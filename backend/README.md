@@ -84,6 +84,18 @@ Sẽ tạo / cập nhật bản ghi `Config` singleton với nội dung popup m�
 - Production nên bật OTP SMS hoặc bắt buộc password.
 - Header: `Authorization: Bearer <token>`
 
+## CORS
+
+Cấu hình qua biến `CORS_ORIGINS` trong `.env`:
+
+| Giá trị | Hành vi |
+|:--|:--|
+| `*` hoặc để trống | Chấp nhận **mọi origin** (echo lại origin để vẫn tương thích `credentials: true`) |
+| `a.com,b.com` | Chỉ cho phép origin nằm trong danh sách |
+
+Lưu ý: server luôn echo lại origin cụ thể (không gửi `Access-Control-Allow-Origin: *`) để browser chấp nhận cookie/Authorization header khi `credentials: true`.
+- Header: `Authorization: Bearer <token>`
+
 ## Cron
 
 - `CLEANUP_CRON` (mặc định `0 2 * * *`): xoá `PopupEvent` cũ hơn 90 ngày.
