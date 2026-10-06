@@ -5,3 +5,9 @@ export const markLessonComplete = (lessonId) =>
 
 export const fetchMyProgress = () =>
   api.get('/progress/me').then((r) => r.data);
+
+export const fetchMyStats = () =>
+  api.get('/progress/me/stats').then((r) => r.data);
+
+export const fetchContinueLearning = () =>
+  api.get('/progress/me/continue').then((r) => r.data);

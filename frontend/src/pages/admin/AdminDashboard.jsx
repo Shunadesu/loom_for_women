@@ -30,6 +30,38 @@ export default function AdminDashboard() {
           </span>
         </Link>
 
+        <Link
+          to="/admin/product-categories"
+          className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-xs transition-all hover:border-pink-200 hover:shadow-sm"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-lg text-[#E60067]">
+            🛍️
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Danh mục SP</h3>
+            <p className="text-[11px] text-slate-500">Quản lý danh mục Cửa hàng Sinh kế</p>
+          </div>
+          <span className="ml-auto text-slate-300 transition-colors group-hover:text-[#E60067]">
+            ›
+          </span>
+        </Link>
+
+        <Link
+          to="/admin/products"
+          className="group flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-xs transition-all hover:border-pink-200 hover:shadow-sm"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-lg text-[#E60067]">
+            📦
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Sản phẩm</h3>
+            <p className="text-[11px] text-slate-500">Quản lý sản phẩm do Admin đăng</p>
+          </div>
+          <span className="ml-auto text-slate-300 transition-colors group-hover:text-[#E60067]">
+            ›
+          </span>
+        </Link>
+
         <div className="flex cursor-not-allowed items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-4 opacity-60">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-lg">
             👥

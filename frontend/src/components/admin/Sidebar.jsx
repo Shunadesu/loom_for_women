@@ -3,8 +3,10 @@ import { NavLink } from 'react-router-dom';
 const NAV = [
   { to: '/admin', label: 'Dashboard', icon: '📊', end: true },
   { to: '/admin/heroes', label: 'Hero Banner', icon: '🖼️' },
-  { to: '/admin/categories', label: 'Danh mục', icon: '📁' },
+  { to: '/admin/categories', label: 'Danh mục KH', icon: '📁' },
   { to: '/admin/courses', label: 'Khóa học', icon: '📚' },
+  { to: '/admin/product-categories', label: 'Danh mục SP', icon: '🛍️' },
+  { to: '/admin/products', label: 'Sản phẩm', icon: '📦' },
   { to: '/admin/users', label: 'Người dùng', icon: '👥', soon: true },
   { to: '/admin/config', label: 'Cấu hình', icon: '⚙️', soon: true },
 ];

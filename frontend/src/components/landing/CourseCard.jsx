@@ -5,18 +5,24 @@ import CourseProgressButton from './CourseProgressButton.jsx';
 /**
  * Card khóa học — dùng cho cả list + featured.
  * Props:
- *   - course: { _id, title, slug, thumbnail, category, rating, durationMinutes, progressPct, lessonsCount }
+ *   - course: { _id, title, slug, thumbnail, category, rating, durationMinutes, progressPct, lessonsCount, lastLessonId }
  *   - onProgressClick: bấm nút progress (default navigate detail)
+ *   - onImageClick: click vào vùng thumbnail
  */
 export default function CourseCard({ course, onProgressClick, onImageClick }) {
   const categoryName = course.category?.name || 'Khác';
   const categoryColor = course.category?.color || '#E60067';
 
+  // Nếu user đang học dở → deep-link tới đúng bài đó
+  const detailHref = course.lastLessonId
+    ? `/khoa-hoc/${course.slug}?lesson=${course.lastLessonId}`
+    : `/khoa-hoc/${course.slug}`;
+
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs transition-all hover:border-pink-200 sm:flex-row">
       {/* Thumbnail */}
       <div className="relative h-28 w-full shrink-0 overflow-hidden bg-slate-100 sm:h-28 sm:w-28">
-        <Link to={`/khoa-hoc/${course.slug}`} className="block h-full w-full">
+        <Link to={detailHref} className="block h-full w-full">
           <img
             alt={course.title}
             src={course.thumbnail}
@@ -61,7 +67,7 @@ export default function CourseCard({ course, onProgressClick, onImageClick }) {
             )}
           </div>
 
-          <Link to={`/khoa-hoc/${course.slug}`}>
+          <Link to={detailHref}>
             <h3 className="line-clamp-2 cursor-pointer text-xs font-bold text-slate-900 hover:text-[#E60067]">
               {course.title}
             </h3>

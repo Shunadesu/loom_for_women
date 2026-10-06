@@ -33,6 +33,11 @@ const lessonSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    documentsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true }
 );

@@ -8,12 +8,18 @@ import CourseDetail from './pages/CourseDetail.jsx';
 import MyFavorites from './pages/MyFavorites.jsx';
 import MyCertificates from './pages/MyCertificates.jsx';
 import MyPoints from './pages/MyPoints.jsx';
+import Marketplace from './pages/Marketplace.jsx';
+import Library from './pages/Library.jsx';
+import SafetyPassport from './pages/SafetyPassport.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import HeroManager from './pages/admin/HeroManager.jsx';
 import CategoryManager from './pages/admin/CategoryManager.jsx';
 import CourseManager from './pages/admin/CourseManager.jsx';
+import LessonManager from './pages/admin/LessonManager.jsx';
+import ProductCategoryManager from './pages/admin/ProductCategoryManager.jsx';
+import ProductManager from './pages/admin/ProductManager.jsx';
 import ProtectedRoute from './components/admin/ProtectedRoute.jsx';
 import { usePopupStore } from './store/popupStore.js';
 
@@ -47,18 +53,9 @@ export default function App() {
           <Route path="/yeu-thich" element={<MyFavorites />} />
           <Route path="/chung-chi" element={<MyCertificates />} />
           <Route path="/diem" element={<MyPoints />} />
-          <Route
-            path="/cua-hang"
-            element={<ComingSoon title="Cửa hàng sinh kế" />}
-          />
-          <Route
-            path="/thu-vien"
-            element={<ComingSoon title="Thư viện tài liệu" />}
-          />
-          <Route
-            path="/he-chieu"
-            element={<ComingSoon title="Hộ Chiếu An Toàn" />}
-          />
+          <Route path="/cua-hang" element={<Marketplace />} />
+          <Route path="/thu-vien" element={<Library />} />
+          <Route path="/he-chieu" element={<SafetyPassport />} />
           <Route path="/workshop" element={<ComingSoon title="Workshop" />} />
           <Route
             path="/hoi-chuyen-gia"
@@ -81,6 +78,12 @@ export default function App() {
             <Route path="heroes" element={<HeroManager />} />
             <Route path="categories" element={<CategoryManager />} />
             <Route path="courses" element={<CourseManager />} />
+            <Route path="courses/:courseId/lessons" element={<LessonManager />} />
+            <Route
+              path="product-categories"
+              element={<ProductCategoryManager />}
+            />
+            <Route path="products" element={<ProductManager />} />
           </Route>
 
           <Route

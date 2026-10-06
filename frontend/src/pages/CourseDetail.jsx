@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '../components/layout/Header.jsx';
 import {
@@ -22,8 +22,10 @@ import { addFavorite, removeFavorite } from '../services/favoriteApi.js';
 export default function CourseDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuthStore((s) => s.user);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = Boolean(token || user?._id);
 
   const detailCache = useCourseStore((s) => s.detailCache);
   const detailLoading = useCourseStore((s) => s.detailLoading);
@@ -32,6 +34,8 @@ export default function CourseDetail() {
 
   const progressStore = useProgressStore((s) => s.byCourse);
   const completeLesson = useProgressStore((s) => s.complete);
+  const fetchContinue = useProgressStore((s) => s.fetchContinue);
+  const fetchStats = useProgressStore((s) => s.fetchStats);
   const isFavorite = useProgressStore((s) => s.isFavorite);
   const toggleFavoriteLocal = useProgressStore((s) => s.toggleFavoriteLocal);
 
@@ -56,16 +60,25 @@ export default function CourseDetail() {
   }, [slug, fetchDetail, fetchComments]);
 
   useEffect(() => {
-    if (lessons.length > 0 && !currentLessonId) {
-      const lastId = myProgress?.lastLessonId;
-      const found = lessons.find((l) => String(l._id) === String(lastId));
-      setCurrentLessonId(found ? found._id : lessons[0]._id);
+    if (lessons.length === 0) return;
+    // Ưu tiên lesson từ query (?lesson=xxx) — dùng cho deep-link
+    const queryLesson = searchParams.get('lesson');
+    const fromQuery = queryLesson && lessons.find((l) => String(l._id) === String(queryLesson));
+    if (fromQuery) {
+      setCurrentLessonId(fromQuery._id);
+      return;
     }
-  }, [lessons, currentLessonId, myProgress]);
+    if (currentLessonId) return;
+    const lastId = myProgress?.lastLessonId;
+    const found = lessons.find((l) => String(l._id) === String(lastId));
+    setCurrentLessonId(found ? found._id : lessons[0]._id);
+  }, [lessons, currentLessonId, myProgress, searchParams]);
 
   const currentLesson = lessons.find((l) => String(l._id) === String(currentLessonId));
   const completedSet = new Set(
-    (progressStore[course?._id]?.completedLessons || []).map(String)
+    (progressStore[course?._id]?.completedLessons || myProgress?.completedLessons || []).map(
+      String
+    )
   );
 
   async function handleComplete(lessonId) {
@@ -75,6 +88,9 @@ export default function CourseDetail() {
     }
     try {
       await completeLesson(lessonId, course._id);
+      // Refresh continue + stats cho header
+      fetchContinue().catch(() => {});
+      fetchStats().catch(() => {});
     } catch (err) {
       alert(err?.response?.data?.error || 'Không lưu được tiến độ.');
     }
@@ -411,7 +427,17 @@ export default function CourseDetail() {
                     <button
                       key={l._id}
                       type="button"
-                      onClick={() => setCurrentLessonId(l._id)}
+                      onClick={() => {
+                        setCurrentLessonId(l._id);
+                        setSearchParams(
+                          (prev) => {
+                            const next = new URLSearchParams(prev);
+                            next.set('lesson', String(l._id));
+                            return next;
+                          },
+                          { replace: true }
+                        );
+                      }}
                       className={[
                         'group flex w-full items-start gap-3 p-3 text-left transition-colors',
                         isActive

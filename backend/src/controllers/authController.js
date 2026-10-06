@@ -3,7 +3,43 @@ import { validationResult } from 'express-validator';
 import User from '../models/User.js';
 import { signToken } from '../utils/jwt.js';
 
-const PHONE_REGEX = /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/;
+// Chấp nhận: 0901234567, 84901234567, +84901234567, 9 012 345 67, 090-123-4567
+// Yêu cầu: 9–11 chữ số sau khi bỏ khoảng trắng/dấu phân cách
+const PHONE_DIGITS_ONLY = /^[0-9]{9,11}$/;
+
+/**
+ * Chuẩn hoá SĐT về dạng 0xxxxxxxxx (10 số) hoặc trả về chuỗi gốc nếu không match.
+ * Trả về null nếu không hợp lệ.
+ *
+ * Hỗ trợ các format phổ biến tại VN:
+ *   0901234567
+ *   84 90 123 4567
+ *   +84 901 234 567
+ *   090-123-4567
+ *   090.123.4567
+ *   901 234 567  (thiếu 0 — sẽ tự thêm)
+ *
+ * Bắt buộc: 9–11 chữ số, bắt đầu bằng 0 (10 số), 84 (11 số), hoặc 3/5/7/8/9 (9 số).
+ * Lưu ý: không bắt buộc đầu số 3/5/7/8/9 để cho phép SĐT test/seed như 0123456789.
+ */
+function normalizePhone(input) {
+  if (typeof input !== 'string') return null;
+  const digits = input.replace(/[\s\-().+]/g, '');
+  if (!PHONE_DIGITS_ONLY.test(digits)) return null;
+  // 84xxxxxxxxx (11 số) -> 0xxxxxxxxx
+  if (digits.startsWith('84') && digits.length === 11) {
+    return '0' + digits.slice(2);
+  }
+  // 0xxxxxxxxx (10 số) — ok
+  if (digits.startsWith('0') && digits.length === 10) {
+    return digits;
+  }
+  // xxxxxxxxx (9 số, thiếu 0) — tự thêm nếu đầu là 3/5/7/8/9
+  if (digits.length === 9 && /^[35789]/.test(digits)) {
+    return '0' + digits;
+  }
+  return null;
+}
 
 export const register = async (req, res) => {
   const errors = validationResult(req);
@@ -11,9 +47,9 @@ export const register = async (req, res) => {
     return res.status(400).json({ error: errors.array()[0].msg });
   }
 
-  const { phone, name = '', password = '' } = req.body;
-
-  if (!PHONE_REGEX.test(phone)) {
+  const { name = '', password = '' } = req.body;
+  const phone = normalizePhone(req.body.phone);
+  if (!phone) {
     return res.status(400).json({ error: 'Số điện thoại không hợp lệ.' });
   }
 
@@ -46,9 +82,9 @@ export const login = async (req, res) => {
     return res.status(400).json({ error: errors.array()[0].msg });
   }
 
-  const { phone, password = '' } = req.body;
-
-  if (!PHONE_REGEX.test(phone)) {
+  const { password = '' } = req.body;
+  const phone = normalizePhone(req.body.phone);
+  if (!phone) {
     return res.status(400).json({ error: 'Số điện thoại không hợp lệ.' });
   }
 

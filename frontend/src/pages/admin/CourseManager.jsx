@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   fetchAllCoursesAdmin,
   createCourseAdmin,
@@ -7,9 +8,10 @@ import {
   reorderCoursesAdmin,
 } from '../../services/courseApi.js';
 import { fetchAllCategoriesAdmin } from '../../services/categoryApi.js';
-import { PlusIcon, EditIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, ImageIcon } from '../../components/icons/index.jsx';
+import { PlusIcon, EditIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, ImageIcon, VideoIcon } from '../../components/icons/index.jsx';
 
 export default function CourseManager() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -197,6 +199,14 @@ export default function CourseManager() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/admin/courses/${item._id}/lessons`)}
+                        className="rounded p-1 hover:bg-sky-50"
+                        title="Quản lý bài học"
+                      >
+                        <VideoIcon aria-hidden="true" className="h-4 w-4 text-sky-600" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleMoveUp(i)}

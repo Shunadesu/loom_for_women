@@ -1,5 +1,18 @@
 import { create } from 'zustand';
-import { fetchMyProgress, markLessonComplete } from '../services/progressApi.js';
+import {
+  fetchMyProgress,
+  markLessonComplete,
+  fetchMyStats,
+  fetchContinueLearning,
+} from '../services/progressApi.js';
+
+const DEFAULT_STATS = {
+  ongoing: 0,
+  completed: 0,
+  totalMinutes: 0,
+  certificatesCount: 0,
+  favoriteCount: 0,
+};
 
 export const useProgressStore = create((set, get) => ({
   // Map: courseId -> { progressPct, lastLessonId, completedLessons[] }
@@ -7,6 +20,14 @@ export const useProgressStore = create((set, get) => ({
   favoriteIds: new Set(),
   loading: false,
   error: null,
+
+  // Stats summary cho header
+  stats: DEFAULT_STATS,
+  statsLoading: false,
+
+  // Continue learning (1 course gần nhất đang học dở)
+  continueItem: null,
+  continueLoading: false,
 
   fetch: async () => {
     set({ loading: true, error: null });
@@ -32,6 +53,26 @@ export const useProgressStore = create((set, get) => ({
         error: err?.response?.data?.error || 'Không tải được tiến độ.',
         loading: false,
       });
+    }
+  },
+
+  fetchStats: async () => {
+    set({ statsLoading: true });
+    try {
+      const data = await fetchMyStats();
+      set({ stats: { ...DEFAULT_STATS, ...data }, statsLoading: false });
+    } catch {
+      set({ stats: DEFAULT_STATS, statsLoading: false });
+    }
+  },
+
+  fetchContinue: async () => {
+    set({ continueLoading: true });
+    try {
+      const data = await fetchContinueLearning();
+      set({ continueItem: data?.item || null, continueLoading: false });
+    } catch {
+      set({ continueItem: null, continueLoading: false });
     }
   },
 

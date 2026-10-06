@@ -25,6 +25,13 @@ export const BookIcon = (props) => (
   </svg>
 );
 
+export const BookOpenIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M12 7v14" />
+    <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+  </svg>
+);
+
 export const ShopIcon = (props) => (
   <svg {...baseProps} {...props}>
     <path d="M3 9h18l-1.5 11a2 2 0 0 1-2 1.7H6.5a2 2 0 0 1-2-1.7L3 9z" />
@@ -197,6 +204,124 @@ export const ShieldCheckIcon = (props) => (
   </svg>
 );
 
+export const EditIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+export const TrashIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M3 6h18" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
+export const ImageIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+    <circle cx="9" cy="9" r="2" />
+    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+  </svg>
+);
+
+export const ImagePlusIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7" />
+    <line x1="16" x2="22" y1="5" y2="5" />
+    <line x1="19" x2="19" y1="2" y2="8" />
+    <circle cx="9" cy="9" r="2" />
+    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+  </svg>
+);
+
+export const PlayCircleIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M10 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 10 14.996z" />
+  </svg>
+);
+
+export const SaveIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
+  </svg>
+);
+
+export const VideoIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="m22 8-6 4 6 4V8Z" />
+    <rect width="14" height="12" x="2" y="6" rx="2" ry="2" />
+  </svg>
+);
+
+export const ListOrderedIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <line x1="10" x2="21" y1="6" y2="6" />
+    <line x1="10" x2="21" y1="12" y2="12" />
+    <line x1="10" x2="21" y1="18" y2="18" />
+    <path d="M4 6h1v4" />
+    <path d="M4 10h2" />
+    <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" />
+  </svg>
+);
+
+export const Clock3Icon = (props) => (
+  <svg {...baseProps} {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6" />
+    <path d="M12 18h4" />
+  </svg>
+);
+
+export const MoreVerticalIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="12" cy="5" r="1" />
+    <circle cx="12" cy="19" r="1" />
+  </svg>
+);
+
+export const XIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
+export const RefreshIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+    <path d="M8 16H3v5" />
+  </svg>
+);
+
+export const CheckIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+);
+
+export const ChevronLeftIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="m15 18-6-6 6-6" />
+  </svg>
+);
+
+export const FilterIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+  </svg>
+);
+
+export const SparkleIcon = SparklesIcon;
+
 export const SearchIcon = (props) => (
   <svg {...baseProps} {...props}>
     <circle cx="11" cy="11" r="8" />
@@ -310,5 +435,95 @@ export const PdfIcon = (props) => (
     <path d="M14 2v6h6" />
     <path d="M9 13h6" />
     <path d="M9 17h6" />
+  </svg>
+);
+
+export const FlameIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+  </svg>
+);
+
+export const TrendingUpIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+    <polyline points="16 7 22 7 22 13" />
+  </svg>
+);
+
+export const SortIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M3 6h18" />
+    <path d="M7 12h10" />
+    <path d="M10 18h4" />
+  </svg>
+);
+
+export const LayoutGridIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <rect width="7" height="7" x="3" y="3" rx="1" />
+    <rect width="7" height="7" x="14" y="3" rx="1" />
+    <rect width="7" height="7" x="14" y="14" rx="1" />
+    <rect width="7" height="7" x="3" y="14" rx="1" />
+  </svg>
+);
+
+export const EyeIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+export const FolderIconSolid = (props) => (
+  <svg {...baseProps} {...props} fill="currentColor" stroke="none">
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+  </svg>
+);
+
+export const CameraIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M14.5 4h-5L7 6H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2.5-2z" />
+    <circle cx="12" cy="13" r="4" />
+  </svg>
+);
+
+export const MessageCircleIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
+  </svg>
+);
+
+export const QrCodeIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <rect width="5" height="5" x="3" y="3" rx="1" />
+    <rect width="5" height="5" x="16" y="3" rx="1" />
+    <rect width="5" height="5" x="3" y="16" rx="1" />
+    <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+    <path d="M21 21v.01" />
+    <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+    <path d="M3 12h.01" />
+    <path d="M12 3h.01" />
+    <path d="M12 16v.01" />
+    <path d="M16 12h1" />
+    <path d="M21 12v.01" />
+    <path d="M12 21v-1" />
+  </svg>
+);
+
+export const StoreIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5" />
+    <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244" />
+    <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05" />
+  </svg>
+);
+
+export const PackageIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+    <path d="M12 22V12" />
+    <polyline points="3.29 7 12 12 20.71 7" />
+    <path d="m7.5 4.27 9 5.15" />
   </svg>
 );

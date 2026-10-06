@@ -19,10 +19,20 @@ import favoriteRoutes from './routes/favorites.js';
 import commentRoutes from './routes/comments.js';
 import certificateRoutes from './routes/certificates.js';
 import pointRoutes from './routes/points.js';
+import productRoutes from './routes/products.js';
+import productCategoryRoutes from './routes/productCategories.js';
+import cartRoutes from './routes/cart.js';
 import adminCategoryRoutes from './routes/adminCategories.js';
 import adminCourseRoutes from './routes/adminCourses.js';
 import adminLessonRoutes from './routes/adminLessons.js';
 import adminCommentRoutes from './routes/adminComments.js';
+import adminProductRoutes from './routes/adminProducts.js';
+import adminProductCategoryRoutes from './routes/adminProductCategories.js';
+import documentRoutes from './routes/documents.js';
+import adminDocumentRoutes, {
+  lessonDocumentsRouter,
+} from './routes/adminDocuments.js';
+import passportRoutes from './routes/passport.js';
 import { notFoundHandler, errorHandler } from './middleware/error.js';
 
 const app = express();
@@ -100,11 +110,20 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/points', pointRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/product-categories', productCategoryRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/admin/courses', adminCourseRoutes);
 app.use('/api/admin/lessons', adminLessonRoutes);
 app.use('/api/admin/comments', adminCommentRoutes);
+app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/admin/product-categories', adminProductCategoryRoutes);
+app.use('/api/admin/documents', adminDocumentRoutes);
+app.use('/api/admin/lessons/:lessonId/documents', lessonDocumentsRouter);
+app.use('/api/documents', documentRoutes);
+app.use('/api/me', passportRoutes);
 
 // Static — phục vụ ảnh upload từ admin
 app.use(

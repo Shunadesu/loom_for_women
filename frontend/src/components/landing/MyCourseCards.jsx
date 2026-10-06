@@ -1,13 +1,17 @@
+import { useNavigate } from 'react-router-dom';
 import { GraduationCapIcon, ShoppingBagIcon } from '../icons/index.jsx';
 
-const COURSE_BADGE = 1; // tạm thời hardcode — sẽ nối useCartStore sau
+const CART_BADGE = 1; // tạm thời hardcode — sẽ nối useCartStore sau
 
 export default function MyCourseCards() {
+  const navigate = useNavigate();
+
   return (
     <div className="grid grid-cols-2 gap-3">
       {/* Card 1: Khóa học của tôi — pink nền */}
       <button
         type="button"
+        onClick={() => navigate('/khoa-hoc?tab=ongoing')}
         className="group relative overflow-hidden rounded-2xl bg-[#E60067] p-3.5 text-left text-white shadow-sm transition-all hover:opacity-95"
       >
         <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white/20">
@@ -28,7 +32,7 @@ export default function MyCourseCards() {
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold leading-tight">Giỏ hàng của tôi</h3>
           <span className="rounded-full bg-[#E60067] px-1.5 py-0.5 text-[9px] font-bold text-white">
-            {COURSE_BADGE}
+            {CART_BADGE}
           </span>
         </div>
         <p className="mt-0.5 text-[10px] text-slate-400">Đơn hàng hiện tại</p>
