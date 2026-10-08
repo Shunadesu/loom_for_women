@@ -36,6 +36,7 @@ export const listProducts = async (req, res) => {
       sort = 'newest',
       limit = 50,
       skip = 0,
+      promo,
     } = req.query;
 
     const filter = { isActive: true, isPublished: true };
@@ -52,11 +53,21 @@ export const listProducts = async (req, res) => {
     }
     if (status === 'featured') filter.isFeatured = true;
 
+    // Filter promo: chỉ lấy sản phẩm có giảm giá
+    if (promo === 'true') {
+      filter.originalPrice = { $gt: 0 };
+      filter.$expr = { $gt: ['$originalPrice', '$price'] };
+    }
+
     // sort
     let sortObj = { order: 1, createdAt: -1 };
     if (sort === 'priceAsc') sortObj = { price: 1 };
     else if (sort === 'priceDesc') sortObj = { price: -1 };
     else if (sort === 'popular') sortObj = { salesCount: -1, createdAt: -1 };
+    else if (sort === 'discount') {
+      // Sort theo discount % cao nhất (computed field)
+      sortObj = { createdAt: -1 }; // Fallback, sẽ sort client-side sau
+    }
 
     const items = await Product.find(filter)
       .populate('category', 'name slug icon color')
@@ -64,6 +75,15 @@ export const listProducts = async (req, res) => {
       .skip(Number(skip) || 0)
       .limit(Math.min(Number(limit) || 50, 100))
       .lean({ virtuals: true });
+
+    // Nếu sort by discount, tính toán và sort client-side
+    if (sort === 'discount' && promo === 'true') {
+      items.sort((a, b) => {
+        const discA = a.discountPct || 0;
+        const discB = b.discountPct || 0;
+        return discB - discA;
+      });
+    }
 
     res.json({ items });
   } catch (err) {

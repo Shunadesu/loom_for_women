@@ -46,3 +46,51 @@ body {
 .hero-swiper .swiper-pagination-bullet-active {
   background: #E60067;
 }
+
+/* Forum post content styling */
+.forum-post-content {
+  line-height: 1.6;
+}
+
+.forum-post-content p {
+  margin-bottom: 0.5rem;
+}
+
+.forum-post-content strong {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.forum-post-content em {
+  font-style: italic;
+}
+
+.forum-post-content u {
+  text-decoration: underline;
+}
+
+.forum-post-content ol,
+.forum-post-content ul {
+  margin-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.forum-post-content ol {
+  list-style-type: decimal;
+}
+
+.forum-post-content ul {
+  list-style-type: disc;
+}
+
+.forum-post-content li {
+  margin-bottom: 0.25rem;
+}
+
+/* Line clamp utility for preview */
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

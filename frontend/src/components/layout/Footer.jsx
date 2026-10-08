@@ -149,26 +149,26 @@ export default function Footer() {
             An Toàn. Giữ toàn bộ bản quyền.
           </div>
           <div className="flex items-center gap-4">
-            <button
-              type="button"
+            <Link
+              to="/chinh-sach-bao-mat"
               className="cursor-pointer transition-colors hover:text-[#E60067]"
             >
               Chính sách bảo mật
-            </button>
+            </Link>
             <span aria-hidden="true">•</span>
-            <button
-              type="button"
+            <Link
+              to="/dieu-khoan-su-dung"
               className="cursor-pointer transition-colors hover:text-[#E60067]"
             >
               Điều khoản sử dụng
-            </button>
+            </Link>
             <span aria-hidden="true">•</span>
-            <button
-              type="button"
+            <Link
+              to="/cam-ket-esg-2026"
               className="cursor-pointer transition-colors hover:text-[#E60067]"
             >
               Cam kết ESG 2026
-            </button>
+            </Link>
           </div>
         </div>
       </div>

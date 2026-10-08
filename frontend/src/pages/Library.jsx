@@ -73,7 +73,7 @@ export default function Library() {
       className="flex min-h-screen flex-col bg-gradient-to-b from-primary-50 via-white to-primary-50"
     >
       <Header />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-6 sm:px-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-3.5 sm:p-6 overflow-hidden">
           <div className="p-3.5 space-y-3 text-xs pb-10">
             <LibraryHeader />

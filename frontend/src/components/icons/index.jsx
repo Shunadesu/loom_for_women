@@ -293,6 +293,14 @@ export const XIcon = (props) => (
   </svg>
 );
 
+export const XMarkIcon = XIcon;
+
+export const MinusIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M5 12h14" />
+  </svg>
+);
+
 export const RefreshIcon = (props) => (
   <svg {...baseProps} {...props}>
     <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
@@ -332,6 +340,20 @@ export const SearchIcon = (props) => (
 export const ChevronRightIcon = (props) => (
   <svg {...baseProps} {...props}>
     <path d="m9 18 6-6-6-6" />
+  </svg>
+);
+
+export const ChevronDownIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+export const LogOutIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" x2="9" y1="12" y2="12" />
   </svg>
 );
 
@@ -525,5 +547,59 @@ export const PackageIcon = (props) => (
     <path d="M12 22V12" />
     <polyline points="3.29 7 12 12 20.71 7" />
     <path d="m7.5 4.27 9 5.15" />
+  </svg>
+);
+
+export const MessageSquareIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+export const SendIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
+    <path d="m21.854 2.147-10.94 10.939" />
+  </svg>
+);
+
+export const ShieldAlertIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+    <path d="M12 8v4" />
+    <path d="M12 16h.01" />
+  </svg>
+);
+
+export const TriangleAlertIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+    <path d="M12 9v4" />
+    <path d="M12 17h.01" />
+  </svg>
+);
+
+export const MenuIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <line x1="4" x2="20" y1="12" y2="12" />
+    <line x1="4" x2="20" y1="6" y2="6" />
+    <line x1="4" x2="20" y1="18" y2="18" />
+  </svg>
+);
+
+export const UserCircleIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="10" r="3" />
+    <path d="M7 20.662A7 7 0 0 1 12 18a7 7 0 0 1 5 2.662" />
+  </svg>
+);
+
+export const CalendarIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <rect width="18" height="18" x="3" y="4" rx="2" />
+    <path d="M16 2v4" />
+    <path d="M8 2v4" />
+    <path d="M3 10h18" />
   </svg>
 );

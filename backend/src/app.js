@@ -33,6 +33,10 @@ import adminDocumentRoutes, {
   lessonDocumentsRouter,
 } from './routes/adminDocuments.js';
 import passportRoutes from './routes/passport.js';
+import forumPostRoutes from './routes/forumPosts.js';
+import adminForumPostRoutes from './routes/adminForumPosts.js';
+import consignmentProductRoutes from './routes/consignmentProducts.js';
+import adminConsignmentProductRoutes from './routes/adminConsignmentProducts.js';
 import { notFoundHandler, errorHandler } from './middleware/error.js';
 
 const app = express();
@@ -124,6 +128,10 @@ app.use('/api/admin/documents', adminDocumentRoutes);
 app.use('/api/admin/lessons/:lessonId/documents', lessonDocumentsRouter);
 app.use('/api/documents', documentRoutes);
 app.use('/api/me', passportRoutes);
+app.use('/api/forum-posts', forumPostRoutes);
+app.use('/api/admin/forum-posts', adminForumPostRoutes);
+app.use('/api/consignment-products', consignmentProductRoutes);
+app.use('/api/admin/consignment-products', adminConsignmentProductRoutes);
 
 // Static — phục vụ ảnh upload từ admin
 app.use(

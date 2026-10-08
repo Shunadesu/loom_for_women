@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { animate, motion } from 'framer-motion';
 import Header from '../components/layout/Header.jsx';
 import MarketplaceHeader from '../components/marketplace/MarketplaceHeader.jsx';
 import ProductSearchBar from '../components/marketplace/ProductSearchBar.jsx';
@@ -24,6 +24,9 @@ export default function Marketplace() {
   const [sortBy, setSortBy] = useState('newest');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
+  // Ref cho khu vực hiển thị sản phẩm — dùng để auto-scroll khi đổi danh mục
+  const productsAnchorRef = useRef(null);
+
   // Fetch list khi mount
   useEffect(() => {
     list();
@@ -34,6 +37,30 @@ export default function Marketplace() {
     const t = setTimeout(() => setDebouncedQuery(query.trim()), 300);
     return () => clearTimeout(t);
   }, [query]);
+
+  // Khi đổi danh mục → cập nhật state + trượt xuống khu vực sản phẩm
+  const handleCategoryChange = useCallback((id) => {
+    setActiveCategory(id);
+    // Đợi React render danh sách mới rồi mới cuộn (2 frame để chắc chắn layout đã ổn định)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = productsAnchorRef.current;
+        if (!el) return;
+        const targetY =
+          el.getBoundingClientRect().top + window.scrollY - 80;
+        const startY = window.scrollY;
+        // Không cuộn nếu đã ở gần vị trí — tránh "giật" khi chọn cùng 1 danh mục
+        if (Math.abs(targetY - startY) < 16) return;
+
+        // Smooth scroll với framer-motion — easing mượt, có kiểm soát duration
+        animate(startY, targetY, {
+          duration: 0.75,
+          ease: [0.22, 1, 0.36, 1], // easeOutQuint — chậm dần về cuối, rất mượt
+          onUpdate: (latest) => window.scrollTo(0, latest),
+        });
+      });
+    });
+  }, []);
 
   // Filter + sort client-side
   const displayProducts = useMemo(() => {
@@ -98,7 +125,7 @@ export default function Marketplace() {
       className="flex min-h-screen flex-col bg-gradient-to-b from-primary-50 via-white to-primary-50"
     >
       <Header />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-6 sm:px-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
         <div className="space-y-4 overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-sm sm:p-6">
           <MarketplaceHeader count={products.length} />
 
@@ -113,7 +140,7 @@ export default function Marketplace() {
           <ProductCategoryGrid
             categories={categories.filter((c) => c.slug !== 'tat-ca')}
             activeId={activeCategory}
-            onChange={setActiveCategory}
+            onChange={handleCategoryChange}
           />
 
           {error && (
@@ -125,18 +152,36 @@ export default function Marketplace() {
 
           <ProductFilterBar sortBy={sortBy} onSortChange={setSortBy} />
 
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              {displayProducts.length} sản phẩm
-            </span>
-          </div>
+          <motion.div
+            ref={productsAnchorRef}
+            key={activeCategory || 'all'}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="scroll-mt-24 space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {displayProducts.length} sản phẩm
+              </span>
+              {activeCategory && (
+                <button
+                  type="button"
+                  onClick={() => handleCategoryChange('')}
+                  className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-200"
+                >
+                  ✕ Bỏ lọc
+                </button>
+              )}
+            </div>
 
-          <ProductPromoBanner />
+            <ProductPromoBanner />
 
-          <ProductGrid
-            products={displayProducts}
-            onAddToCart={handleAddToCart}
-          />
+            <ProductGrid
+              products={displayProducts}
+              onAddToCart={handleAddToCart}
+            />
+          </motion.div>
         </div>
       </main>
     </motion.div>

@@ -184,7 +184,7 @@ export default function CourseDetail() {
       className="flex min-h-screen flex-col bg-gradient-to-b from-primary-50 via-white to-primary-50"
     >
       <Header />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-6 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
         <button
           type="button"
           onClick={() => navigate('/khoa-hoc')}

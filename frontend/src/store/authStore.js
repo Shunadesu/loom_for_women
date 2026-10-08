@@ -6,11 +6,10 @@ import { normalizePhoneVN } from '../utils/phone.js';
 export const useAuthStore = create(
   persist(
     (set) => ({
-      user: { name: 'Bạn của Loom' },
+      user: null,
       token: null,
-      // Số điểm thưởng hiển thị ở header — mock ban đầu, sẽ sync từ API sau
-      points: 480,
-      level: 2,
+      points: 0,
+      level: 1,
       
       // Profile fields cho Safety Passport
       profile: {
@@ -25,8 +24,12 @@ export const useAuthStore = create(
         ],
       },
 
-      setAuth: (user, token) => set({ user, token }),
-      logout: () => set({ user: null, token: null }),
+      setAuth: (user, token) => {
+        const points = user?.points || 0;
+        const level = user?.level || 1;
+        set({ user, token, points, level });
+      },
+      logout: () => set({ user: null, token: null, points: 0, level: 1 }),
       setPoints: (points) => set({ points }),
       setProfile: (patch) => set((state) => ({ profile: { ...state.profile, ...patch } })),
 
@@ -42,14 +45,20 @@ export const useAuthStore = create(
           phone: normalized,
           password,
         });
-        set({ user: data.user, token: data.token });
+        const points = data.user?.points || 0;
+        const level = data.user?.level || 1;
+        set({ user: data.user, token: data.token, points, level });
         return data.user;
       },
     }),
     {
       name: 'loom-auth',
-      // Chỉ persist user + token — không cần lưu function
-      partialize: (state) => ({ user: state.user, token: state.token }),
+      partialize: (state) => ({ 
+        user: state.user, 
+        token: state.token,
+        points: state.points,
+        level: state.level,
+      }),
     }
   )
 );

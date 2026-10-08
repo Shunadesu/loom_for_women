@@ -20,6 +20,7 @@ export const useCartStore = create((set, get) => ({
   loading: false,
   error: null,
   initialized: false,
+  isOpen: false,
 
   /** Tải cart từ server — gọi 1 lần khi app boot (nếu đã login). */
   init: async () => {
@@ -129,4 +130,7 @@ export const useCartStore = create((set, get) => ({
   },
 
   clear: () => set({ items: [], total: 0, count: 0 }),
+
+  openCart: () => set({ isOpen: true }),
+  closeCart: () => set({ isOpen: false }),
 }));

@@ -13,7 +13,7 @@ export default function ProfileBanner() {
     <div className="bg-gradient-to-r from-rose-600 via-[#E60067] to-pink-500 rounded-2xl p-4 text-white shadow-md flex items-center gap-3">
       <div className="relative">
         <img
-          alt={user?.name || 'User'}
+          alt={profile?.name || 'User'}
           className="w-14 h-14 rounded-full object-cover border-2 border-white/80 shadow-md"
           src={profile.avatar}
           onError={(e) => {

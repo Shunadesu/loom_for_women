@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { GraduationCapIcon, ShoppingBagIcon } from '../icons/index.jsx';
-
-const CART_BADGE = 1; // tạm thời hardcode — sẽ nối useCartStore sau
+import { useCartStore } from '../../store/cartStore.js';
 
 export default function MyCourseCards() {
   const navigate = useNavigate();
+  const { count, openCart } = useCartStore();
 
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -24,6 +24,7 @@ export default function MyCourseCards() {
       {/* Card 2: Giỏ hàng của tôi — trắng + badge */}
       <button
         type="button"
+        onClick={openCart}
         className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-3.5 text-left text-slate-800 shadow-xs transition-all hover:bg-slate-50"
       >
         <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-pink-50 text-[#E60067]">
@@ -31,9 +32,11 @@ export default function MyCourseCards() {
         </div>
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold leading-tight">Giỏ hàng của tôi</h3>
-          <span className="rounded-full bg-[#E60067] px-1.5 py-0.5 text-[9px] font-bold text-white">
-            {CART_BADGE}
-          </span>
+          {count > 0 && (
+            <span className="rounded-full bg-[#E60067] px-1.5 py-0.5 text-[9px] font-bold text-white">
+              {count}
+            </span>
+          )}
         </div>
         <p className="mt-0.5 text-[10px] text-slate-400">Đơn hàng hiện tại</p>
       </button>

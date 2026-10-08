@@ -1,7 +1,15 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import PopupContainer from './components/popups/PopupContainer.jsx';
+import LoginDrawer from './components/auth/LoginDrawer.jsx';
+import CartDrawer from './components/cart/CartDrawer.jsx';
+import ExpertQAModal from './components/expert/ExpertQAModal.jsx';
+import SupportModal from './components/support/SupportModal.jsx';
+import ForumModal from './components/forum/ForumModal.jsx';
 import Footer from './components/layout/Footer.jsx';
+import BottomNav from './components/layout/BottomNav.jsx';
+import ScrollToTop from './components/layout/ScrollToTop.jsx';
+import PageTransition from './components/layout/PageTransition.jsx';
 import Home from './pages/Home.jsx';
 import CourseList from './pages/CourseList.jsx';
 import CourseDetail from './pages/CourseDetail.jsx';
@@ -11,17 +19,14 @@ import MyPoints from './pages/MyPoints.jsx';
 import Marketplace from './pages/Marketplace.jsx';
 import Library from './pages/Library.jsx';
 import SafetyPassport from './pages/SafetyPassport.jsx';
-import AdminLogin from './pages/admin/AdminLogin.jsx';
-import AdminLayout from './pages/admin/AdminLayout.jsx';
-import AdminDashboard from './pages/admin/AdminDashboard.jsx';
-import HeroManager from './pages/admin/HeroManager.jsx';
-import CategoryManager from './pages/admin/CategoryManager.jsx';
-import CourseManager from './pages/admin/CourseManager.jsx';
-import LessonManager from './pages/admin/LessonManager.jsx';
-import ProductCategoryManager from './pages/admin/ProductCategoryManager.jsx';
-import ProductManager from './pages/admin/ProductManager.jsx';
-import ProtectedRoute from './components/admin/ProtectedRoute.jsx';
+import NewsDetail from './pages/NewsDetail.jsx';
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
+import TermsOfUse from './pages/TermsOfUse.jsx';
+import EsgCommitment from './pages/EsgCommitment.jsx';
+import UserProtectedRoute from './components/auth/UserProtectedRoute.jsx';
 import { usePopupStore } from './store/popupStore.js';
+import { useForumStore } from './store/forumStore.js';
+import { useCartStore } from './store/cartStore.js';
 
 function ComingSoon({ title }) {
   return (
@@ -36,8 +41,74 @@ function ComingSoon({ title }) {
   );
 }
 
+/**
+ * AppRoutes — dùng location.pathname làm key để PageTransition biết khi nào
+ * trang thay đổi (cần thiết cho AnimatePresence của framer-motion).
+ */
+function AppRoutes() {
+  const location = useLocation();
+  return (
+    <PageTransition>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Home />} />
+        <Route path="/khoa-hoc" element={<CourseList />} />
+        <Route path="/khoa-hoc/:slug" element={<CourseDetail />} />
+        <Route
+          path="/yeu-thich"
+          element={
+            <UserProtectedRoute>
+              <MyFavorites />
+            </UserProtectedRoute>
+          }
+        />
+        <Route
+          path="/chung-chi"
+          element={
+            <UserProtectedRoute>
+              <MyCertificates />
+            </UserProtectedRoute>
+          }
+        />
+        <Route
+          path="/diem"
+          element={
+            <UserProtectedRoute>
+              <MyPoints />
+            </UserProtectedRoute>
+          }
+        />
+        <Route path="/cua-hang" element={<Marketplace />} />
+        <Route path="/thu-vien" element={<Library />} />
+        <Route
+          path="/he-chieu"
+          element={
+            <UserProtectedRoute>
+              <SafetyPassport />
+            </UserProtectedRoute>
+          }
+        />
+        <Route path="/workshop" element={<ComingSoon title="Workshop" />} />
+        <Route path="/tin-tuc" element={<ComingSoon title="Tin tức & Cập nhật" />} />
+        <Route path="/tin-tuc/:slug" element={<NewsDetail />} />
+        <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicy />} />
+        <Route path="/dieu-khoan-su-dung" element={<TermsOfUse />} />
+        <Route path="/cam-ket-esg-2026" element={<EsgCommitment />} />
+
+        <Route
+          path="*"
+          element={<ComingSoon title="404 — Không tìm thấy trang" />}
+        />
+      </Routes>
+    </PageTransition>
+  );
+}
+
 export default function App() {
   const init = usePopupStore((s) => s.init);
+  const isForumOpen = useForumStore((s) => s.isOpen);
+  const closeForum = useForumStore((s) => s.closeForum);
+  const isCartOpen = useCartStore((s) => s.isOpen);
+  const closeCart = useCartStore((s) => s.closeCart);
 
   useEffect(() => {
     init();
@@ -45,53 +116,16 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <div className="flex min-h-screen flex-col bg-primary-50">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/khoa-hoc" element={<CourseList />} />
-          <Route path="/khoa-hoc/:slug" element={<CourseDetail />} />
-          <Route path="/yeu-thich" element={<MyFavorites />} />
-          <Route path="/chung-chi" element={<MyCertificates />} />
-          <Route path="/diem" element={<MyPoints />} />
-          <Route path="/cua-hang" element={<Marketplace />} />
-          <Route path="/thu-vien" element={<Library />} />
-          <Route path="/he-chieu" element={<SafetyPassport />} />
-          <Route path="/workshop" element={<ComingSoon title="Workshop" />} />
-          <Route
-            path="/hoi-chuyen-gia"
-            element={<ComingSoon title="Hỏi chuyên gia" />}
-          />
-          <Route path="/dien-dan" element={<ComingSoon title="Diễn đàn" />} />
-          <Route path="/ho-tro" element={<ComingSoon title="Hỗ trợ 24/7" />} />
-
-          {/* Admin — tách biệt khỏi public layout */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminDashboard />} />
-            <Route path="heroes" element={<HeroManager />} />
-            <Route path="categories" element={<CategoryManager />} />
-            <Route path="courses" element={<CourseManager />} />
-            <Route path="courses/:courseId/lessons" element={<LessonManager />} />
-            <Route
-              path="product-categories"
-              element={<ProductCategoryManager />}
-            />
-            <Route path="products" element={<ProductManager />} />
-          </Route>
-
-          <Route
-            path="*"
-            element={<ComingSoon title="404 — Không tìm thấy trang" />}
-          />
-        </Routes>
+        <AppRoutes />
+        <LoginDrawer />
+        <CartDrawer isOpen={isCartOpen} onClose={closeCart} />
+        <ExpertQAModal />
+        <SupportModal />
+        <ForumModal isOpen={isForumOpen} onClose={closeForum} />
         <PopupContainer />
+        <BottomNav />
         <Footer />
       </div>
     </BrowserRouter>
