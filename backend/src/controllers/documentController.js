@@ -6,8 +6,7 @@ import UserProgress from '../models/UserProgress.js';
 import { UPLOAD_DOC_DIR } from '../middleware/upload.js';
 
 const publicUrlFor = (filename) => {
-  const base = process.env.PUBLIC_BASE_URL || 'https://sunnydemo.site';
-  return `${base}/uploads/documents/${filename}`;
+  return `/uploads/documents/${filename}`;
 };
 
 const filenameFromUrl = (url) => {

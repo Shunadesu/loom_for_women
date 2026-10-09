@@ -51,34 +51,10 @@ app.use(compression());
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
-// CORS
-// - CORS_ORIGINS=*                  → cho phép mọi origin (echo lại origin cụ thể, tương thích credentials)
-// - CORS_ORIGINS=rỗng               → cho phép mọi origin (mặc định an toàn cho dev)
-// - CORS_ORIGINS=a.com,b.com        → chỉ cho phép các origin trong danh sách
-const rawOrigins = (process.env.CORS_ORIGINS || '').trim();
-const isWildcard = rawOrigins === '' || rawOrigins === '*';
-const allowedOriginsList = rawOrigins
-  .split(',')
-  .map((s) => s.trim())
-  .filter((s) => s && s !== '*');
-
+// CORS - Cho phép tất cả origins
 app.use(
   cors({
-    origin(origin, cb) {
-      // Cho phép request không có Origin (server-to-server, curl, Postman)
-      if (!origin) return cb(null, true);
-
-      if (isWildcard) {
-        // Echo lại origin để tương thích với Access-Control-Allow-Credentials
-        return cb(null, origin);
-      }
-
-      if (allowedOriginsList.includes(origin)) {
-        return cb(null, origin);
-      }
-
-      return cb(new Error(`Origin ${origin} không được phép bởi CORS.`));
-    },
+    origin: true,
     credentials: true,
   })
 );
@@ -133,9 +109,18 @@ app.use('/api/admin/forum-posts', adminForumPostRoutes);
 app.use('/api/consignment-products', consignmentProductRoutes);
 app.use('/api/admin/consignment-products', adminConsignmentProductRoutes);
 
-// Static — phục vụ ảnh upload từ admin
+// Static — phục vụ ảnh upload từ admin với CORS
 app.use(
   '/uploads',
+  (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  },
   express.static(path.join(__dirname, '../uploads'), {
     maxAge: '7d',
     etag: true,

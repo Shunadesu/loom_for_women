@@ -5,8 +5,7 @@ import { safeUnlink, UPLOAD_PRODUCT_DIR } from '../middleware/upload.js';
 import { slugify } from '../utils/slugify.js';
 
 const publicUrlFor = (filename) => {
-  const base = process.env.PUBLIC_BASE_URL || 'https://sunnydemo.site';
-  return `${base}/uploads/products/${filename}`;
+  return `/uploads/products/${filename}`;
 };
 
 const filenameFromUrl = (url) => {

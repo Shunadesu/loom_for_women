@@ -2,10 +2,9 @@ import path from 'path';
 import HeroBanner from '../models/HeroBanner.js';
 import { safeUnlink, UPLOAD_HERO_DIR } from '../middleware/upload.js';
 
-/** Public URL cho ảnh upload mới (khi create/update). */
+/** Trả về relative path thay vì full URL để tránh CORS */
 const publicUrlFor = (filename) => {
-  const base = process.env.PUBLIC_BASE_URL || 'https://sunnydemo.site';
-  return `${base}/uploads/heroes/${filename}`;
+  return `/uploads/heroes/${filename}`;
 };
 
 const filenameFromUrl = (url) => {

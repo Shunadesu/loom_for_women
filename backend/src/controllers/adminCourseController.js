@@ -10,8 +10,7 @@ import { slugify } from '../utils/slugify.js';
 import { extractYoutubeId } from '../utils/youtube.js';
 
 const publicUrlFor = (filename) => {
-  const base = process.env.PUBLIC_BASE_URL || 'https://sunnydemo.site';
-  return `${base}/uploads/courses/${filename}`;
+  return `/uploads/courses/${filename}`;
 };
 
 const filenameFromUrl = (url) => {
