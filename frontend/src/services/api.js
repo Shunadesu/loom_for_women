@@ -1,7 +1,11 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3010/api',
+  // Để relative '/api' để request đi qua Vite proxy ở local dev
+  // (xem vite.config.js). Proxy sẽ forward sang backend thật (sunnydemo.site
+  // hoặc localhost:3010 tuỳ env). Production build thường dùng URL tuyệt đối
+  // (xem .env.production).
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 

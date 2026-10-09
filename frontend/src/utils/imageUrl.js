@@ -1,30 +1,25 @@
 /**
  * Chuẩn hoá URL ảnh trong frontend.
  *
- * Hành vi:
- * - URL tuyệt đối (http://..., https://...) → trả về path tương đối.
- * - URL tương đối (bắt đầu '/') → nếu VITE_PUBLIC_BASE_URL được set
- *   thì trả về URL tuyệt đối trỏ về backend deploy (vd. https://sunnydemo.site/uploads/...),
- *   ngược lại giữ nguyên để đi qua Vite proxy ở local dev.
- * - data: / blob: → giữ nguyên.
+ * Đơn giản hoá: nếu backend trả URL tuyệt đối (https://...), giữ nguyên.
+ * Chỉ xử lý khi URL tương đối (bắt đầu '/') → prepend VITE_PUBLIC_BASE_URL.
  *
- * Thiết lập ở production:
- *   VITE_API_URL=https://sunnydemo.site/api
- *   VITE_PUBLIC_BASE_URL=https://sunnydemo.site
+ * Backend đã set PUBLIC_BASE_URL=https://sunnydemo.site nên sẽ trả URL đầy đủ.
+ * Frontend chỉ cần hiển thị, không cần rewrite.
  */
 const PUBLIC_BASE_URL = (import.meta.env.VITE_PUBLIC_BASE_URL || '').replace(/\/$/, '');
 
 export function toRelativeImageUrl(url) {
   if (!url) return url;
+  
+  // data: / blob: / URL tuyệt đối → giữ nguyên
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  
+  // URL tương đối → prepend base nếu có
   if (url.startsWith('/')) {
     return PUBLIC_BASE_URL ? `${PUBLIC_BASE_URL}${url}` : url;
   }
-  try {
-    const u = new URL(url);
-    const path = `${u.pathname}${u.search || ''}`;
-    return PUBLIC_BASE_URL ? `${PUBLIC_BASE_URL}${path}` : path;
-  } catch {
-    return url;
-  }
+  
+  return url;
 }

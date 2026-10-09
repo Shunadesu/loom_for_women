@@ -5,12 +5,6 @@ import UserProgress from '../models/UserProgress.js';
 import Favorite from '../models/Favorite.js';
 import { safeUnlink, UPLOAD_COURSE_DIR } from '../middleware/upload.js';
 
-const publicUrlFor = (filename) => {
-  const base =
-    process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || 3010}`;
-  return `${base.replace(/\/$/, '')}/uploads/courses/${filename}`;
-};
-
 const filenameFromUrl = (url) => {
   if (!url) return null;
   try {
@@ -172,4 +166,4 @@ export const getCourseBySlug = async (req, res) => {
 };
 
 // ─── Internal helpers dùng cho admin / progress ─────────────
-export { publicUrlFor, filenameFromUrl, absFromFilename };
+export { filenameFromUrl, absFromFilename };

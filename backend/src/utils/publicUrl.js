@@ -1,52 +1,45 @@
 /**
  * Helpers để build / chuẩn hoá public URL cho resource upload (ảnh, document…).
  *
- * Tại sao cần:
- * - Khi upload, controller build URL = ${PUBLIC_BASE_URL}/uploads/<file>.
- * - Nếu deploy quên set PUBLIC_BASE_URL, fallback về http://localhost:PORT
- *   làm record trong DB bị "khoá" vào localhost.
- * - Ở phía read, ta rewrite mọi URL localhost/127.0.0.1/relative → URL theo
- *   PUBLIC_BASE_URL hiện tại, nên response API luôn đúng domain dù record
- *   cũ vẫn lưu localhost.
+ * Backend nên set PUBLIC_BASE_URL=https://sunnydemo.site trong .env
+ * để mọi URL upload lưu đúng domain, không bị localhost.
+ *
+ * Phía frontend dùng VITE_PUBLIC_BASE_URL + toRelativeImageUrl() để rewrite
+ * localhost → domain production (đề phòng record cũ còn lưu localhost).
  */
 
-/** Lấy base URL hiện tại (đã strip trailing slash). */
-export const getPublicBaseUrl = () =>
+/** Lấy base URL từ env. */
+const getBase = () =>
   (process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || 3010}`)
     .replace(/\/$/, '');
 
-/** Build URL tuyệt đối từ một đường dẫn tương đối ('uploads/heroes/x.jpg' hoặc '/uploads/...'). */
-export const buildPublicUrl = (relativePath) => {
-  if (!relativePath) return relativePath;
-  if (/^https?:\/\//i.test(relativePath)) return relativePath;
-  const base = getPublicBaseUrl();
-  return `${base}/${String(relativePath).replace(/^\/+/, '')}`;
+/** Build URL tuyệt đối: base + đường dẫn tương đối. */
+export const buildPublicUrl = (subPath) => {
+  if (!subPath) return subPath;
+  if (/^https?:\/\//i.test(subPath)) return subPath;
+  return `${getBase()}/${String(subPath).replace(/^\/+/, '')}`;
 };
 
 /**
- * Chuẩn hoá một URL ảnh đã có sẵn:
- * - Nếu là URL localhost/127.0.0.1 → rewrite host sang PUBLIC_BASE_URL hiện tại.
- * - Nếu là URL relative (bắt đầu bằng '/') → build theo PUBLIC_BASE_URL.
- * - Nếu đã là absolute (https://...) → giữ nguyên.
- * - Nếu rỗng / null → trả về nguyên.
+ * Chuẩn hoá một URL ảnh:
+ * - Nếu là localhost/127.0.0.1 → rewrite sang PUBLIC_BASE_URL.
+ * - Nếu đã là https://... → giữ nguyên.
+ * - Relative path → buildPublicUrl.
  */
 export const absolutizeImageUrl = (url) => {
-  if (!url) return url;
-  if (typeof url !== 'string') return url;
+  if (!url || typeof url !== 'string') return url;
 
-  // Đã là absolute với scheme http/https
   if (/^https?:\/\//i.test(url)) {
     try {
       const u = new URL(url);
-      // Rewrite nếu đang trỏ về localhost / 127.0.0.1
       if (
         u.hostname === 'localhost' ||
         u.hostname === '127.0.0.1' ||
         u.hostname === '0.0.0.0'
       ) {
-        const base = new URL(getPublicBaseUrl());
+        const base = new URL(getBase());
         u.protocol = base.protocol;
-        u.host = base.host; // bao gồm port nếu có
+        u.host = base.host;
         return u.toString();
       }
       return url;
@@ -55,7 +48,6 @@ export const absolutizeImageUrl = (url) => {
     }
   }
 
-  // Relative ('/uploads/...' hoặc 'uploads/...')
   if (url.startsWith('/') || /^uploads\//i.test(url)) {
     return buildPublicUrl(url);
   }

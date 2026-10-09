@@ -8,6 +8,9 @@ const PORT = Number(process.env.PORT) || 3010;
 const start = async () => {
   await connectDB();
   startCleanupJob();
+  console.log(
+    `[Server] PUBLIC_BASE_URL = ${process.env.PUBLIC_BASE_URL || '(unset → localhost)'}`,
+  );
 
   const server = app.listen(PORT, () => {
     console.log(`[Server] Loom backend đang chạy tại http://localhost:${PORT}`);
