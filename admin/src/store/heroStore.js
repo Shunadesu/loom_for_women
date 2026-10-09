@@ -6,10 +6,6 @@ import {
   deleteHero,
   reorderHeroes,
 } from '../services/heroApi.js';
-import { toRelativeImageUrl } from '../utils/imageUrl.js';
-
-const normalize = (h) => (h ? { ...h, imageUrl: toRelativeImageUrl(h.imageUrl) } : h);
-const normalizeAll = (arr) => arr.map(normalize);
 
 const sortByOrder = (arr) =>
   [...arr].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (a.createdAt < b.createdAt ? -1 : 1));
@@ -23,7 +19,7 @@ export const useHeroStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const items = await fetchAllHeroes();
-      set({ heroes: sortByOrder(normalizeAll(items)), loading: false });
+      set({ heroes: sortByOrder(items), loading: false });
     } catch (err) {
       set({ error: err?.response?.data?.error || 'Lỗi tải hero.', loading: false });
     }
@@ -31,14 +27,14 @@ export const useHeroStore = create((set, get) => ({
 
   create: async (formData) => {
     const hero = await createHero(formData);
-    set({ heroes: sortByOrder([normalize(hero), ...get().heroes]) });
+    set({ heroes: sortByOrder([hero, ...get().heroes]) });
     return hero;
   },
 
   update: async (id, formData) => {
     const hero = await updateHero(id, formData);
     set({
-      heroes: sortByOrder(get().heroes.map((h) => (h._id === id ? normalize(hero) : h))),
+      heroes: sortByOrder(get().heroes.map((h) => (h._id === id ? hero : h))),
     });
     return hero;
   },
@@ -50,6 +46,6 @@ export const useHeroStore = create((set, get) => ({
 
   reorder: async (items) => {
     const list = await reorderHeroes(items);
-    set({ heroes: sortByOrder(normalizeAll(list)) });
+    set({ heroes: sortByOrder(list) });
   },
 }));

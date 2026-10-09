@@ -33,12 +33,6 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       host: true,
       proxy: {
-        // /uploads → backend (ảnh upload cùng origin, tránh bị helmet
-        // Cross-Origin-Resource-Policy: same-origin chặn khi load cross-origin)
-        '/uploads': {
-          target: backendOrigin,
-          changeOrigin: true,
-        },
         // /api → backend (ẩn URL production khỏi Network tab khi dev)
         '/api': {
           target: backendOrigin,

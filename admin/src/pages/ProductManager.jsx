@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useProductStore } from '../store/productStore.js';
-import { toRelativeImageUrl } from '../utils/imageUrl.js';
 import ProductManagerModal from '../components/ProductManagerModal.jsx';
 import {
   PlusIcon,
@@ -301,7 +300,7 @@ export default function ProductManager() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sorted.map((item) => {
-                  const thumb = toRelativeImageUrl(item.thumbnail || item.images?.[0]);
+                  const thumb = item.thumbnail || item.images?.[0];
                   return (
                     <tr
                       key={item._id}

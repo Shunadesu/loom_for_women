@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { XIcon, ImageIcon } from './icons.jsx';
-import { toRelativeImageUrl } from '../utils/imageUrl.js';
 
 const blankForm = {
   title: '',
@@ -107,7 +106,7 @@ export default function ProductManagerModal({
 
   const previewSrc = form.file
     ? URL.createObjectURL(form.file)
-    : toRelativeImageUrl(product?.thumbnail || product?.images?.[0]);
+    : (product?.thumbnail || product?.images?.[0]);
 
   return (
     <div

@@ -1,17 +1,12 @@
 import path from 'path';
 import HeroBanner from '../models/HeroBanner.js';
 import { safeUnlink, UPLOAD_HERO_DIR } from '../middleware/upload.js';
-import { buildPublicUrl, absolutizeImageUrl } from '../utils/publicUrl.js';
 
 /** Public URL cho ảnh upload mới (khi create/update). */
-const publicUrlFor = (filename) => buildPublicUrl(`uploads/heroes/${filename}`);
-
-/** Chuẩn hoá record hero trước khi trả về client (đảm bảo imageUrl đúng domain). */
-const normalizeHero = (hero) => {
-  if (!hero) return hero;
-  return { ...hero, imageUrl: absolutizeImageUrl(hero.imageUrl) };
+const publicUrlFor = (filename) => {
+  const base = process.env.PUBLIC_BASE_URL || 'https://sunnydemo.site';
+  return `${base}/uploads/heroes/${filename}`;
 };
-const normalizeHeroes = (list) => list.map(normalizeHero);
 
 const filenameFromUrl = (url) => {
   if (!url) return null;
@@ -35,7 +30,7 @@ export const listActiveHeroes = async (_req, res) => {
     const items = await HeroBanner.find({ isActive: true })
       .sort({ order: 1, createdAt: -1 })
       .lean();
-    res.json({ items: normalizeHeroes(items) });
+    res.json({ items });
   } catch (err) {
     res.status(500).json({ error: 'Không lấy được danh sách hero.' });
   }
@@ -49,7 +44,7 @@ export const listAllHeroes = async (_req, res) => {
     const items = await HeroBanner.find()
       .sort({ order: 1, createdAt: -1 })
       .lean();
-    res.json({ items: normalizeHeroes(items) });
+    res.json({ items });
   } catch (err) {
     res.status(500).json({ error: 'Không lấy được danh sách hero.' });
   }
@@ -68,7 +63,7 @@ export const createHero = async (req, res) => {
       order: Number.isFinite(+order) ? +order : 0,
       isActive: isActive === 'false' ? false : Boolean(isActive),
     });
-    res.status(201).json({ hero: normalizeHero(hero) });
+    res.status(201).json({ hero });
   } catch (err) {
     // Nếu lỗi validate → xoá luôn file vừa upload
     if (req.file) safeUnlink(req.file.path);
@@ -97,7 +92,7 @@ export const updateHero = async (req, res) => {
     }
 
     await hero.save();
-    res.json({ hero: normalizeHero(hero) });
+    res.json({ hero });
   } catch (err) {
     if (req.file) safeUnlink(req.file.path);
     if (err.name === 'CastError') return res.status(400).json({ error: 'ID không hợp lệ.' });
@@ -134,7 +129,7 @@ export const reorderHeroes = async (req, res) => {
       )
     );
     const list = await HeroBanner.find().sort({ order: 1, createdAt: -1 }).lean();
-    res.json({ items: normalizeHeroes(list) });
+    res.json({ items: list });
   } catch (err) {
     res.status(500).json({ error: 'Reorder thất bại.' });
   }

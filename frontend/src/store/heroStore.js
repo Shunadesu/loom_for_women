@@ -7,10 +7,6 @@ import {
   deleteHero,
   reorderHeroes,
 } from '../services/heroApi.js';
-import { toRelativeImageUrl } from '../utils/imageUrl.js';
-
-const normalize = (h) => (h ? { ...h, imageUrl: toRelativeImageUrl(h.imageUrl) } : h);
-const normalizeAll = (arr) => arr.map(normalize);
 
 const sortByOrder = (arr) =>
   [...arr].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.createdAt < b.createdAt ? -1 : 1);
@@ -25,7 +21,7 @@ export const useHeroStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const items = await fetchActiveHeroes();
-      set({ heroes: normalizeAll(items), loading: false });
+      set({ heroes: items, loading: false });
     } catch (err) {
       set({ error: err?.response?.data?.error || 'Lỗi tải hero.', loading: false });
     }
