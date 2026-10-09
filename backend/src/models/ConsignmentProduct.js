@@ -29,7 +29,7 @@ const consignmentProductSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 1000,
+      maxlength: 1_000_000, // cho phép data URL (~700KB ảnh JPEG)
     },
     images: {
       type: [String],

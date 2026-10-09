@@ -603,3 +603,18 @@ export const CalendarIcon = (props) => (
     <path d="M3 10h18" />
   </svg>
 );
+
+export const MicIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M12 19v3" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <rect x="9" y="2" width="6" height="13" rx="3" />
+  </svg>
+);
+
+export const CircleCheckBigIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M21.801 10A10 10 0 1 1 17 3.335" />
+    <path d="m9 11 3 3L22 4" />
+  </svg>
+);

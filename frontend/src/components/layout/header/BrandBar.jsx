@@ -16,6 +16,7 @@ import { useAuthStore } from '../../../store/authStore.js';
 import { useCartStore } from '../../../store/cartStore.js';
 import { useLoginDrawerStore } from '../../../store/loginDrawerStore.js';
 import CartDrawer from '../../cart/CartDrawer.jsx';
+import QuickSellModal from '../../marketplace/QuickSellModal.jsx';
 
 const BRAND_TITLE = 'HỘ CHIẾU AN TOÀN';
 const BRAND_BADGE = 'Loom for Women';
@@ -31,8 +32,9 @@ export default function BrandBar() {
   const navigate = useNavigate();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isQuickSellOpen, setIsQuickSellOpen] = useState(false);
   const dropdownRef = useRef(null);
-  
+
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const points = useAuthStore((s) => s.points);
@@ -40,6 +42,17 @@ export default function BrandBar() {
   const logout = useAuthStore((s) => s.logout);
   const count = useCartStore((s) => s.count);
   const openLoginDrawer = useLoginDrawerStore((s) => s.openLoginDrawer);
+
+  const isAuthenticated = Boolean(token || user?._id);
+
+  const handleQuickSellClick = () => {
+    if (!isAuthenticated) {
+      // Chưa đăng nhập → mở drawer đăng nhập, sau đó user có thể bấm lại nút.
+      openLoginDrawer('/');
+      return;
+    }
+    setIsQuickSellOpen(true);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -92,6 +105,7 @@ export default function BrandBar() {
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
           type="button"
+          onClick={handleQuickSellClick}
           title="Đăng bán sản phẩm 1-Click"
           className="hidden cursor-pointer items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#E60067] to-rose-600 px-3 py-2 text-xs font-bold text-white shadow-xs transition-all hover:from-pink-600 hover:to-rose-700 hover:shadow-sm md:flex"
         >
@@ -246,6 +260,12 @@ export default function BrandBar() {
 
       {/* Cart Drawer */}
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      {/* Quick Sell Modal (Đăng bán sản phẩm 1-Click) */}
+      <QuickSellModal
+        isOpen={isQuickSellOpen}
+        onClose={() => setIsQuickSellOpen(false)}
+      />
     </div>
   );
 }
