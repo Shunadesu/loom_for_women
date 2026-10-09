@@ -7,10 +7,13 @@ import DashboardShowcase from './pages/DashboardShowcase.jsx';
 import HeroManager from './pages/HeroManager.jsx';
 import CategoryManager from './pages/CategoryManager.jsx';
 import CourseManager from './pages/CourseManager.jsx';
+import CourseDetail from './pages/CourseDetail.jsx';
 import LessonManager from './pages/LessonManager.jsx';
 import ProductCategoryManager from './pages/ProductCategoryManager.jsx';
 import ProductManager from './pages/ProductManager.jsx';
 import ForumPostManager from './pages/ForumPostManager.jsx';
+import UserManager from './pages/UserManager.jsx';
+import UserDetail from './pages/UserDetail.jsx';
 
 export default function App() {
   return (
@@ -30,10 +33,13 @@ export default function App() {
           <Route path="heroes" element={<HeroManager />} />
           <Route path="categories" element={<CategoryManager />} />
           <Route path="courses" element={<CourseManager />} />
+          <Route path="courses/:courseId" element={<CourseDetail />} />
           <Route path="courses/:courseId/lessons" element={<LessonManager />} />
           <Route path="product-categories" element={<ProductCategoryManager />} />
           <Route path="products" element={<ProductManager />} />
           <Route path="forum-posts" element={<ForumPostManager />} />
+          <Route path="users" element={<UserManager />} />
+          <Route path="users/:userId" element={<UserDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

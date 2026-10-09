@@ -104,3 +104,28 @@ export const AwardIcon = (props) => (
     <path d="m8.5 13.5-2 8L12 18l5.5 3.5-2-8" />
   </svg>
 );
+
+export const ChevronLeftIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="m15 18-6-6 6-6" />
+  </svg>
+);
+
+export const ChevronRightIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="m9 18 6-6-6-6" />
+  </svg>
+);
+
+export const SearchIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+);
+
+export const FilterIcon = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3Z" />
+  </svg>
+);

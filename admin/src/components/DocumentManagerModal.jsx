@@ -35,10 +35,6 @@ function formatSize(bytes) {
   return `${Math.round(bytes / 1024)} KB`;
 }
 
-/**
- * Modal quản lý tài liệu cho 1 bài học.
- * props.lesson: object lesson có _id, title, youtubeId, ...
- */
 export default function DocumentManagerModal({ lesson, onClose }) {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -90,7 +86,7 @@ export default function DocumentManagerModal({ lesson, onClose }) {
       fileType: doc.fileType,
       pageCount: doc.pageCount || 0,
       isPublished: doc.isPublished,
-      file: null, // không đổi file khi edit
+      file: null,
     });
   }
 
@@ -145,13 +141,13 @@ export default function DocumentManagerModal({ lesson, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
+      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-white p-4 shadow-2xl">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">
+            <h2 className="text-sm font-extrabold text-slate-900">
               Quản lý tài liệu
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-0.5 text-[11px] text-slate-500">
               Bài học:{' '}
               <span className="font-bold text-slate-700">{lesson?.title}</span>
             </p>
@@ -169,23 +165,23 @@ export default function DocumentManagerModal({ lesson, onClose }) {
         {/* Form upload */}
         <form
           onSubmit={handleSubmit}
-          className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3 mb-4"
+          className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2 mb-3"
         >
-          <p className="text-xs font-bold text-slate-700">
+          <p className="text-[11px] font-bold text-slate-700">
             {editingId ? 'Cập nhật tài liệu' : 'Upload tài liệu mới'}
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <input
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Tiêu đề tài liệu *"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none"
+              className="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
             />
             <select
               value={form.fileType}
               onChange={(e) => setForm({ ...form, fileType: e.target.value })}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none"
+              className="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
             >
               {FILE_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -199,9 +195,9 @@ export default function DocumentManagerModal({ lesson, onClose }) {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Mô tả ngắn (tuỳ chọn)"
             rows={2}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none"
+            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex items-center gap-2">
             <input
               type="number"
               value={form.pageCount}
@@ -209,17 +205,17 @@ export default function DocumentManagerModal({ lesson, onClose }) {
                 setForm({ ...form, pageCount: e.target.value })
               }
               min="0"
-              placeholder="Số trang (tuỳ chọn)"
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none"
+              placeholder="Số trang"
+              className="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
             />
-            <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
+            <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
               <input
                 type="checkbox"
                 checked={form.isPublished}
                 onChange={(e) =>
                   setForm({ ...form, isPublished: e.target.checked })
                 }
-                className="h-4 w-4"
+                className="h-3.5 w-3.5"
               />
               Hiển thị cho học viên
             </label>
@@ -231,7 +227,7 @@ export default function DocumentManagerModal({ lesson, onClose }) {
                 setForm({ ...form, file: e.target.files?.[0] || null })
               }
               accept=".pdf,.xls,.xlsx,.jpg,.jpeg,.png,.webp"
-              className="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-600 file:text-white file:font-bold file:text-xs hover:file:bg-primary-700"
+              className="block w-full text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-primary-600 file:text-white file:font-bold file:text-[11px] hover:file:bg-primary-700"
             />
           )}
           <div className="flex gap-2">
@@ -239,7 +235,7 @@ export default function DocumentManagerModal({ lesson, onClose }) {
               <button
                 type="button"
                 onClick={resetForm}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                className="rounded-md border border-slate-300 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100"
               >
                 Huỷ sửa
               </button>
@@ -247,7 +243,7 @@ export default function DocumentManagerModal({ lesson, onClose }) {
             <button
               type="submit"
               disabled={uploading}
-              className="ml-auto rounded-lg bg-primary-600 px-4 py-2 text-xs font-bold text-white hover:bg-primary-700 disabled:opacity-50 flex items-center gap-1"
+              className="ml-auto flex items-center gap-1 rounded-md bg-primary-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-primary-700 disabled:opacity-50"
             >
               <PlusIcon aria-hidden="true" className="h-3 w-3" />
               {uploading
@@ -261,53 +257,47 @@ export default function DocumentManagerModal({ lesson, onClose }) {
 
         {/* List */}
         {loading ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-xs text-slate-500">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 text-center text-xs text-slate-500">
             Đang tải...
           </div>
         ) : docs.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center">
+          <div className="rounded-lg border border-dashed border-slate-200 bg-white p-6 text-center">
             <FileTextIcon
               aria-hidden="true"
-              className="mx-auto mb-2 h-8 w-8 text-slate-300"
+              className="mx-auto mb-1.5 h-6 w-6 text-slate-300"
             />
-            <p className="text-sm font-bold text-slate-700">
+            <p className="text-xs font-bold text-slate-700">
               Chưa có tài liệu nào
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-0.5 text-[11px] text-slate-500">
               Upload file đầu lên ở form phía trên.
             </p>
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-1.5">
             {docs.map((doc) => {
               const s = TYPE_STYLE[doc.fileType] || TYPE_STYLE.guide;
               return (
                 <li
                   key={doc._id}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2"
                 >
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${s.bg} ${s.text} ${s.border}`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${s.bg} ${s.text} ${s.border}`}
                   >
                     {doc.fileType === 'infographic' ? (
-                      <ImageIcon
-                        aria-hidden="true"
-                        className={`w-4 h-4 ${s.icon}`}
-                      />
+                      <ImageIcon aria-hidden="true" className={`w-3.5 h-3.5 ${s.icon}`} />
                     ) : (
-                      <FileTextIcon
-                        aria-hidden="true"
-                        className={`w-4 h-4 ${s.icon}`}
-                      />
+                      <FileTextIcon aria-hidden="true" className={`w-3.5 h-3.5 ${s.icon}`} />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-900 truncate">
+                    <p className="text-xs font-bold text-slate-900 truncate">
                       {doc.title}
                     </p>
                     <p className="text-[10px] text-slate-500">
                       <span
-                        className={`inline-block px-1.5 py-0.5 rounded border ${s.bg} ${s.text} ${s.border} font-bold mr-1`}
+                        className={`inline-block px-1 py-0.5 rounded border ${s.bg} ${s.text} ${s.border} font-bold mr-1`}
                       >
                         {doc.fileType.toUpperCase()}
                       </span>
@@ -320,24 +310,18 @@ export default function DocumentManagerModal({ lesson, onClose }) {
                   <button
                     type="button"
                     onClick={() => startEdit(doc)}
-                    className="rounded p-1.5 hover:bg-blue-50"
+                    className="rounded p-1 hover:bg-blue-50"
                     title="Sửa metadata"
                   >
-                    <EditIcon
-                      aria-hidden="true"
-                      className="h-4 w-4 text-blue-600"
-                    />
+                    <EditIcon aria-hidden="true" className="h-3.5 w-3.5 text-blue-600" />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(doc)}
-                    className="rounded p-1.5 hover:bg-red-50"
+                    className="rounded p-1 hover:bg-red-50"
                     title="Xoá"
                   >
-                    <TrashIcon
-                      aria-hidden="true"
-                      className="h-4 w-4 text-red-600"
-                    />
+                    <TrashIcon aria-hidden="true" className="h-3.5 w-3.5 text-red-600" />
                   </button>
                 </li>
               );

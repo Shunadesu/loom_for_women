@@ -2,12 +2,13 @@ import axios from 'axios';
 
 /**
  * Axios instance RIÊNG cho trang admin.
- * - baseURL: env VITE_API_URL hoặc localhost:3010
+ * - baseURL: dùng đường dẫn tương đối '/api' → đi qua Vite proxy → backend.
+ *   Khi deploy, Vite build ra static file cùng domain với backend, '/api' vẫn đúng.
  * - Storage key RIÊNG ('loom-admin-api-auth') → không xung đột với frontend user.
  * - Khi deploy lên Vercel, set VITE_API_URL trong Project Settings → Environment Variables.
  */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3010/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 

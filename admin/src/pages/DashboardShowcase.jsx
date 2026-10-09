@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import KPICard from '../components/KPICard.jsx';
 import { IncomeGrowthChart, LessonDistributionChart } from '../components/DashboardCharts.jsx';
+import CourseImportPanel from '../components/CourseImportPanel.jsx';
 import {
   kpiMetrics,
   uxMetrics,
@@ -9,8 +11,19 @@ import {
 } from '../data/mockDashboardData.js';
 
 export default function DashboardShowcase() {
+  const initialTabs = dashboardTabs.map((t, i) => ({
+    ...t,
+    active: i === 0,
+  }));
+  const [tabs, setTabs] = useState(initialTabs);
+  const activeTab = tabs.find((t) => t.active)?.id || 'overview';
+
+  function selectTab(id) {
+    setTabs((prev) => prev.map((t) => ({ ...t, active: t.id === id })));
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-3 md:p-8 space-y-6">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans space-y-4">
       {/* Header Section */}
       <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -55,9 +68,11 @@ export default function DashboardShowcase() {
 
       {/* Tab Navigation */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200">
-        {dashboardTabs.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
+            type="button"
+            onClick={() => selectTab(tab.id)}
             className={`px-4 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
               tab.active
                 ? 'bg-[#E60067] text-white shadow-md'
@@ -66,7 +81,9 @@ export default function DashboardShowcase() {
           >
             <span>{tab.icon} {tab.label}</span>
             {tab.count && (
-              <span className="ml-0.5">({tab.count})</span>
+              <span className={`ml-0.5 ${tab.active ? 'text-white/90' : 'text-slate-500'}`}>
+                ({tab.count})
+              </span>
             )}
             {tab.badge && !tab.pulse && (
               <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
@@ -82,42 +99,55 @@ export default function DashboardShowcase() {
         ))}
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpiMetrics.map((metric) => (
-          <KPICard key={metric.id} {...metric} />
-        ))}
-      </div>
+      {activeTab === 'overview' && (
+        <>
+          {/* KPI Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {kpiMetrics.map((metric) => (
+              <KPICard key={metric.id} {...metric} />
+            ))}
+          </div>
 
-      {/* UX Metrics Section */}
-      <div className="bg-white border border-slate-200 p-5 rounded-2xl space-y-4 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-[#E60067]">
-            <path d="M12 6v6l4 2"></path>
-            <circle cx="12" cy="12" r="10"></circle>
-          </svg>
-          <span>Chỉ số Kỹ thuật &amp; Trải nghiệm Nữ công nhân (UX / Task Success)</span>
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-          {uxMetrics.map((metric, index) => (
-            <div key={index} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-              <span className="text-slate-500 text-[11px] font-medium">{metric.label}</span>
-              <p className={`text-xl font-black mt-1 ${
-                metric.color === 'emerald' ? 'text-emerald-600' : 'text-teal-700'
-              }`}>
-                {metric.value}
-              </p>
-              <span className="text-[10px] text-slate-400">{metric.target}</span>
+          {/* UX Metrics Section */}
+          <div className="bg-white border border-slate-200 p-5 rounded-2xl space-y-4 shadow-xs">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-[#E60067]">
+                <path d="M12 6v6l4 2"></path>
+                <circle cx="12" cy="12" r="10"></circle>
+              </svg>
+              <span>Chỉ số Kỹ thuật &amp; Trải nghiệm Nữ công nhân (UX / Task Success)</span>
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+              {uxMetrics.map((metric, index) => (
+                <div key={index} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                  <span className="text-slate-500 text-[11px] font-medium">{metric.label}</span>
+                  <p className={`text-xl font-black mt-1 ${
+                    metric.color === 'emerald' ? 'text-emerald-600' : 'text-teal-700'
+                  }`}>
+                    {metric.value}
+                  </p>
+                  <span className="text-[10px] text-slate-400">{metric.target}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <IncomeGrowthChart data={incomeGrowthData} />
-        <LessonDistributionChart data={lessonDistributionData} />
-      </div>
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <IncomeGrowthChart data={incomeGrowthData} />
+            <LessonDistributionChart data={lessonDistributionData} />
+          </div>
+        </>
+      )}
+
+      {activeTab === 'lessons' && <CourseImportPanel />}
+
+      {!['overview', 'lessons'].includes(activeTab) && (
+        <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-8 text-center text-xs text-slate-500">
+          Tab <span className="font-bold text-slate-700">{activeTab}</span> đang được
+          xây dựng. Vui lòng quay lại sau.
+        </div>
+      )}
     </div>
   );
 }

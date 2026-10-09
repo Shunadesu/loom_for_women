@@ -50,12 +50,12 @@ export default function KPICard({ label, value, subtitle, badge, badgeColor, ico
   };
 
   return (
-    <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-xs hover:shadow-md transition-all">
-      <div className="flex items-center justify-between text-slate-500 text-xs mb-1">
+    <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-xs hover:shadow-sm transition-all">
+      <div className="flex items-center justify-between text-slate-500 text-[11px] mb-1">
         <span className="font-semibold">{label}</span>
         {icons[iconType]}
       </div>
-      <p className={`text-3xl font-black ${valueClasses[getValueColor()]}`}>
+      <p className={`text-xl font-black ${valueClasses[getValueColor()]}`}>
         {value}
       </p>
       {badge && (

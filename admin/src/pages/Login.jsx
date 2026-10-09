@@ -34,16 +34,16 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-        <div className="mb-6 flex flex-col items-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E60067] text-xl font-black text-white">
+      <div className="w-full max-w-sm rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex flex-col items-center">
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-[#E60067] text-lg font-black text-white">
             L
           </div>
-          <h1 className="text-lg font-extrabold text-slate-900">Loom Admin</h1>
-          <p className="mt-1 text-xs text-slate-500">Đăng nhập để quản trị hệ thống</p>
+          <h1 className="text-sm font-extrabold text-slate-900">Loom Admin</h1>
+          <p className="mt-0.5 text-[11px] text-slate-500">Đăng nhập để quản trị hệ thống</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-2.5">
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-slate-700">
               Số điện thoại
@@ -55,7 +55,7 @@ export default function Login() {
               required
               autoComplete="username"
               placeholder="0901234567"
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-[#E60067] focus:outline-none"
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#E60067] focus:outline-none"
             />
           </div>
           <div>
@@ -68,15 +68,15 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               placeholder="••••••"
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-[#E60067] focus:outline-none"
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#E60067] focus:outline-none"
             />
-            <p className="mt-1 text-[10px] text-slate-400">
+            <p className="mt-0.5 text-[10px] text-slate-400">
               Nếu tài khoản chưa có mật khẩu, hãy để trống.
             </p>
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+            <div className="rounded-md border border-red-100 bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
               {error}
             </div>
           )}
@@ -84,7 +84,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-[#E60067] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#d0005a] disabled:opacity-60"
+            className="w-full rounded-md bg-[#E60067] px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#d0005a] disabled:opacity-60"
           >
             {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
           </button>

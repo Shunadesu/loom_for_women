@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   listUsers,
+  listUsersSummary,
   getUser,
   deleteUser,
   getStats,
@@ -21,6 +22,7 @@ const router = Router();
 router.use(requireAuth, requireAdmin);
 
 router.get('/users', listUsers);
+router.get('/users/summary', listUsersSummary);
 router.get('/users/:id', getUser);
 router.delete('/users/:id', deleteUser);
 
