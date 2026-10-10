@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchCourses } from '../../services/courseApi.js';
 import { PlayIcon, StarIcon, ClockIcon, ChevronRightIcon } from '../icons/index.jsx';
+import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 /**
  * Carousel ngang các khóa học nổi bật (isFeatured = true).
@@ -75,7 +76,7 @@ function FeaturedCard({ course }) {
       {course.thumbnail ? (
         <img
           alt={course.title}
-          src={course.thumbnail}
+          src={resolveImageUrl(course.thumbnail)}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {

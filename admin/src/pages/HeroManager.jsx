@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useHeroStore } from '../store/heroStore.js';
 import HeroManagerModal from '../components/HeroManagerModal.jsx';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 import {
   PlusIcon,
   EditIcon,
@@ -131,7 +132,7 @@ export default function HeroManager() {
                   <td className="px-2 py-2">
                     <div className="h-12 w-20 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                       <img
-                        src={hero.imageUrl}
+                        src={resolveImageUrl(hero.imageUrl)}
                         alt={hero.alt || 'Hero'}
                         className="h-full w-full object-cover"
                       />

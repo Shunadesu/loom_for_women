@@ -6,6 +6,7 @@ import {
   markQualityPost,
   deleteForumPost,
 } from '../services/forumPostApi.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 import {
   EditIcon,
   TrashIcon,
@@ -218,7 +219,7 @@ export default function ForumPostManager() {
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-1.5">
                         <img
-                          src={post.author?.avatar}
+                          src={resolveImageUrl(post.author?.avatar)}
                           alt=""
                           className="h-6 w-6 rounded-full border border-slate-200"
                         />

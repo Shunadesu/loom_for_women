@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useProgressStore } from '../../store/progressStore.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { PlayIcon, ClockIcon, ChevronRightIcon } from '../icons/index.jsx';
+import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 /**
  * Banner "Tiếp tục học" — hiển thị khóa học user đang học dở gần nhất.
@@ -64,7 +65,7 @@ export default function ContinueLearningBanner() {
           {thumbnail ? (
             <img
               alt={title}
-              src={thumbnail}
+              src={resolveImageUrl(thumbnail)}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               onError={(e) => {

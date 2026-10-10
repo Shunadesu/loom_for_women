@@ -8,6 +8,7 @@ import {
   reorderCoursesAdmin,
 } from '../services/courseApi.js';
 import { fetchAllCategoriesAdmin } from '../services/categoryApi.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 import { PlusIcon, EditIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, ImageIcon, VideoIcon } from '../components/icons.jsx';
 
 export default function CourseManager() {
@@ -162,7 +163,7 @@ export default function CourseManager() {
                   <td className="px-2 py-2">
                     {item.thumbnail ? (
                       <img
-                        src={item.thumbnail}
+                        src={resolveImageUrl(item.thumbnail)}
                         alt={item.title}
                         className="h-8 w-8 rounded object-cover"
                       />
@@ -385,7 +386,7 @@ function CourseFormModal({ item, categories, onClose, onSave }) {
             />
             {item?.thumbnail && !thumbnailFile && (
               <img
-                src={item.thumbnail}
+                src={resolveImageUrl(item.thumbnail)}
                 alt="Current"
                 className="mt-1.5 h-16 w-16 rounded object-cover"
               />

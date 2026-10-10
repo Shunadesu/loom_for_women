@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { courseCategories, mockCourses } from '../data/mockDashboardData.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 
 const LESSON_TYPES = [
   { value: 'video', label: 'Video YouTube / Embed' },
@@ -405,7 +406,7 @@ export default function CourseImportPanel() {
                   <img
                     alt={course.title}
                     className="w-24 h-24 rounded-xl object-cover border border-slate-200 shrink-0"
-                    src={course.cover}
+                    src={resolveImageUrl(course.cover)}
                   />
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between">

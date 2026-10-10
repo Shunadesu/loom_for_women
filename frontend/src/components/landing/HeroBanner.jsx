@@ -6,6 +6,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 
 import { useHeroStore } from '../../store/heroStore.js';
+import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 function Skeleton() {
   return (
@@ -18,7 +19,7 @@ function Skeleton() {
 function SingleImg({ hero }) {
   const img = (
     <img
-      src={hero.imageUrl}
+      src={resolveImageUrl(hero.imageUrl)}
       alt={hero.alt || 'Hero banner'}
       loading="lazy"
       className="block h-auto w-full object-cover"

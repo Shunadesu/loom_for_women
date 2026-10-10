@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { XIcon, ImageIcon } from './icons.jsx';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 
 export default function HeroManagerModal({ hero, onClose, onSave, onDelete }) {
   const isEdit = Boolean(hero?._id);
@@ -83,7 +84,7 @@ export default function HeroManagerModal({ hero, onClose, onSave, onDelete }) {
                 />
               ) : (
                 <img
-                  src={hero.imageUrl}
+                  src={resolveImageUrl(hero.imageUrl)}
                   alt={hero.alt || 'Hero'}
                   className="h-full w-full object-cover"
                 />

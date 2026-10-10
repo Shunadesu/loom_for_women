@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { PlayIcon, StarIcon, ClockIcon } from '../icons/index.jsx';
 import CourseProgressButton from './CourseProgressButton.jsx';
+import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 /**
  * Card khóa học — dùng cho cả list + featured.
@@ -25,7 +26,7 @@ export default function CourseCard({ course, onProgressClick, onImageClick }) {
         <Link to={detailHref} className="block h-full w-full">
           <img
             alt={course.title}
-            src={course.thumbnail}
+            src={resolveImageUrl(course.thumbnail)}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {

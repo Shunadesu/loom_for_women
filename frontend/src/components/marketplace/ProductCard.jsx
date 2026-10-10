@@ -4,6 +4,7 @@ import {
   PercentIcon,
   StarIcon,
 } from '../../components/icons/index.jsx';
+import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 function formatVND(n) {
   if (!n) return '0₫';
@@ -29,7 +30,7 @@ export default function ProductCard({ product, onAddToCart }) {
       <div className="relative aspect-square w-full overflow-hidden bg-slate-50">
         {product.thumbnail ? (
           <img
-            src={product.thumbnail}
+            src={resolveImageUrl(product.thumbnail)}
             alt={product.title}
             loading="lazy"
             className="h-full w-full object-cover transition-transform hover:scale-105"

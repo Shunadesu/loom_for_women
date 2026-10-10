@@ -4,6 +4,7 @@ import {
   getUserAdmin,
   deleteUserAdmin,
 } from '../services/userApi.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 import {
   ArrowLeftIcon,
   TrashIcon,
@@ -250,7 +251,7 @@ export default function UserDetail() {
             <div className="flex items-start gap-4">
               {user.avatar ? (
                 <img
-                  src={user.avatar}
+                  src={resolveImageUrl(user.avatar)}
                   alt=""
                   className="h-20 w-20 shrink-0 rounded-full border-4 border-white object-cover shadow-md"
                   onError={(e) => {
@@ -439,7 +440,7 @@ export default function UserDetail() {
                   >
                     {p.course?.thumbnail ? (
                       <img
-                        src={p.course.thumbnail}
+                        src={resolveImageUrl(p.course.thumbnail)}
                         alt=""
                         className="h-14 w-20 shrink-0 rounded-md border border-slate-200 object-cover"
                         onError={(e) => {

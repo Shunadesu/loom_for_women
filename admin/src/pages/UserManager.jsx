@@ -4,6 +4,7 @@ import {
   fetchUsersAdminSummary,
   deleteUserAdmin,
 } from '../services/userApi.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 import {
   SearchIcon,
   TrashIcon,
@@ -316,7 +317,7 @@ export default function UserManager() {
                         <div className="flex items-center gap-2">
                           {user.avatar ? (
                             <img
-                              src={user.avatar}
+                              src={resolveImageUrl(user.avatar)}
                               alt=""
                               className="h-8 w-8 shrink-0 rounded-full border border-slate-200 object-cover"
                               onError={(e) => {

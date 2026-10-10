@@ -1,49 +1,55 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import svgo from 'vite-plugin-svgo'
+import { imagetools } from 'vite-imagetools'
 
-/**
- * Vite dev server "ẩn proxy" — khi dev, browser chỉ thấy
- * http://localhost:3013/api/... và http://localhost:3013/uploads/...
- * Vite sẽ forward sang backend thật.
- *
- * Target derive từ VITE_BACKEND_ORIGIN (ưu tiên) hoặc VITE_API_URL.
- *   VITE_BACKEND_ORIGIN=https://sunnydemo.site        → target gốc
- *   VITE_API_URL=https://sunnydemo.site/api          → suy ra target
- *   (không set)                                       → http://localhost:3010
- *
- * Production: `npm run build` không chạy dev server, proxy bị bỏ qua.
- * Ảnh / API trong production đi thẳng tới URL trong .env.production.
- */
-const backendOriginFromEnv = (env) => {
-  if (env.VITE_BACKEND_ORIGIN) {
-    return env.VITE_BACKEND_ORIGIN.replace(/\/$/, '');
-  }
-  const raw = env.VITE_API_URL || 'http://localhost:3010/api';
-  return raw.replace(/\/api\/?$/, '').replace(/\/$/, '');
-};
-
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  const backendOrigin = backendOriginFromEnv(env);
-
-  return {
-    plugins: [react()],
-    server: {
-      port: 3013,
-      strictPort: true,
-      host: true,
-      proxy: {
-        // /api → backend (ẩn URL production khỏi Network tab khi dev)
-        '/api': {
-          target: backendOrigin,
-          changeOrigin: true,
-          rewrite: (path) => path,
-        },
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    // Process and optimize imported images at build time:
+    // - Converts to WebP/AVIF where supported
+    // - Generates multiple sizes for srcset
+    // - Inlines tiny assets as base64
+    imagetools({
+      defaultDirectives: (url) => {
+        // Generate WebP when the image is used with the ?as=webp query
+        // Usage in code: import myImage from './myImage.jpg?as=webp'
+        return []
+      },
+    }),
+    svgo({
+      // Optimize SVG assets (favicon, inline SVGs)
+      multipass: true,
+      plugins: [
+        'preset-default',
+        'removeDimensions',
+        'removeXMLNS',
+      ],
+    }),
+  ],
+  server: {
+    port: 3013,
+    host: true,
+    proxy: {
+      '/api': {
+        target: 'https://sunnydemo.site ',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/uploads': {
+        target: 'https://sunnydemo.site ',
+        changeOrigin: true,
+        secure: false,
       },
     },
-    build: {
-      outDir: 'dist',
-      sourcemap: false,
-    },
-  };
-});
+  },
+  build: {
+    // Generate optimized asset file names with content hashes
+    assetFileNames: 'assets/[name]-[hash][extname]',
+    // Inline small assets (< 4KB) as base64 to reduce HTTP requests
+    assetsInlineLimit: 4096,
+    // Report compressed sizes in the build log
+    reportCompressedSize: true,
+  },
+})

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { XIcon } from '../icons/index.jsx';
+import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 export default function DocumentPreviewModal({ doc, onClose }) {
   const dialogRef = useRef(null);
@@ -51,7 +52,7 @@ export default function DocumentPreviewModal({ doc, onClose }) {
         <div className="flex-1 bg-slate-50 overflow-auto">
           {isImage ? (
             <img
-              src={doc.fileUrl}
+              src={resolveImageUrl(doc.fileUrl)}
               alt={doc.title}
               className="w-full h-auto block mx-auto"
               loading="lazy"
@@ -59,14 +60,14 @@ export default function DocumentPreviewModal({ doc, onClose }) {
           ) : isPdf ? (
             <iframe
               title={doc.title}
-              src={doc.fileUrl}
+              src={resolveImageUrl(doc.fileUrl)}
               className="w-full h-[70vh] border-0"
             />
           ) : (
             <div className="p-10 text-center text-sm text-slate-500">
               File này không hỗ trợ xem trực tiếp. Vui lòng bấm{' '}
               <a
-                href={doc.fileUrl}
+                href={resolveImageUrl(doc.fileUrl)}
                 target="_blank"
                 rel="noreferrer"
                 className="text-[#E60067] font-bold hover:underline"
@@ -79,7 +80,7 @@ export default function DocumentPreviewModal({ doc, onClose }) {
         </div>
         <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-end gap-2">
           <a
-            href={doc.fileUrl}
+            href={resolveImageUrl(doc.fileUrl)}
             target="_blank"
             rel="noreferrer"
             className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#E60067] hover:bg-[#c90059] text-white shadow-xs"

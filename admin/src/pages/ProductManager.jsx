@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useProductStore } from '../store/productStore.js';
 import ProductManagerModal from '../components/ProductManagerModal.jsx';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 import {
   PlusIcon,
   EditIcon,
@@ -310,7 +311,7 @@ export default function ProductManager() {
                         <div className="h-10 w-10 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                           {thumb ? (
                             <img
-                              src={thumb}
+                              src={resolveImageUrl(thumb)}
                               alt={item.title}
                               className="h-full w-full object-cover"
                             />

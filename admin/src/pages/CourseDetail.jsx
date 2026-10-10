@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { mockCourses } from '../data/mockDashboardData.js';
 import { extractYoutubeId } from '../utils/youtube.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 
 const LESSON_TYPE_LABELS = {
   video: { label: 'Video YouTube / Embed', color: 'bg-rose-50 text-rose-600' },
@@ -103,7 +104,7 @@ export default function CourseDetail() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-0">
           <div className="md:col-span-2 bg-slate-100">
             <img
-              src={course.cover}
+              src={resolveImageUrl(course.cover)}
               alt={course.title}
               className="w-full h-48 md:h-full object-cover"
               onError={(e) => {
@@ -255,7 +256,7 @@ export default function CourseDetail() {
               {lesson.type === 'infographic' && lesson.url && (
                 <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
                   <img
-                    src={lesson.url}
+                    src={resolveImageUrl(lesson.url)}
                     alt={lesson.title}
                     className="w-full max-h-80 object-contain bg-white"
                     onError={(e) => {

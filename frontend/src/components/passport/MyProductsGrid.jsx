@@ -1,5 +1,6 @@
 import { EditIcon, TrashIcon, MessageCircleIcon } from '../icons/index.jsx';
 import { usePassportStore } from '../../store/passportStore.js';
+import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 export default function MyProductsGrid() {
   const myProducts = usePassportStore((s) => s.myProducts);
@@ -35,7 +36,7 @@ export default function MyProductsGrid() {
                   <img
                     alt={product.title}
                     className="w-full h-full object-cover"
-                    src={product.imageUrl || product.thumbnail}
+                    src={resolveImageUrl(product.imageUrl || product.thumbnail)}
                     onError={(e) => {
                       e.currentTarget.src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&q=80&w=600';
                     }}

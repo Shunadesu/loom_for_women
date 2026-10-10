@@ -46,11 +46,6 @@ const __dirname = path.dirname(__filename);
 // Behind proxy (nginx, etc.) — trust first hop
 app.set('trust proxy', 1);
 
-app.use(helmet());
-app.use(compression());
-app.use(express.json({ limit: '100kb' }));
-app.use(express.urlencoded({ extended: true, limit: '100kb' }));
-
 // CORS - Cho phép tất cả origins
 app.use(
   cors({
@@ -58,6 +53,24 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(helmet({
+  crossOriginResourcePolicy: false, // Cho phép cross-origin ảnh
+}));
+
+// Riêng cho /uploads — allow cross-origin images
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+app.use(compression());
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -109,18 +122,9 @@ app.use('/api/admin/forum-posts', adminForumPostRoutes);
 app.use('/api/consignment-products', consignmentProductRoutes);
 app.use('/api/admin/consignment-products', adminConsignmentProductRoutes);
 
-// Static — phục vụ ảnh upload từ admin với CORS
+// Static — phục vụ ảnh upload với cache
 app.use(
   '/uploads',
-  (req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
-    next();
-  },
   express.static(path.join(__dirname, '../uploads'), {
     maxAge: '7d',
     etag: true,
