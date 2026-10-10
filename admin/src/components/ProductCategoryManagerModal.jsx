@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { XIcon } from './icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 const ICON_PRESETS = [
   '🛍️', '🧶', '🧵', '👗', '👜', '🧣', '🧤', '🧥',
@@ -24,6 +25,7 @@ export default function ProductCategoryManagerModal({
   const isEdit = Boolean(category?._id);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(blankForm);
+  const { notify } = useNotification();
 
   useEffect(() => {
     if (category) {
@@ -45,7 +47,10 @@ export default function ProductCategoryManagerModal({
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name.trim()) return alert('Vui lòng nhập tên danh mục.');
+    if (!form.name.trim()) {
+      notify({ type: 'warning', title: 'Thiếu thông tin', message: 'Vui lòng nhập tên danh mục.' });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -58,7 +63,7 @@ export default function ProductCategoryManagerModal({
       });
       onClose();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Lưu thất bại.');
+      notify({ type: 'error', title: 'Lưu thất bại', message: err?.response?.data?.error || 'Lưu thất bại.' });
     } finally {
       setSaving(false);
     }
@@ -70,7 +75,7 @@ export default function ProductCategoryManagerModal({
       await onDelete(category._id);
       onClose();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xoá thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
     }
   }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { XIcon, ImageIcon } from './icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 const blankForm = {
   title: '',
@@ -28,6 +29,7 @@ export default function ProductManagerModal({
   const isEdit = Boolean(product?._id);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(blankForm);
+  const { notify } = useNotification();
 
   useEffect(() => {
     if (product) {
@@ -58,11 +60,17 @@ export default function ProductManagerModal({
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.title.trim()) return alert('Vui lòng nhập tên sản phẩm.');
-    if (form.price === '' || Number(form.price) < 0)
-      return alert('Vui lòng nhập giá bán hợp lệ.');
+    if (!form.title.trim()) {
+      notify({ type: 'warning', title: 'Thiếu thông tin', message: 'Vui lòng nhập tên sản phẩm.' });
+      return;
+    }
+    if (form.price === '' || Number(form.price) < 0) {
+      notify({ type: 'warning', title: 'Sai định dạng', message: 'Vui lòng nhập giá bán hợp lệ.' });
+      return;
+    }
     if (!isEdit && !form.file) {
-      return alert('Vui lòng chọn ảnh thumbnail cho sản phẩm.');
+      notify({ type: 'warning', title: 'Thiếu ảnh', message: 'Vui lòng chọn ảnh thumbnail cho sản phẩm.' });
+      return;
     }
 
     setSaving(true);
@@ -88,7 +96,7 @@ export default function ProductManagerModal({
       await onSave(fd, isEdit ? product._id : null);
       onClose();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Lưu thất bại.');
+      notify({ type: 'error', title: 'Lưu thất bại', message: err?.response?.data?.error || 'Lưu thất bại.' });
     } finally {
       setSaving(false);
     }
@@ -100,7 +108,7 @@ export default function ProductManagerModal({
       await onDelete(product._id);
       onClose();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xoá thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
     }
   }
 

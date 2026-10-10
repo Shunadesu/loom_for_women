@@ -7,6 +7,7 @@ import CourseEmptyState from '../components/landing/CourseEmptyState.jsx';
 import { HeartFillIcon } from '../components/icons/index.jsx';
 import { useFavoriteStore } from '../store/favoriteStore.js';
 import { useAuthStore } from '../store/authStore.js';
+import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
 
 export default function MyFavorites() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export default function MyFavorites() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để xem yêu thích.');
+      useLoginDrawerStore.getState().openLoginDrawer();
       navigate('/');
       return;
     }

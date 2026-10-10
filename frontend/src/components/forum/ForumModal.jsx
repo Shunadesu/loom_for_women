@@ -7,6 +7,7 @@ import { FORUM_CATEGORIES } from '../../data/mockForumPosts.js';
 import { useForumPostStore } from '../../store/forumPostStore.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useLoginDrawerStore } from '../../store/loginDrawerStore.js';
+import { useNotification } from '../../store/notificationStore.js';
 
 /**
  * Modal diễn đàn cộng đồng
@@ -19,6 +20,7 @@ export default function ForumModal({ isOpen, onClose }) {
   const { posts, loading, selectedCategory, setCategory, fetchPosts, createPost, likePost } = useForumPostStore();
   const { user } = useAuthStore();
   const { openLoginDrawer } = useLoginDrawerStore();
+  const { toast } = useNotification();
 
   // Reset scroll khi mở modal và fetch posts
   useEffect(() => {
@@ -55,10 +57,10 @@ export default function ForumModal({ isOpen, onClose }) {
   const handleSubmitPost = async (postData) => {
     await createPost(postData);
     setIsNewPostModalOpen(false);
-    
+
     // Show success message
-    alert('Bài viết đã gửi! BQT sẽ duyệt trong vòng 24h. ✅');
-    
+    toast({ type: 'success', message: 'Bài viết đã gửi! BQT sẽ duyệt trong vòng 24h. ✅' });
+
     // Refresh posts
     fetchPosts();
   };

@@ -2,10 +2,12 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon, ShoppingBagIcon, TrashIcon, MinusIcon, PlusIcon } from '../icons/index.jsx';
 import { useCartStore } from '../../store/cartStore.js';
+import { useNotification } from '../../store/notificationStore.js';
 import { formatPrice } from '../../utils/format.js';
 
 export default function CartDrawer({ isOpen, onClose }) {
   const { items, total, count, updateQty, removeItem } = useCartStore();
+  const { notify } = useNotification();
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -191,7 +193,7 @@ export default function CartDrawer({ isOpen, onClose }) {
               className="w-full rounded-xl bg-gradient-to-r from-[#E60067] to-rose-600 py-3 text-sm font-bold text-white shadow-lg transition-all hover:from-pink-600 hover:to-rose-700 hover:shadow-xl"
               onClick={() => {
                 // TODO: Navigate to checkout page
-                alert('Chức năng thanh toán đang được phát triển');
+                notify({ type: 'info', title: 'Sắp ra mắt', message: 'Chức năng thanh toán đang được phát triển.' });
               }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

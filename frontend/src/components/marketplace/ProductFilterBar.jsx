@@ -1,4 +1,5 @@
 import { FilterIcon } from '../../components/icons/index.jsx';
+import { useNotification } from '../../store/notificationStore.js';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Mới nhất' },
@@ -8,8 +9,10 @@ const SORT_OPTIONS = [
 ];
 
 export default function ProductFilterBar({ sortBy, onSortChange }) {
+  const { notify } = useNotification();
+
   function handleFilterClick() {
-    alert('Bộ lọc nâng cao sắp ra mắt.');
+    notify({ type: 'info', title: 'Sắp ra mắt', message: 'Bộ lọc nâng cao sắp ra mắt.' });
   }
 
   return (

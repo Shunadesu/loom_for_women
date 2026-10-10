@@ -10,6 +10,7 @@ import Footer from './components/layout/Footer.jsx';
 import BottomNav from './components/layout/BottomNav.jsx';
 import ScrollToTop from './components/layout/ScrollToTop.jsx';
 import PageTransition from './components/layout/PageTransition.jsx';
+import NotificationContainer from './components/notification/NotificationContainer.jsx';
 import Home from './pages/Home.jsx';
 import CourseList from './pages/CourseList.jsx';
 import CourseDetail from './pages/CourseDetail.jsx';
@@ -125,6 +126,7 @@ export default function App() {
         <SupportModal />
         <ForumModal isOpen={isForumOpen} onClose={closeForum} />
         <PopupContainer />
+        <NotificationContainer />
         <BottomNav />
         <Footer />
       </div>

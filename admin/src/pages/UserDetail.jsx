@@ -13,6 +13,7 @@ import {
   XIcon,
   ImageIcon,
 } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 // Map key tier → class Tailwind (đồng bộ UserManager).
 const TIER_STYLES = {
@@ -136,6 +137,7 @@ export default function UserDetail() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadUser();
@@ -156,7 +158,7 @@ export default function UserDetail() {
         setSummary(null);
       } else {
         const msg = err?.response?.data?.error || 'Không tải được người dùng.';
-        alert(msg);
+        notify({ type: 'error', title: 'Tải dữ liệu thất bại', message: msg });
       }
     } finally {
       setLoading(false);
@@ -176,7 +178,7 @@ export default function UserDetail() {
       navigate('/admin/users');
     } catch (err) {
       const msg = err?.response?.data?.error || 'Xoá thất bại.';
-      alert(msg);
+      notify({ type: 'error', title: 'Xoá thất bại', message: msg });
     }
   }
 

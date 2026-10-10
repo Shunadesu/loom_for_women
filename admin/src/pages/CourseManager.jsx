@@ -10,6 +10,7 @@ import {
 import { fetchAllCategoriesAdmin } from '../services/categoryApi.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
 import { PlusIcon, EditIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, ImageIcon, VideoIcon } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 export default function CourseManager() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function CourseManager() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadData();
@@ -30,7 +32,7 @@ export default function CourseManager() {
       const data = await fetchAllCoursesAdmin();
       setItems(data);
     } catch (err) {
-      alert('Không tải được khóa học.');
+      notify({ type: 'error', title: 'Tải dữ liệu thất bại', message: 'Không tải được khóa học.' });
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,7 @@ export default function CourseManager() {
       setItems(items.filter((c) => c._id !== item._id));
     } catch (err) {
       const msg = err?.response?.data?.error || 'Xoá thất bại.';
-      alert(msg);
+      notify({ type: 'error', title: 'Xoá thất bại', message: msg });
     }
   }
 
@@ -77,7 +79,7 @@ export default function CourseManager() {
       }
       setModalOpen(false);
     } catch (err) {
-      alert(err?.response?.data?.error || 'Lưu thất bại.');
+      notify({ type: 'error', title: 'Lưu thất bại', message: err?.response?.data?.error || 'Lưu thất bại.' });
     }
   }
 
@@ -102,7 +104,7 @@ export default function CourseManager() {
       const payload = newItems.map((c, i) => ({ id: c._id, order: i }));
       await reorderCoursesAdmin(payload);
     } catch (err) {
-      alert('Không sắp xếp được.');
+      notify({ type: 'error', title: 'Sắp xếp thất bại', message: 'Không sắp xếp được.' });
       loadData();
     }
   }
@@ -274,11 +276,18 @@ function CourseFormModal({ item, categories, onClose, onSave }) {
   const [isActive, setIsActive] = useState(item?.isActive ?? true);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const { notify } = useNotification();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!title.trim()) return alert('Tiêu đề không được trống.');
-    if (!item && !thumbnailFile) return alert('Vui lòng chọn ảnh thumbnail.');
+    if (!title.trim()) {
+      notify({ type: 'warning', title: 'Thiếu thông tin', message: 'Tiêu đề không được trống.' });
+      return;
+    }
+    if (!item && !thumbnailFile) {
+      notify({ type: 'warning', title: 'Thiếu ảnh', message: 'Vui lòng chọn ảnh thumbnail.' });
+      return;
+    }
 
     setSaving(true);
     try {

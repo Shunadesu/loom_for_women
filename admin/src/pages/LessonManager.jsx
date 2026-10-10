@@ -22,6 +22,7 @@ import {
   FileTextIcon,
 } from '../components/icons.jsx';
 import DocumentManagerModal from '../components/DocumentManagerModal.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 export default function LessonManager() {
   const { courseId } = useParams();
@@ -34,6 +35,7 @@ export default function LessonManager() {
   const [editingItem, setEditingItem] = useState(null);
   const [previewingItem, setPreviewingItem] = useState(null);
   const [docsModalFor, setDocsModalFor] = useState(null);
+  const { notify } = useNotification();
 
   useEffect(() => {
     if (!courseId) return;
@@ -57,7 +59,7 @@ export default function LessonManager() {
       const data = await fetchLessonsByCourseAdmin(courseId);
       setItems(sortByOrder(data));
     } catch (err) {
-      alert('Không tải được bài học.');
+      notify({ type: 'error', title: 'Tải dữ liệu thất bại', message: 'Không tải được bài học.' });
     } finally {
       setLoading(false);
     }
@@ -83,7 +85,7 @@ export default function LessonManager() {
       await deleteLessonAdmin(item._id);
       setItems(items.filter((l) => l._id !== item._id));
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xoá thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
     }
   }
 
@@ -98,7 +100,7 @@ export default function LessonManager() {
       }
       setModalOpen(false);
     } catch (err) {
-      alert(err?.response?.data?.error || 'Lưu thất bại.');
+      notify({ type: 'error', title: 'Lưu thất bại', message: err?.response?.data?.error || 'Lưu thất bại.' });
     }
   }
 
@@ -123,7 +125,7 @@ export default function LessonManager() {
       const payload = next.map((l, i) => ({ id: l._id, order: i }));
       await reorderLessonsAdmin(courseId, payload);
     } catch (err) {
-      alert('Không sắp xếp được.');
+      notify({ type: 'error', title: 'Sắp xếp thất bại', message: 'Không sắp xếp được.' });
       loadLessons();
     }
   }
@@ -331,12 +333,19 @@ function LessonFormModal({ item, onClose, onSave }) {
   const [youtubeUrl, setYoutubeUrl] = useState(item?.youtubeId ? `https://youtu.be/${item.youtubeId}` : '');
   const [durationSeconds, setDurationSeconds] = useState(item?.durationSeconds || 0);
   const [saving, setSaving] = useState(false);
+  const { notify } = useNotification();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!title.trim()) return alert('Tiêu đề không được trống.');
+    if (!title.trim()) {
+      notify({ type: 'warning', title: 'Thiếu thông tin', message: 'Tiêu đề không được trống.' });
+      return;
+    }
     const ytId = extractYoutubeId(youtubeUrl);
-    if (!ytId) return alert('YouTube URL/ID không hợp lệ.');
+    if (!ytId) {
+      notify({ type: 'warning', title: 'Link không hợp lệ', message: 'YouTube URL/ID không hợp lệ.' });
+      return;
+    }
 
     setSaving(true);
     try {

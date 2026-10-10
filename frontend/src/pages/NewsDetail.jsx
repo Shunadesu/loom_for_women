@@ -8,6 +8,7 @@ import {
   ShareIcon,
   CalendarIcon,
 } from '../components/icons/index.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 /**
  * NewsDetail — trang chi tiết một bài viết tin tức.
@@ -16,6 +17,7 @@ import {
 export default function NewsDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { toast } = useNotification();
 
   const item = NEWS_ITEMS.find((n) => n.slug === slug);
 
@@ -55,9 +57,9 @@ export default function NewsDetail() {
     } else {
       try {
         await navigator.clipboard.writeText(window.location.href);
-        alert('Đã sao chép liên kết!');
+        toast({ type: 'success', message: 'Đã sao chép liên kết!' });
       } catch {
-        alert('Không thể chia sẻ.');
+        toast({ type: 'error', message: 'Không thể chia sẻ.' });
       }
     }
   };

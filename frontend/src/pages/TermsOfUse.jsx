@@ -6,6 +6,7 @@ import {
   CalendarIcon,
   FileTextIcon,
 } from '../components/icons/index.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 const LAST_UPDATED = '01/10/2026';
 
@@ -26,6 +27,7 @@ const RELATED = [
 
 export default function TermsOfUse() {
   const navigate = useNavigate();
+  const { toast } = useNotification();
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -41,9 +43,9 @@ export default function TermsOfUse() {
     } else {
       try {
         await navigator.clipboard.writeText(window.location.href);
-        alert('Đã sao chép liên kết!');
+        toast({ type: 'success', message: 'Đã sao chép liên kết!' });
       } catch {
-        alert('Không thể chia sẻ.');
+        toast({ type: 'error', message: 'Không thể chia sẻ.' });
       }
     }
   };

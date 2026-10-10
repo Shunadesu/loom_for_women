@@ -5,6 +5,7 @@ import {
   StarIcon,
 } from '../../components/icons/index.jsx';
 import { resolveImageUrl } from '../../utils/imageUrl.js';
+import { useNotification } from '../../store/notificationStore.js';
 
 function formatVND(n) {
   if (!n) return '0₫';
@@ -14,6 +15,7 @@ function formatVND(n) {
 export default function ProductCard({ product, onAddToCart }) {
   const discount = product.discountPct ?? 0;
   const rating = product.rating || 0;
+  const { toast } = useNotification();
 
   function handleZalo() {
     const url = product.sellerZaloUrl;
@@ -22,7 +24,7 @@ export default function ProductCard({ product, onAddToCart }) {
 
   function handleAdd() {
     if (typeof onAddToCart === 'function') onAddToCart(product);
-    else alert(`Đã thêm "${product.title}" vào giỏ (mock).`);
+    else toast({ type: 'success', message: `Đã thêm "${product.title}" vào giỏ (mock).` });
   }
 
   return (

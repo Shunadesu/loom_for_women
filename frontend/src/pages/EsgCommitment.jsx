@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon,
   HandIcon,
 } from '../components/icons/index.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 const LAST_UPDATED = '01/10/2026';
 
@@ -88,6 +89,7 @@ function PillarIcon({ name, className }) {
 
 export default function EsgCommitment() {
   const navigate = useNavigate();
+  const { toast } = useNotification();
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -103,9 +105,9 @@ export default function EsgCommitment() {
     } else {
       try {
         await navigator.clipboard.writeText(window.location.href);
-        alert('Đã sao chép liên kết!');
+        toast({ type: 'success', message: 'Đã sao chép liên kết!' });
       } catch {
-        alert('Không thể chia sẻ.');
+        toast({ type: 'error', message: 'Không thể chia sẻ.' });
       }
     }
   };

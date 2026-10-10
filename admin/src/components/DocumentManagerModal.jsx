@@ -13,6 +13,7 @@ import {
   FileTextIcon,
   ImageIcon,
 } from './icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 const FILE_TYPES = [
   { value: 'pdf', label: 'PDF' },
@@ -48,6 +49,7 @@ export default function DocumentManagerModal({ lesson, onClose }) {
     file: null,
   });
   const [editingId, setEditingId] = useState(null);
+  const { notify } = useNotification();
 
   useEffect(() => {
     if (!lesson?._id) return;
@@ -60,7 +62,7 @@ export default function DocumentManagerModal({ lesson, onClose }) {
       const items = await listDocumentsByLessonAdmin(lesson._id);
       setDocs(items);
     } catch (err) {
-      alert('Không tải được danh sách tài liệu.');
+      notify({ type: 'error', title: 'Tải dữ liệu thất bại', message: 'Không tải được danh sách tài liệu.' });
     } finally {
       setLoading(false);
     }
@@ -92,8 +94,14 @@ export default function DocumentManagerModal({ lesson, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.title.trim()) return alert('Tiêu đề không được trống.');
-    if (!editingId && !form.file) return alert('Vui lòng chọn file.');
+    if (!form.title.trim()) {
+      notify({ type: 'warning', title: 'Thiếu thông tin', message: 'Tiêu đề không được trống.' });
+      return;
+    }
+    if (!editingId && !form.file) {
+      notify({ type: 'warning', title: 'Thiếu file', message: 'Vui lòng chọn file.' });
+      return;
+    }
 
     setUploading(true);
     try {
@@ -118,7 +126,7 @@ export default function DocumentManagerModal({ lesson, onClose }) {
       resetForm();
       await load();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Lưu thất bại.');
+      notify({ type: 'error', title: 'Lưu thất bại', message: err?.response?.data?.error || 'Lưu thất bại.' });
     } finally {
       setUploading(false);
     }
@@ -130,7 +138,7 @@ export default function DocumentManagerModal({ lesson, onClose }) {
       await deleteDocumentAdmin(doc._id);
       setDocs((prev) => prev.filter((d) => d._id !== doc._id));
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xoá thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
     }
   }
 

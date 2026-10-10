@@ -9,6 +9,7 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
 } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 const SORTS = {
   name: (a, b) => a.name.localeCompare(b.name, 'vi'),
@@ -31,6 +32,7 @@ export default function ProductCategoryManager() {
   const [sortKey, setSortKey] = useState('order');
   const [sortDir, setSortDir] = useState('asc');
   const [modal, setModal] = useState(null); // null | { type: 'add' } | { type: 'edit', category }
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadAll();
@@ -86,7 +88,7 @@ export default function ProductCategoryManager() {
     try {
       await removeCategory(item._id);
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xoá thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
     }
   }
 
@@ -109,7 +111,7 @@ export default function ProductCategoryManager() {
     try {
       await reorderCategories(payload);
     } catch (err) {
-      alert('Không sắp xếp được.');
+      notify({ type: 'error', title: 'Sắp xếp thất bại', message: 'Không sắp xếp được.' });
       loadAll();
     }
   }

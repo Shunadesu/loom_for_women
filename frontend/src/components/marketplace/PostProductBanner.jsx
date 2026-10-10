@@ -1,8 +1,11 @@
 import { PlusIcon } from '../../components/icons/index.jsx';
+import { useNotification } from '../../store/notificationStore.js';
 
 export default function PostProductBanner() {
+  const { notify } = useNotification();
+
   function handleClick() {
-    alert('Tính năng đăng bài sắp ra mắt.');
+    notify({ type: 'info', title: 'Sắp ra mắt', message: 'Tính năng đăng bài sắp ra mắt.' });
   }
 
   return (

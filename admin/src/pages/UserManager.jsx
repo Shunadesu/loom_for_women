@@ -11,6 +11,7 @@ import {
   EyeIcon,
   FilterIcon,
 } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 // Bảng màu tier — đồng bộ với key trả về từ backend (utils/points.js#TIERS).
 const TIER_STYLES = {
@@ -107,6 +108,7 @@ export default function UserManager() {
   const [searchInput, setSearchInput] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState(''); // '', 'true', 'false'
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadUsers();
@@ -134,7 +136,7 @@ export default function UserManager() {
       setTotal(result.total);
     } catch (err) {
       const msg = err?.response?.data?.error || 'Không tải được người dùng.';
-      alert(msg);
+      notify({ type: 'error', title: 'Tải dữ liệu thất bại', message: msg });
       setItems([]);
     } finally {
       setLoading(false);
@@ -163,7 +165,7 @@ export default function UserManager() {
       setItems((prev) => prev.filter((u) => u._id !== user._id));
     } catch (err) {
       const msg = err?.response?.data?.error || 'Xoá thất bại.';
-      alert(msg);
+      notify({ type: 'error', title: 'Xoá thất bại', message: msg });
     }
   }
 

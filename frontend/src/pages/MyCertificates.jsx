@@ -5,6 +5,8 @@ import Header from '../components/layout/Header.jsx';
 import { PdfIcon, CheckCircleIcon } from '../components/icons/index.jsx';
 import { useCertificateStore } from '../store/certificateStore.js';
 import { useAuthStore } from '../store/authStore.js';
+import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
+import { useNotification } from '../store/notificationStore.js';
 
 export default function MyCertificates() {
   const navigate = useNavigate();
@@ -12,12 +14,13 @@ export default function MyCertificates() {
   const items = useCertificateStore((s) => s.items);
   const loading = useCertificateStore((s) => s.loading);
   const fetch = useCertificateStore((s) => s.fetch);
+  const { notify } = useNotification();
 
   const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để xem chứng chỉ.');
+      useLoginDrawerStore.getState().openLoginDrawer();
       navigate('/');
       return;
     }
@@ -67,7 +70,7 @@ export default function MyCertificates() {
       pdf.save(`chung-chi-${cert.serialNumber}.pdf`);
     } catch (err) {
       console.error('Download error:', err);
-      alert('Không tải được chứng chỉ.');
+      notify({ type: 'error', title: 'Tải chứng chỉ thất bại', message: 'Không tải được chứng chỉ. Vui lòng thử lại sau.' });
     } finally {
       setDownloading(null);
     }

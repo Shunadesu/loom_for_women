@@ -11,6 +11,7 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
 } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 const SORTS = {
   name: (a, b) => a.title.localeCompare(b.title, 'vi'),
@@ -40,6 +41,7 @@ export default function ProductManager() {
   const [sortKey, setSortKey] = useState('order');
   const [sortDir, setSortDir] = useState('asc');
   const [modal, setModal] = useState(null); // null | { type: 'add' } | { type: 'edit', product }
+  const { notify } = useNotification();
 
   useEffect(() => {
     fetchAll();
@@ -126,7 +128,7 @@ export default function ProductManager() {
     try {
       await remove(item._id);
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xoá thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
     }
   }
 

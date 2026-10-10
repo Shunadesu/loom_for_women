@@ -17,6 +17,8 @@ import { useProgressStore } from '../store/progressStore.js';
 import { useCommentStore } from '../store/commentStore.js';
 import { useFavoriteStore } from '../store/favoriteStore.js';
 import { useAuthStore } from '../store/authStore.js';
+import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
+import { useNotification } from '../store/notificationStore.js';
 import { addFavorite, removeFavorite } from '../services/favoriteApi.js';
 
 export default function CourseDetail() {
@@ -26,6 +28,8 @@ export default function CourseDetail() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const isAuthenticated = Boolean(token || user?._id);
+  const { openLoginDrawer } = useLoginDrawerStore();
+  const { notify } = useNotification();
 
   const detailCache = useCourseStore((s) => s.detailCache);
   const detailLoading = useCourseStore((s) => s.detailLoading);
@@ -83,7 +87,7 @@ export default function CourseDetail() {
 
   async function handleComplete(lessonId) {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để lưu tiến độ.');
+      openLoginDrawer();
       return;
     }
     try {
@@ -92,13 +96,13 @@ export default function CourseDetail() {
       fetchContinue().catch(() => {});
       fetchStats().catch(() => {});
     } catch (err) {
-      alert(err?.response?.data?.error || 'Không lưu được tiến độ.');
+      notify({ type: 'error', title: 'Lưu tiến độ thất bại', message: err?.response?.data?.error || 'Không lưu được tiến độ.' });
     }
   }
 
   async function handleToggleFavorite() {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để lưu yêu thích.');
+      openLoginDrawer();
       return;
     }
     try {
@@ -107,17 +111,17 @@ export default function CourseDetail() {
       else await addFavorite(course._id);
       toggleFavoriteLocal(course._id);
     } catch (err) {
-      alert(err?.response?.data?.error || 'Không thực hiện được.');
+      notify({ type: 'error', title: 'Không thể cập nhật yêu thích', message: err?.response?.data?.error || 'Không thực hiện được.' });
     }
   }
 
   async function handlePostComment() {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để bình luận.');
+      openLoginDrawer();
       return;
     }
     if (!commentText.trim()) {
-      alert('Nội dung bình luận không được trống.');
+      notify({ type: 'warning', title: 'Thiếu nội dung', message: 'Nội dung bình luận không được trống.' });
       return;
     }
     try {
@@ -129,7 +133,7 @@ export default function CourseDetail() {
       setCommentText('');
       setCommentRating(5);
     } catch (err) {
-      alert(err?.response?.data?.error || 'Đăng bình luận thất bại.');
+      notify({ type: 'error', title: 'Đăng bình luận thất bại', message: err?.response?.data?.error || 'Đăng bình luận thất bại.' });
     }
   }
 

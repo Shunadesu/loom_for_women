@@ -5,6 +5,7 @@ import Header from '../components/layout/Header.jsx';
 import { PercentIcon, TrophyIcon, ArrowUpIcon } from '../components/icons/index.jsx';
 import { usePointsStore } from '../store/pointsStore.js';
 import { useAuthStore } from '../store/authStore.js';
+import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
 
 export default function MyPoints() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export default function MyPoints() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để xem điểm.');
+      useLoginDrawerStore.getState().openLoginDrawer();
       navigate('/');
       return;
     }

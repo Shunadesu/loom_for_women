@@ -7,12 +7,14 @@ import {
   reorderCategoriesAdmin,
 } from '../services/categoryApi.js';
 import { PlusIcon, EditIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 export default function CategoryManager() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadData();
@@ -24,7 +26,7 @@ export default function CategoryManager() {
       const data = await fetchAllCategoriesAdmin();
       setItems(data);
     } catch (err) {
-      alert('Không tải được danh mục.');
+      notify({ type: 'error', title: 'Tải dữ liệu thất bại', message: 'Không tải được danh mục.' });
     } finally {
       setLoading(false);
     }
@@ -46,7 +48,7 @@ export default function CategoryManager() {
       await deleteCategoryAdmin(item._id);
       setItems(items.filter((c) => c._id !== item._id));
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xoá thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
     }
   }
 
@@ -61,7 +63,7 @@ export default function CategoryManager() {
       }
       setModalOpen(false);
     } catch (err) {
-      alert(err?.response?.data?.error || 'Lưu thất bại.');
+      notify({ type: 'error', title: 'Lưu thất bại', message: err?.response?.data?.error || 'Lưu thất bại.' });
     }
   }
 
@@ -86,7 +88,7 @@ export default function CategoryManager() {
       const payload = newItems.map((c, i) => ({ id: c._id, order: i }));
       await reorderCategoriesAdmin(payload);
     } catch (err) {
-      alert('Không sắp xếp được.');
+      notify({ type: 'error', title: 'Sắp xếp thất bại', message: 'Không sắp xếp được.' });
       loadData();
     }
   }
@@ -224,10 +226,14 @@ function CategoryFormModal({ item, onClose, onSave }) {
   const [color, setColor] = useState(item?.color || '#E60067');
   const [isActive, setIsActive] = useState(item?.isActive ?? true);
   const [saving, setSaving] = useState(false);
+  const { notify } = useNotification();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!name.trim()) return alert('Tên không được trống.');
+    if (!name.trim()) {
+      notify({ type: 'warning', title: 'Thiếu thông tin', message: 'Tên không được trống.' });
+      return;
+    }
     setSaving(true);
     try {
       await onSave({ name: name.trim(), color, isActive });

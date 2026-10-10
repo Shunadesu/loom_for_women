@@ -15,6 +15,7 @@ import {
   AwardIcon,
   EyeIcon,
 } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 const TABS = [
   { id: 'pending', label: 'Chờ duyệt', color: 'yellow' },
@@ -36,6 +37,7 @@ export default function ForumPostManager() {
   const [selectedPost, setSelectedPost] = useState(null);
   const [voucherCode, setVoucherCode] = useState('');
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const { notify } = useNotification();
 
   useEffect(() => {
     loadPosts();
@@ -47,7 +49,7 @@ export default function ForumPostManager() {
       const data = await fetchForumPostsAdmin(activeTab);
       setPosts(data);
     } catch (err) {
-      alert('Không tải được danh sách bài viết.');
+      notify({ type: 'error', title: 'Tải dữ liệu thất bại', message: 'Không tải được danh sách bài viết.' });
     } finally {
       setLoading(false);
     }
@@ -59,7 +61,7 @@ export default function ForumPostManager() {
       await approveForumPost(post._id);
       loadPosts();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Duyệt thất bại.');
+      notify({ type: 'error', title: 'Duyệt thất bại', message: err?.response?.data?.error || 'Duyệt thất bại.' });
     }
   }
 
@@ -69,7 +71,7 @@ export default function ForumPostManager() {
       await rejectForumPost(post._id);
       loadPosts();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Từ chối thất bại.');
+      notify({ type: 'error', title: 'Từ chối thất bại', message: err?.response?.data?.error || 'Từ chối thất bại.' });
     }
   }
 
@@ -79,7 +81,7 @@ export default function ForumPostManager() {
       await deleteForumPost(post._id);
       setPosts(posts.filter((p) => p._id !== post._id));
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xóa thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xóa thất bại.' });
     }
   }
 
@@ -98,7 +100,7 @@ export default function ForumPostManager() {
       setVoucherCode('');
       loadPosts();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Cập nhật thất bại.');
+      notify({ type: 'error', title: 'Cập nhật thất bại', message: err?.response?.data?.error || 'Cập nhật thất bại.' });
     }
   }
 

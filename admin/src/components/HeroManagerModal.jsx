@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { XIcon, ImageIcon } from './icons.jsx';
 import { resolveImageUrl } from '../utils/imageUrl.js';
+import { useNotification } from '../store/notificationStore.js';
 
 export default function HeroManagerModal({ hero, onClose, onSave, onDelete }) {
   const isEdit = Boolean(hero?._id);
@@ -12,6 +13,7 @@ export default function HeroManagerModal({ hero, onClose, onSave, onDelete }) {
     isActive: hero?.isActive ?? true,
     file: null,
   });
+  const { notify } = useNotification();
 
   function set(key, val) {
     setForm((f) => ({ ...f, [key]: val }));
@@ -19,8 +21,14 @@ export default function HeroManagerModal({ hero, onClose, onSave, onDelete }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!isEdit && !form.file) return alert('Vui lòng chọn ảnh.');
-    if (!form.alt.trim()) return alert('Vui lòng nhập mô tả ảnh (alt).');
+    if (!isEdit && !form.file) {
+      notify({ type: 'warning', title: 'Thiếu ảnh', message: 'Vui lòng chọn ảnh.' });
+      return;
+    }
+    if (!form.alt.trim()) {
+      notify({ type: 'warning', title: 'Thiếu mô tả', message: 'Vui lòng nhập mô tả ảnh (alt).' });
+      return;
+    }
 
     setUploading(true);
     try {
@@ -33,7 +41,7 @@ export default function HeroManagerModal({ hero, onClose, onSave, onDelete }) {
       await onSave(fd);
       onClose();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Lưu thất bại.');
+      notify({ type: 'error', title: 'Lưu thất bại', message: err?.response?.data?.error || 'Lưu thất bại.' });
     } finally {
       setUploading(false);
     }
@@ -45,7 +53,7 @@ export default function HeroManagerModal({ hero, onClose, onSave, onDelete }) {
       await onDelete(hero._id);
       onClose();
     } catch (err) {
-      alert(err?.response?.data?.error || 'Xoá thất bại.');
+      notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
     }
   }
 

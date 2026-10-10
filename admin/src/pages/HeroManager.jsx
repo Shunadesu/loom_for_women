@@ -9,6 +9,7 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
 } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
 
 export default function HeroManager() {
   const heroes = useHeroStore((s) => s.heroes);
@@ -21,6 +22,7 @@ export default function HeroManager() {
   const reorderHeroes = useHeroStore((s) => s.reorder);
 
   const [modal, setModal] = useState(null); // null | { type: 'add' | 'edit', hero?: Hero }
+  const { notify } = useNotification();
 
   useEffect(() => {
     fetchAll();
@@ -58,7 +60,7 @@ export default function HeroManager() {
     try {
       await reorderHeroes(payload);
     } catch (err) {
-      alert('Không sắp xếp được.');
+      notify({ type: 'error', title: 'Sắp xếp thất bại', message: 'Không sắp xếp được.' });
       fetchAll();
     }
   }

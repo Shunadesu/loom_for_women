@@ -14,6 +14,7 @@ import ProductManager from './pages/ProductManager.jsx';
 import ForumPostManager from './pages/ForumPostManager.jsx';
 import UserManager from './pages/UserManager.jsx';
 import UserDetail from './pages/UserDetail.jsx';
+import NotificationContainer from './components/notification/NotificationContainer.jsx';
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
+      <NotificationContainer />
     </BrowserRouter>
   );
 }
