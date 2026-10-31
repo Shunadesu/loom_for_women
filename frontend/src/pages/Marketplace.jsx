@@ -10,6 +10,9 @@ import ProductPromoBanner from '../components/marketplace/ProductPromoBanner.jsx
 import ProductGrid from '../components/marketplace/ProductGrid.jsx';
 import { useProductStore } from '../store/productStore.js';
 import { useCartStore } from '../store/cartStore.js';
+import { useAuthStore } from '../store/authStore.js';
+import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
+import { useNotification } from '../store/notificationStore.js';
 
 export default function Marketplace() {
   const products = useProductStore((s) => s.products);
@@ -18,6 +21,10 @@ export default function Marketplace() {
   const list = useProductStore((s) => s.list);
 
   const addItem = useCartStore((s) => s.addItem);
+  const openCart = useCartStore((s) => s.openCart);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const openLoginDrawer = useLoginDrawerStore((s) => s.openLoginDrawer);
+  const { notify, toast } = useNotification();
 
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
@@ -113,8 +120,28 @@ export default function Marketplace() {
     return result;
   }, [products, activeCategory, debouncedQuery, sortBy]);
 
-  function handleAddToCart(product) {
-    addItem(product, 1);
+  async function handleAddToCart(product) {
+    if (!isAuthenticated) {
+      // Chưa đăng nhập — mở LoginDrawer. Cart sẽ được sync sau khi login
+      // thông qua cartStore.syncWithServer() trong LoginDrawer.
+      toast({
+        type: 'info',
+        message: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ.',
+      });
+      openLoginDrawer('/cua-hang');
+      // Vẫn lưu vào cart cục bộ để khi login xong sẽ sync lên server.
+      await addItem(product, 1);
+      return;
+    }
+
+    const result = await addItem(product, 1);
+    if (result?.ok) {
+      toast({ type: 'success', message: `Đã thêm "${product.title}" vào giỏ hàng.` });
+      // Mở cart drawer để user thấy ngay sản phẩm vừa thêm
+      openCart();
+    } else if (result?.error) {
+      notify({ type: 'error', title: 'Thêm vào giỏ thất bại', message: result.error });
+    }
   }
 
   return (

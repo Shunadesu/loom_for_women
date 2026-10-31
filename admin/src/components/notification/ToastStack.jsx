@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { XIcon, CheckIcon } from './icons.jsx';
-import { useNotificationStore } from '../store/notificationStore.js';
+import { XIcon } from '../icons.jsx';
+import { useNotificationStore } from '../../store/notificationStore.js';
 
 const STYLE_MAP = {
   success: { bar: 'bg-emerald-500', iconWrap: 'bg-emerald-100 text-emerald-600', symbol: '✓' },

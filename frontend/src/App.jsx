@@ -28,6 +28,7 @@ import UserProtectedRoute from './components/auth/UserProtectedRoute.jsx';
 import { usePopupStore } from './store/popupStore.js';
 import { useForumStore } from './store/forumStore.js';
 import { useCartStore } from './store/cartStore.js';
+import { useAuthStore } from './store/authStore.js';
 
 function ComingSoon({ title }) {
   return (
@@ -110,10 +111,19 @@ export default function App() {
   const closeForum = useForumStore((s) => s.closeForum);
   const isCartOpen = useCartStore((s) => s.isOpen);
   const closeCart = useCartStore((s) => s.closeCart);
+  const initCart = useCartStore((s) => s.init);
+  const token = useAuthStore((s) => s.token);
 
   useEffect(() => {
     init();
   }, [init]);
+
+  // Khi user đăng nhập (token xuất hiện) → tải cart từ server
+  useEffect(() => {
+    if (token) {
+      initCart();
+    }
+  }, [token, initCart]);
 
   return (
     <BrowserRouter>

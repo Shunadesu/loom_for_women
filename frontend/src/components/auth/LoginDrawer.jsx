@@ -4,11 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon, UserIcon } from '../icons/index.jsx';
 import { useAuthStore } from '../../store/authStore.js';
 import { useLoginDrawerStore } from '../../store/loginDrawerStore.js';
+import { useCartStore } from '../../store/cartStore.js';
 
 export default function LoginDrawer() {
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
   const { isOpen, redirectPath, closeLoginDrawer } = useLoginDrawerStore();
+  const syncCartWithServer = useCartStore((s) => s.syncWithServer);
+  const openCart = useCartStore((s) => s.openCart);
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -53,11 +56,17 @@ export default function LoginDrawer() {
     setLoading(true);
     try {
       await login(phone.trim(), password);
+      // Sau khi login thành công: nếu có sản phẩm trong giỏ cục bộ
+      // (thêm khi chưa login) → sync lên server.
+      try {
+        await syncCartWithServer();
+      } catch {
+        /* không chặn flow nếu sync lỗi */
+      }
       closeLoginDrawer();
-      
-      // Nếu redirectPath là '/gio-hang', mở drawer thay vì chuyển trang
-      if (redirectPath === '/gio-hang') {
-        const { openCart } = require('../../store/cartStore.js').useCartStore.getState();
+
+      // Nếu redirectPath là '/gio-hang' (hoặc '/cua-hang'), mở cart drawer
+      if (redirectPath === '/gio-hang' || redirectPath === '/cua-hang') {
         openCart();
       } else if (redirectPath && redirectPath !== '/') {
         // Nếu có redirectPath hợp lệ, chuyển trang

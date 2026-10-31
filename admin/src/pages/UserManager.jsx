@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
 import {
   fetchUsersAdminSummary,
   deleteUserAdmin,
@@ -12,6 +11,7 @@ import {
   FilterIcon,
 } from '../components/icons.jsx';
 import { useNotification } from '../store/notificationStore.js';
+import UserDetailModal from '../components/UserDetailModal.jsx';
 
 // Bảng màu tier — đồng bộ với key trả về từ backend (utils/points.js#TIERS).
 const TIER_STYLES = {
@@ -97,7 +97,7 @@ function formatDateTime(dateString) {
 }
 
 export default function UserManager() {
-  const navigate = useNavigate();
+  const [selectedUser, setSelectedUser] = useState(null);
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -169,8 +169,10 @@ export default function UserManager() {
     }
   }
 
+  const closeDetail = useCallback(() => setSelectedUser(null), []);
+
   function handleRowClick(user) {
-    navigate(`/admin/users/${user._id}`);
+    setSelectedUser(user);
   }
 
   function handleView(user, e) {
@@ -433,6 +435,8 @@ export default function UserManager() {
           </button>
         </div>
       )}
+
+      <UserDetailModal user={selectedUser} onClose={closeDetail} />
     </div>
   );
 }

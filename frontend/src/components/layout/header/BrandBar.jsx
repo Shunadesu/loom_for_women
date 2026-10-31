@@ -41,6 +41,7 @@ export default function BrandBar() {
   const level = useAuthStore((s) => s.level);
   const logout = useAuthStore((s) => s.logout);
   const count = useCartStore((s) => s.count);
+  const clearCart = useCartStore((s) => s.clear);
   const openLoginDrawer = useLoginDrawerStore((s) => s.openLoginDrawer);
 
   const isAuthenticated = Boolean(token || user?._id);
@@ -70,6 +71,7 @@ export default function BrandBar() {
 
   const handleLogout = () => {
     logout();
+    clearCart();
     setIsDropdownOpen(false);
     navigate('/');
   };

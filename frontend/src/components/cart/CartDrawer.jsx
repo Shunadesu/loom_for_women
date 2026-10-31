@@ -131,7 +131,12 @@ export default function CartDrawer({ isOpen, onClose }) {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <motion.button
-                            onClick={() => updateQty(productId, item.quantity - 1)}
+                            onClick={async () => {
+                              const result = await updateQty(productId, item.quantity - 1);
+                              if (result && !result.ok && result.error) {
+                                notify({ type: 'error', title: 'Cập nhật thất bại', message: result.error });
+                              }
+                            }}
                             className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition-colors hover:border-[#E60067] hover:bg-pink-50 hover:text-[#E60067]"
                             aria-label="Giảm số lượng"
                             whileHover={{ scale: 1.1 }}
@@ -139,7 +144,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                           >
                             <MinusIcon className="h-4 w-4" />
                           </motion.button>
-                          <motion.span 
+                          <motion.span
                             key={item.quantity}
                             initial={{ scale: 1.2 }}
                             animate={{ scale: 1 }}
@@ -148,7 +153,12 @@ export default function CartDrawer({ isOpen, onClose }) {
                             {item.quantity}
                           </motion.span>
                           <motion.button
-                            onClick={() => updateQty(productId, item.quantity + 1)}
+                            onClick={async () => {
+                              const result = await updateQty(productId, item.quantity + 1);
+                              if (result && !result.ok && result.error) {
+                                notify({ type: 'error', title: 'Cập nhật thất bại', message: result.error });
+                              }
+                            }}
                             className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition-colors hover:border-[#E60067] hover:bg-pink-50 hover:text-[#E60067]"
                             aria-label="Tăng số lượng"
                             whileHover={{ scale: 1.1 }}
@@ -160,7 +170,12 @@ export default function CartDrawer({ isOpen, onClose }) {
 
                         {/* Remove Button */}
                         <motion.button
-                          onClick={() => removeItem(productId)}
+                          onClick={async () => {
+                            const result = await removeItem(productId);
+                            if (result && !result.ok && result.error) {
+                              notify({ type: 'error', title: 'Xoá thất bại', message: result.error });
+                            }
+                          }}
                           className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
                           aria-label="Xóa sản phẩm"
                           whileHover={{ scale: 1.1, rotate: 10 }}

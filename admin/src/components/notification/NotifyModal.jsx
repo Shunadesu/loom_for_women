@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { XIcon, CheckIcon } from './icons.jsx';
-import { useNotificationStore } from '../store/notificationStore.js';
+import { XIcon } from '../icons.jsx';
+import { useNotificationStore } from '../../store/notificationStore.js';
 
 const ICON_MAP = {
   success: { ring: 'bg-emerald-100', color: 'text-emerald-600', bar: 'bg-emerald-500' },
