@@ -3,7 +3,7 @@ import Certificate from '../models/Certificate.js';
 export const myCertificates = async (req, res) => {
   try {
     const certs = await Certificate.find({ userId: req.user._id })
-      .populate('courseId', 'title slug thumbnail category')
+      .populate('courseId', 'title slug thumbnail')
       .sort({ issuedAt: -1 })
       .lean();
     res.json({ items: certs });

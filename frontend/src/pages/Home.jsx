@@ -9,7 +9,7 @@ import CategoryNav from '../components/landing/CategoryNav.jsx';
 import NewsList from '../components/landing/NewsList.jsx';
 import {
   CATEGORY_HOC_TAP,
-  CATEGORY_MUA_SAM,
+  CATEGORY_AN_TOAN,
 } from '../data/homeContent.js';
 
 export default function Home() {
@@ -28,9 +28,20 @@ export default function Home() {
           <QuickActions />
           <MyCourseCards />
           <OAFollowCard />
-          <div id="loom-catalog-sections" className="scroll-mt-4 space-y-4">
-            <CategoryNav title="Học tập cùng Loom" items={CATEGORY_HOC_TAP} />
-            <CategoryNav title="Mua sắm cùng Loom" items={CATEGORY_MUA_SAM} />
+          <div
+            id="loom-catalog-sections"
+            className="grid scroll-mt-4 grid-cols-1 gap-4 md:grid-cols-2"
+          >
+            <CategoryNav
+              title={CATEGORY_HOC_TAP.title}
+              titleIcon={CATEGORY_HOC_TAP.icon}
+              items={CATEGORY_HOC_TAP.items}
+            />
+            <CategoryNav
+              title={CATEGORY_AN_TOAN.title}
+              titleIcon={CATEGORY_AN_TOAN.icon}
+              items={CATEGORY_AN_TOAN.items}
+            />
           </div>
           <NewsList />
         </div>

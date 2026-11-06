@@ -76,7 +76,7 @@ export const listDocuments = async (req, res) => {
 
     let items = await LessonDocument.find(filter)
       .populate('lessonId', 'title order')
-      .populate('courseId', 'title slug thumbnail category')
+      .populate('courseId', 'title slug thumbnail')
       .sort({ createdAt: -1 })
       .skip(safeSkip)
       .limit(safeLimit)
@@ -158,7 +158,7 @@ export const getDocumentDetail = async (req, res) => {
   try {
     const doc = await LessonDocument.findOne({ _id: req.params.id, isPublished: true })
       .populate('lessonId', 'title order')
-      .populate('courseId', 'title slug thumbnail category')
+      .populate('courseId', 'title slug thumbnail')
       .lean();
     if (!doc) return res.status(404).json({ error: 'Không tìm thấy tài liệu.' });
 

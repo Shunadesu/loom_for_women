@@ -5,8 +5,9 @@ import Layout from './pages/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import DashboardShowcase from './pages/DashboardShowcase.jsx';
 import HeroManager from './pages/HeroManager.jsx';
-import CategoryManager from './pages/CategoryManager.jsx';
+import LogoManager from './pages/LogoManager.jsx';
 import CourseManager from './pages/CourseManager.jsx';
+import CourseForm from './pages/CourseForm.jsx';
 import CourseDetail from './pages/CourseDetail.jsx';
 import LessonManager from './pages/LessonManager.jsx';
 import ProductCategoryManager from './pages/ProductCategoryManager.jsx';
@@ -32,8 +33,10 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="showcase" element={<DashboardShowcase />} />
           <Route path="heroes" element={<HeroManager />} />
-          <Route path="categories" element={<CategoryManager />} />
+          <Route path="logo" element={<LogoManager />} />
           <Route path="courses" element={<CourseManager />} />
+          <Route path="courses/new" element={<CourseForm />} />
+          <Route path="courses/:courseId/edit" element={<CourseForm />} />
           <Route path="courses/:courseId" element={<CourseDetail />} />
           <Route path="courses/:courseId/lessons" element={<LessonManager />} />
           <Route path="product-categories" element={<ProductCategoryManager />} />

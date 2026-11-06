@@ -31,6 +31,10 @@ const configSchema = new mongoose.Schema(
     // Common
     laterBtn: { type: String, default: 'Để Sau' },
 
+    // Logo thương hiệu (dùng chung cho header/footer/popup/favicon)
+    logoUrl: { type: String, default: '' }, // relative path: /uploads/brand/xxx.png
+    logoAlt: { type: String, default: 'Logo Loom for Women' },
+
     // Theme
     themeColor: { type: String, default: '#E60067' },
     primaryShade: { type: Number, default: 600, min: 100, max: 900 },

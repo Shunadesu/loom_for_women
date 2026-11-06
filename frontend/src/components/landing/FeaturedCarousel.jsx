@@ -65,9 +65,6 @@ export default function FeaturedCarousel() {
 }
 
 function FeaturedCard({ course }) {
-  const categoryName = course.category?.name || 'Khác';
-  const categoryColor = course.category?.color || '#E60067';
-
   return (
     <Link
       to={`/khoa-hoc/${course.slug}`}
@@ -90,14 +87,6 @@ function FeaturedCard({ course }) {
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      <div className="absolute left-1.5 top-1.5">
-        <span
-          className="rounded-full px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wide text-white shadow-xs"
-          style={{ backgroundColor: categoryColor }}
-        >
-          {categoryName}
-        </span>
-      </div>
       <div className="absolute inset-0 flex items-center justify-center opacity-90 transition-opacity group-hover:opacity-100">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
           <PlayIcon aria-hidden="true" className="h-5 w-5 text-white drop-shadow" />

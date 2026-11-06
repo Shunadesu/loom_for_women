@@ -30,8 +30,7 @@ export const myFavorites = async (req, res) => {
     const favs = await Favorite.find({ userId: req.user._id })
       .populate({
         path: 'courseId',
-        select: 'title slug thumbnail category durationMinutes rating lessonsCount isActive',
-        populate: { path: 'category', select: 'name slug color' },
+        select: 'title slug thumbnail durationMinutes rating lessonsCount isActive',
       })
       .sort({ createdAt: -1 })
       .lean();

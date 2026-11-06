@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { uploadCourse } from '../middleware/upload.js';
 import {
   listAllCourses,
+  getCourseById,
   createCourse,
   updateCourse,
   deleteCourse,
@@ -22,6 +23,9 @@ router.get('/', listAllCourses);
 router.get('/:courseId/lessons', listLessonsByCourse);
 router.post('/:courseId/lessons', createLesson);
 router.post('/:courseId/lessons/reorder', reorderLessons);
+
+// Chi tiết 1 khóa học (dùng cho trang Sửa khóa học)
+router.get('/:id', getCourseById);
 
 router.post('/', uploadCourse.single('thumbnail'), createCourse);
 router.put('/:id', uploadCourse.single('thumbnail'), updateCourse);

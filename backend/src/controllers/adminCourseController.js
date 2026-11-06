@@ -16,7 +16,8 @@ const publicUrlFor = (filename) => {
 const filenameFromUrl = (url) => {
   if (!url) return null;
   try {
-    const u = new URL(url);
+    // base cần thiết vì url có thể là relative path (/uploads/courses/x.png)
+    const u = new URL(url, 'http://localhost');
     const last = u.pathname.split('/').pop();
     return last || null;
   } catch {
@@ -41,10 +42,20 @@ const ensureUniqueSlug = async (base, excludeId = null) => {
 export const listAllCourses = async (_req, res) => {
   try {
     const items = await Course.find()
-      .populate('category', 'name slug color')
+      .select('-category')
       .sort({ order: 1, createdAt: -1 })
       .lean();
     res.json({ items });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server.' });
+  }
+};
+
+export const getCourseById = async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id).select('-category').lean();
+    if (!course) return res.status(404).json({ error: 'Không tìm thấy.' });
+    res.json({ course });
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });
   }
@@ -56,7 +67,8 @@ export const createCourse = async (req, res) => {
       title,
       description = '',
       thumbnail: thumbnailInput = '',
-      category = null,
+      bannerUrl: bannerInput = '',
+      videoId: videoInput = '',
       rating = 0,
       durationMinutes = 0,
       isPublished = true,
@@ -77,12 +89,14 @@ export const createCourse = async (req, res) => {
     }
 
     const slug = await ensureUniqueSlug(slugify(title));
+    const videoId = extractYoutubeId(videoInput) || '';
     const course = await Course.create({
       title: String(title).slice(0, 200),
       slug,
       description: String(description).slice(0, 2000),
       thumbnail: String(thumbnail).slice(0, 1000),
-      category: category || null,
+      bannerUrl: String(bannerInput || '').trim().slice(0, 1000),
+      videoId,
       rating: Math.max(0, Math.min(5, Number(rating) || 0)),
       durationMinutes: Math.max(0, Number(durationMinutes) || 0),
       isPublished: isPublished === 'false' || isPublished === false ? false : Boolean(isPublished),
@@ -120,9 +134,7 @@ export const createCourse = async (req, res) => {
       }
     }
 
-    const populated = await Course.findById(course._id)
-      .populate('category', 'name slug color')
-      .lean();
+    const populated = await Course.findById(course._id).select('-category').lean();
     res.status(201).json({ course: populated });
   } catch (err) {
     if (req.file) safeUnlink(req.file.path);
@@ -140,7 +152,8 @@ export const updateCourse = async (req, res) => {
       title,
       description,
       thumbnail: thumbnailInput,
-      category,
+      bannerUrl: bannerInput,
+      videoId: videoInput,
       rating,
       durationMinutes,
       isPublished,
@@ -157,7 +170,12 @@ export const updateCourse = async (req, res) => {
       }
     }
     if (typeof description === 'string') course.description = description.slice(0, 2000);
-    if (category !== undefined) course.category = category || null;
+    if (typeof bannerInput === 'string') {
+      course.bannerUrl = bannerInput.trim().slice(0, 1000);
+    }
+    if (videoInput !== undefined && videoInput !== null) {
+      course.videoId = extractYoutubeId(videoInput) || '';
+    }
     if (rating !== undefined && rating !== '') {
       course.rating = Math.max(0, Math.min(5, Number(rating) || 0));
     }
@@ -184,9 +202,7 @@ export const updateCourse = async (req, res) => {
     }
 
     await course.save();
-    const populated = await Course.findById(course._id)
-      .populate('category', 'name slug color')
-      .lean();
+    const populated = await Course.findById(course._id).select('-category').lean();
     res.json({ course: populated });
   } catch (err) {
     if (req.file) safeUnlink(req.file.path);
@@ -232,7 +248,7 @@ export const reorderCourses = async (req, res) => {
       )
     );
     const list = await Course.find()
-      .populate('category', 'name slug color')
+      .select('-category')
       .sort({ order: 1, createdAt: -1 })
       .lean();
     res.json({ items: list });

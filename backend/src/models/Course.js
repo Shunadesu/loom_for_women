@@ -32,11 +32,19 @@ const courseSchema = new mongoose.Schema(
       trim: true,
       maxlength: 1000,
     },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
-      default: null,
-      index: true,
+    // Ảnh nền (banner) hiển thị ở hero trang chi tiết khóa học — URL ngoài.
+    bannerUrl: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 1000,
+    },
+    // YouTube video giới thiệu khóa học — lưu ID 11 ký tự (giống Lesson.youtubeId).
+    videoId: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 20,
     },
     rating: {
       type: Number,
@@ -83,6 +91,5 @@ const courseSchema = new mongoose.Schema(
 );
 
 courseSchema.index({ isActive: 1, isPublished: 1, order: 1, createdAt: -1 });
-courseSchema.index({ category: 1, isActive: 1, isPublished: 1 });
 
 export default mongoose.model('Course', courseSchema);

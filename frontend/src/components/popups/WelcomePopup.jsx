@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useEffect } from 'react';
 import { usePopupStore } from '../../store/popupStore.js';
 import { useConfigStore } from '../../store/configStore.js';
+import BrandLogo from '../layout/BrandLogo.jsx';
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -50,14 +51,13 @@ export default function WelcomePopup() {
 
         {/* Logo header */}
         <div className="relative flex items-center justify-center">
-          <motion.img
-            src="/logo.png"
-            alt="Loom for Women"
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
-            className="h-40 w-40 object-contain"
-          />
+          >
+            <BrandLogo className="h-40 w-40 object-contain" alt="Loom for Women" />
+          </motion.div>
         </div>
 
         {/* Body */}

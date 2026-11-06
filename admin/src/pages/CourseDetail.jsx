@@ -115,9 +115,6 @@ export default function CourseDetail() {
           </div>
           <div className="md:col-span-3 p-5 md:p-6 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="bg-pink-50 text-[#E60067] font-extrabold text-[10px] px-2.5 py-1 rounded-md border border-pink-200 uppercase tracking-wider">
-                {course.category}
-              </span>
               {lesson && typeMeta && (
                 <span
                   className={`font-extrabold text-[10px] px-2.5 py-1 rounded-md border border-current/20 ${typeMeta.color}`}

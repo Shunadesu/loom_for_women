@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { usePopupStore } from '../../store/popupStore.js';
 import { useAuthStore } from '../../store/authStore.js';
 import { useConfigStore } from '../../store/configStore.js';
+import BrandLogo from '../layout/BrandLogo.jsx';
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -144,10 +145,9 @@ export default function RegisterPopup() {
           </button>
 
           <div className="flex items-center gap-3 pl-1">
-            <img
-              src="/logo.png"
-              alt="Loom for Women"
+            <BrandLogo
               className="h-14 w-14 flex-shrink-0 rounded-2xl bg-white p-1.5 object-contain shadow-md"
+              alt="Loom for Women"
             />
             <div className="min-w-0 pr-6">
               <h2 className="text-xl font-extrabold leading-tight text-white">

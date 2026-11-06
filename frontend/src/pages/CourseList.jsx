@@ -11,7 +11,6 @@ import CourseEmptyState from '../components/landing/CourseEmptyState.jsx';
 import StatsHeader from '../components/landing/StatsHeader.jsx';
 import ContinueLearningBanner from '../components/landing/ContinueLearningBanner.jsx';
 import FeaturedCarousel from '../components/landing/FeaturedCarousel.jsx';
-import CategoryFilterChips from '../components/landing/CategoryFilterChips.jsx';
 import CourseSortDropdown from '../components/landing/CourseSortDropdown.jsx';
 import { useCourseStore } from '../store/courseStore.js';
 import { MOCK_COURSES } from '../data/mockCourses.js';
@@ -33,9 +32,6 @@ export default function CourseList() {
 
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'ongoing');
-  const [activeCategory, setActiveCategory] = useState(
-    () => searchParams.get('category') || ''
-  );
   const [sortBy, setSortBy] = useState('newest');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
@@ -51,25 +47,23 @@ export default function CourseList() {
     list({
       status: apiStatus,
       q: debouncedQuery || undefined,
-      category: activeCategory || undefined,
     }).catch(() => {});
-  }, [activeTab, debouncedQuery, activeCategory, list]);
+  }, [activeTab, debouncedQuery, list]);
 
   // Đồng bộ URL params
   useEffect(() => {
     const next = new URLSearchParams();
     if (activeTab !== 'ongoing') next.set('tab', activeTab);
-    if (activeCategory) next.set('category', activeCategory);
     if (query) next.set('q', query);
     setSearchParams(next, { replace: true });
-  }, [activeTab, activeCategory, query, setSearchParams]);
+  }, [activeTab, query, setSearchParams]);
 
   // Sort + fallback mock
   const displayCourses = useMemo(() => {
-    let list2 = error && courses.length === 0 ? filterMock(activeTab, query, activeCategory) : courses;
+    let list2 = error && courses.length === 0 ? filterMock(activeTab, query) : courses;
     list2 = sortCourses(list2, sortBy);
     return list2;
-  }, [courses, error, activeTab, query, activeCategory, sortBy]);
+  }, [courses, error, activeTab, query, sortBy]);
 
   const isLoading = loading && courses.length === 0 && !error;
 
@@ -102,7 +96,6 @@ export default function CourseList() {
           <FeaturedCarousel />
 
           <CourseFilterTabs active={activeTab} onChange={setActiveTab} />
-          <CategoryFilterChips active={activeCategory} onChange={setActiveCategory} />
 
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -131,7 +124,6 @@ export default function CourseList() {
               <CourseEmptyState
                 onReset={() => {
                   setActiveTab('ongoing');
-                  setActiveCategory('');
                   setQuery('');
                 }}
               />
@@ -151,7 +143,7 @@ export default function CourseList() {
   );
 }
 
-function filterMock(tab, query, categoryId) {
+function filterMock(tab, query) {
   let list = [...MOCK_COURSES];
   if (tab === 'unstarted') list = list.filter((c) => (c.progressPct || 0) === 0);
   else if (tab === 'ongoing') {
@@ -163,14 +155,7 @@ function filterMock(tab, query, categoryId) {
 
   const q = query.trim().toLowerCase();
   if (q) {
-    list = list.filter(
-      (c) =>
-        c.title.toLowerCase().includes(q) ||
-        (c.category?.name || '').toLowerCase().includes(q)
-    );
-  }
-  if (categoryId) {
-    list = list.filter((c) => c.category?._id === categoryId);
+    list = list.filter((c) => c.title.toLowerCase().includes(q));
   }
   return list;
 }

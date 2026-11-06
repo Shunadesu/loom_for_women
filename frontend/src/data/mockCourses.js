@@ -9,7 +9,6 @@ export const MOCK_COURSES = [
     description: 'Khóa học móc len cơ bản',
     thumbnail:
       'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&q=80&w=600',
-    category: { name: 'Móc len cơ bản', color: '#E60067' },
     rating: 4.7,
     durationMinutes: 185,
     lessonsCount: 6,
@@ -24,7 +23,6 @@ export const MOCK_COURSES = [
     description: 'Các hình thức lừa đảo phổ biến',
     thumbnail:
       'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=600',
-    category: { name: 'Phòng chống lừa đảo', color: '#0EA5E9' },
     rating: 4.9,
     durationMinutes: 120,
     lessonsCount: 5,
@@ -39,7 +37,6 @@ export const MOCK_COURSES = [
     description: 'Kiến thức cơ bản về sức khỏe sinh sản',
     thumbnail:
       'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=600',
-    category: { name: 'Sức khỏe nữ', color: '#10B981' },
     rating: 4.6,
     durationMinutes: 95,
     lessonsCount: 3,
@@ -54,7 +51,6 @@ export const MOCK_COURSES = [
     description: 'Kỹ năng giao tiếp và đàm phán',
     thumbnail:
       'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=600',
-    category: { name: 'Kỹ năng mềm', color: '#F59E0B' },
     rating: 4.8,
     durationMinutes: 150,
     lessonsCount: 3,
@@ -69,7 +65,6 @@ export const MOCK_COURSES = [
     description: 'Làm thú bông amigurumi',
     thumbnail:
       'https://images.unsplash.com/photo-1605733513597-a8f8341084e6?auto=format&fit=crop&q=80&w=600',
-    category: { name: 'Móc len cơ bản', color: '#E60067' },
     rating: 4.5,
     durationMinutes: 240,
     lessonsCount: 5,
@@ -84,7 +79,6 @@ export const MOCK_COURSES = [
     description: 'Cách lập ngân sách',
     thumbnail:
       'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=600',
-    category: { name: 'Tài chính cá nhân', color: '#8B5CF6' },
     rating: 4.7,
     durationMinutes: 110,
     lessonsCount: 3,

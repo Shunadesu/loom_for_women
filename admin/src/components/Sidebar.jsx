@@ -5,7 +5,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', icon: '📊', end: true },
   { to: '/showcase', label: 'Dashboard Showcase', icon: '🎯' },
   { to: '/heroes', label: 'Hero Banner', icon: '🖼️' },
-  { to: '/categories', label: 'Danh mục KH', icon: '📁' },
+  { to: '/logo', label: 'Logo', icon: '🎨' },
   { to: '/courses', label: 'Khóa học', icon: '📚' },
   { to: '/product-categories', label: 'Danh mục SP', icon: '🛍️' },
   { to: '/products', label: 'Sản phẩm', icon: '📦' },

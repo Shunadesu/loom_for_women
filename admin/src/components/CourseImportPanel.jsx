@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { courseCategories, mockCourses } from '../data/mockDashboardData.js';
+import { mockCourses } from '../data/mockDashboardData.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
 
 const LESSON_TYPES = [
@@ -11,7 +11,6 @@ const LESSON_TYPES = [
 
 const blankForm = {
   title: '',
-  category: courseCategories[0],
   duration: '',
   cover:
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600',
@@ -105,7 +104,6 @@ export default function CourseImportPanel() {
     const newCourse = {
       id: `c${Date.now()}`,
       title: form.title.trim(),
-      category: form.category,
       duration: form.duration.trim(),
       cover: form.cover.trim(),
       description: form.description.trim(),
@@ -185,40 +183,22 @@ export default function CourseImportPanel() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-slate-800 font-bold mb-1 block">
-                  Danh Mục
-                </label>
-                <select
-                  value={form.category}
-                  onChange={(e) => set('category', e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 font-medium outline-none"
-                >
-                  {courseCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-slate-800 font-bold mb-1 block">
-                  Thời Lượng *
-                </label>
-                <input
-                  type="text"
-                  value={form.duration}
-                  onChange={(e) => set('duration', e.target.value)}
-                  placeholder="VD: 45 phút"
-                  className={`w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-slate-900 font-medium outline-none ${
-                    errors.duration ? 'border-rose-300' : 'border-slate-200'
-                  }`}
-                />
-                {errors.duration && (
-                  <p className="mt-1 text-[11px] text-rose-600">{errors.duration}</p>
-                )}
-              </div>
+            <div>
+              <label className="text-slate-800 font-bold mb-1 block">
+                Thời Lượng *
+              </label>
+              <input
+                type="text"
+                value={form.duration}
+                onChange={(e) => set('duration', e.target.value)}
+                placeholder="VD: 45 phút"
+                className={`w-full bg-slate-50 border rounded-xl px-3 py-2.5 text-slate-900 font-medium outline-none ${
+                  errors.duration ? 'border-rose-300' : 'border-slate-200'
+                }`}
+              />
+              {errors.duration && (
+                <p className="mt-1 text-[11px] text-rose-600">{errors.duration}</p>
+              )}
             </div>
 
             <div>
@@ -410,9 +390,6 @@ export default function CourseImportPanel() {
                   />
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="bg-pink-50 text-[#E60067] font-bold text-[10px] px-2 py-0.5 rounded-md">
-                        {course.category}
-                      </span>
                       <button
                         type="button"
                         onClick={(e) => handleDelete(course, e)}

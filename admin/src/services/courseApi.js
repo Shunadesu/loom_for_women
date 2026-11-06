@@ -4,6 +4,9 @@ import api from './api.js';
 export const fetchAllCoursesAdmin = () =>
   api.get('/admin/courses').then((r) => r.data.items || []);
 
+export const fetchCourseAdmin = (id) =>
+  api.get(`/admin/courses/${id}`).then((r) => r.data.course);
+
 export const createCourseAdmin = (formData) =>
   api
     .post('/admin/courses', formData, {

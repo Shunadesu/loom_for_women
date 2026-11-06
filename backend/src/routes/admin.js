@@ -7,7 +7,11 @@ import {
   getStats,
   updateConfig,
 } from '../controllers/adminController.js';
-import { uploadHero } from '../middleware/upload.js';
+import { uploadHero, uploadLogo } from '../middleware/upload.js';
+import {
+  uploadLogo as uploadLogoHandler,
+  deleteLogo as deleteLogoHandler,
+} from '../controllers/brandController.js';
 import {
   listAllHeroes,
   createHero,
@@ -29,6 +33,10 @@ router.delete('/users/:id', deleteUser);
 router.get('/stats', getStats);
 
 router.put('/config', updateConfig);
+
+// Logo thương hiệu — upload / xoá
+router.put('/config/logo', uploadLogo.single('logo'), uploadLogoHandler);
+router.delete('/config/logo', deleteLogoHandler);
 
 // Hero banners — CRUD
 router.get('/heroes', listAllHeroes);

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import { fetchConfig as fetchConfigApi } from '../services/configApi.js';
 
-// Mock config — sẽ thay bằng API thật khi backend ready
+// Giá trị mặc định — dùng làm fallback khi API lỗi hoặc field chưa có trong DB.
 const MOCK_CONFIG = {
   welcomeTitle: 'Đem an toàn và hy vọng',
   welcomeDesc:
@@ -13,21 +14,27 @@ const MOCK_CONFIG = {
   laterBtn: 'Để sau',
   themeColor: '#E60067',
   primaryShade: 600,
+  // Logo thương hiệu — rỗng = dùng /logo.png mặc định
+  logoUrl: '',
+  logoAlt: 'Logo Loom for Women',
 };
 
 export const useConfigStore = create((set) => ({
   config: MOCK_CONFIG,
   loading: false,
+  error: null,
   fetchConfig: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
-      // Khi backend ready sẽ thay bằng:
-      // const { data } = await api.get('/config/popup');
-      // set({ config: data });
-      await new Promise((r) => setTimeout(r, 100));
-      set({ config: MOCK_CONFIG, loading: false });
+      const data = await fetchConfigApi();
+      // Merge để field mới (logoUrl, logoAlt…) có giá trị, field thiếu vẫn dùng default
+      set({ config: { ...MOCK_CONFIG, ...(data || {}) }, loading: false });
     } catch (err) {
-      set({ loading: false });
+      set({
+        config: MOCK_CONFIG,
+        error: err?.response?.data?.error || 'Lỗi tải cấu hình.',
+        loading: false,
+      });
     }
   },
 }));

@@ -31,6 +31,12 @@ if (!fs.existsSync(UPLOAD_DOC_DIR)) {
   fs.mkdirSync(UPLOAD_DOC_DIR, { recursive: true });
 }
 
+// ─── Brand (logo thương hiệu) upload dir ─────────────────────
+const UPLOAD_BRAND_DIR = path.join(__dirname, '../../uploads/brand');
+if (!fs.existsSync(UPLOAD_BRAND_DIR)) {
+  fs.mkdirSync(UPLOAD_BRAND_DIR, { recursive: true });
+}
+
 const imageFileFilter = (_req, file, cb) => {
   const ok = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
     file.mimetype
@@ -118,11 +124,18 @@ export const uploadDocument = multer({
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 
+export const uploadLogo = multer({
+  storage: makeStorage(UPLOAD_BRAND_DIR),
+  fileFilter: imageFileFilter,
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
+});
+
 export {
   UPLOAD_HERO_DIR,
   UPLOAD_COURSE_DIR,
   UPLOAD_PRODUCT_DIR,
   UPLOAD_DOC_DIR,
+  UPLOAD_BRAND_DIR,
 };
 
 /** Xoá file vật lý nếu thuộc thư gốc uploads của mình. */
@@ -134,7 +147,8 @@ export const safeUnlink = (absPath) => {
       (UPLOAD_HERO_DIR && norm.startsWith(UPLOAD_HERO_DIR)) ||
       (UPLOAD_COURSE_DIR && norm.startsWith(UPLOAD_COURSE_DIR)) ||
       (UPLOAD_PRODUCT_DIR && norm.startsWith(UPLOAD_PRODUCT_DIR)) ||
-      (UPLOAD_DOC_DIR && norm.startsWith(UPLOAD_DOC_DIR));
+      (UPLOAD_DOC_DIR && norm.startsWith(UPLOAD_DOC_DIR)) ||
+      (UPLOAD_BRAND_DIR && norm.startsWith(UPLOAD_BRAND_DIR));
     if (isInUploads && fs.existsSync(norm)) {
       fs.unlinkSync(norm);
     }

@@ -29,6 +29,8 @@ import { usePopupStore } from './store/popupStore.js';
 import { useForumStore } from './store/forumStore.js';
 import { useCartStore } from './store/cartStore.js';
 import { useAuthStore } from './store/authStore.js';
+import { useConfigStore } from './store/configStore.js';
+import { resolveImageUrl } from './utils/imageUrl.js';
 
 function ComingSoon({ title }) {
   return (
@@ -113,10 +115,24 @@ export default function App() {
   const closeCart = useCartStore((s) => s.closeCart);
   const initCart = useCartStore((s) => s.init);
   const token = useAuthStore((s) => s.token);
+  const fetchConfig = useConfigStore((s) => s.fetchConfig);
+  const logoUrl = useConfigStore((s) => s.config?.logoUrl);
 
   useEffect(() => {
     init();
   }, [init]);
+
+  // Tải config (logo, text popup) sớm để header/footer có logo ngay
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
+
+  // Cập nhật favicon theo logo đang cấu hình
+  useEffect(() => {
+    const link = document.querySelector('link[rel="icon"]');
+    if (!link) return;
+    link.setAttribute('href', logoUrl ? resolveImageUrl(logoUrl) : '/logo.png');
+  }, [logoUrl]);
 
   // Khi user đăng nhập (token xuất hiện) → tải cart từ server
   useEffect(() => {

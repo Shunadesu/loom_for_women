@@ -16,6 +16,7 @@ import { useAuthStore } from '../../../store/authStore.js';
 import { useCartStore } from '../../../store/cartStore.js';
 import { useLoginDrawerStore } from '../../../store/loginDrawerStore.js';
 import CartDrawer from '../../cart/CartDrawer.jsx';
+import BrandLogo from '../BrandLogo.jsx';
 import QuickSellModal from '../../marketplace/QuickSellModal.jsx';
 
 const BRAND_TITLE = 'HỘ CHIẾU AN TOÀN';
@@ -81,10 +82,9 @@ export default function BrandBar() {
       {/* Trái: logo + brand */}
       <Link to="/" className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#E60067] p-1.5 shadow-xs sm:h-12 sm:w-auto sm:px-2.5 sm:py-1">
-          <img
-            src="/logo.png"
-            alt="Logo Loom for Women"
+          <BrandLogo
             className="h-full w-full object-contain"
+            alt="Logo Loom for Women"
           />
         </div>
         <div className="min-w-0 flex-1 leading-tight">

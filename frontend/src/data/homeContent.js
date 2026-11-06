@@ -1,15 +1,12 @@
 import {
   GraduationCapIcon,
-  ShopIcon,
-  HeartIcon,
   QuestionMarkIcon,
-  ShieldCheckIcon,
   FileTextIcon,
   ShareIcon,
-  ListIcon,
-  ShoppingBagIcon,
-  BookmarkIcon,
-  PercentIcon,
+  CalendarIcon,
+  PhoneCallIcon,
+  ShieldCheckIcon,
+  BookOpenIcon,
 } from '../components/icons/index.jsx';
 
 // ───────────────────────────────────────────────────────────────
@@ -21,7 +18,10 @@ export const HERO_IMAGE_ALT =
   'Recap workshop - Nhận diện & phòng chống lừa đảo trực tuyến';
 
 // ───────────────────────────────────────────────────────────────
-// Quick actions (E-learning, Cửa hàng, Workshop, Hỗ trợ, Tất cả)
+// Quick actions (E-learning, Workshop, Hỏi đáp, Diễn đàn, Hỗ trợ)
+// - `to`   : điều hướng tới route
+// - `action`: mở modal tương ứng ('expertQA' | 'forum' | 'support')
+// - `tone` : màu nhấn của ô icon, mặc định hồng thương hiệu
 // ───────────────────────────────────────────────────────────────
 export const QUICK_ACTIONS = [
   {
@@ -31,35 +31,29 @@ export const QUICK_ACTIONS = [
     to: '/khoa-hoc',
   },
   {
-    id: 'cua-hang',
-    label: 'Cửa hàng',
-    Icon: ShopIcon,
-    to: '/cua-hang',
-  },
-  {
-    id: 'thu-vien',
-    label: 'Thư viện',
-    Icon: FileTextIcon,
-    to: '/thu-vien',
-  },
-  {
     id: 'workshop',
     label: 'Workshop',
-    Icon: HeartIcon,
+    Icon: CalendarIcon,
     to: '/workshop',
-    cursor: true,
+  },
+  {
+    id: 'hoi-dap',
+    label: 'Hỏi đáp',
+    Icon: QuestionMarkIcon,
+    action: 'expertQA',
+  },
+  {
+    id: 'dien-dan',
+    label: 'Diễn đàn',
+    Icon: ShareIcon,
+    action: 'forum',
   },
   {
     id: 'ho-tro',
-    label: 'Hỗ trợ',
-    Icon: QuestionMarkIcon,
-    to: '/ho-tro',
-  },
-  {
-    id: 'ho-chieu',
-    label: 'Hộ Chiếu',
-    Icon: ShieldCheckIcon,
-    to: '/he-chieu',
+    label: 'Hỗ trợ 24/7',
+    Icon: PhoneCallIcon,
+    action: 'support',
+    tone: 'emerald',
   },
 ];
 
@@ -75,40 +69,42 @@ export const OA_LOGO_URL =
 // ───────────────────────────────────────────────────────────────
 // CategoryNav — "Học tập cùng Loom"
 // ───────────────────────────────────────────────────────────────
-export const CATEGORY_HOC_TAP = [
-  { id: 'tai-lieu', label: 'Tài liệu', Icon: FileTextIcon, to: '/thu-vien' },
-  { id: 'bai-hoc', label: 'Bài học', Icon: GraduationCapIcon, to: '/khoa-hoc' },
-  {
-    id: 'hoi-dap',
-    label: 'Hỏi đáp',
-    Icon: QuestionMarkIcon,
-    to: '/hoi-chuyen-gia',
-    ping: true,
-  },
-  { id: 'dien-dan', label: 'Diễn đàn', Icon: ShareIcon, to: '/dien-dan', action: 'forum' },
-];
+export const CATEGORY_HOC_TAP = {
+  title: 'Học tập cùng Loom',
+  icon: GraduationCapIcon,
+  items: [
+    { id: 'tai-lieu', label: 'Tài liệu', Icon: FileTextIcon, to: '/thu-vien' },
+    { id: 'bai-hoc', label: 'Bài học', Icon: GraduationCapIcon, to: '/khoa-hoc' },
+    {
+      id: 'hoi-dap',
+      label: 'Hỏi đáp',
+      Icon: QuestionMarkIcon,
+      action: 'expertQA',
+      ping: true,
+    },
+    { id: 'dien-dan', label: 'Diễn đàn', Icon: ShareIcon, action: 'forum' },
+  ],
+};
 
 // ───────────────────────────────────────────────────────────────
-// CategoryNav — "Mua sắm cùng Loom"
+// CategoryNav — "An toàn & Hỗ trợ Nữ Công Nhân"
 // ───────────────────────────────────────────────────────────────
-export const CATEGORY_MUA_SAM = [
-  { id: 'danh-muc', label: 'Danh mục', Icon: ListIcon, to: '/cua-hang' },
-  {
-    id: 'gio-hang',
-    label: 'Giỏ hàng',
-    Icon: ShoppingBagIcon,
-    to: '/gio-hang',
-    badge: 1,
-    action: 'cart',
-  },
-  { id: 'ky-gui', label: 'Ký gửi', Icon: BookmarkIcon, to: '/ky-gui' },
-  {
-    id: 'khuyen-mai',
-    label: 'Khuyến mãi',
-    Icon: PercentIcon,
-    to: '/khuyen-mai',
-  },
-];
+export const CATEGORY_AN_TOAN = {
+  title: 'An toàn & Hỗ trợ Nữ Công Nhân',
+  icon: ShieldCheckIcon,
+  items: [
+    { id: 'workshop', label: 'Workshop', Icon: CalendarIcon, to: '/workshop' },
+    { id: 'he-chieu', label: 'Hộ chiếu', Icon: ShieldCheckIcon, to: '/he-chieu' },
+    {
+      id: 'sos',
+      label: 'SOS 24/7',
+      Icon: PhoneCallIcon,
+      action: 'support',
+      tone: 'emerald',
+    },
+    { id: 'cam-nang', label: 'Cẩm nang', Icon: BookOpenIcon, action: 'guide' },
+  ],
+};
 
 // ───────────────────────────────────────────────────────────────
 // Tin tức (news list)

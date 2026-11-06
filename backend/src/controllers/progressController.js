@@ -125,7 +125,7 @@ export const myProgress = async (req, res) => {
       return res.status(401).json({ error: 'Vui lòng đăng nhập.' });
     }
     const progresses = await UserProgress.find({ userId: req.user._id })
-      .populate('courseId', 'title slug thumbnail category')
+      .populate('courseId', 'title slug thumbnail')
       .sort({ updatedAt: -1 })
       .lean();
     const favorites = await Favorite.find({ userId: req.user._id }).lean();
@@ -205,8 +205,7 @@ export const getContinueLearning = async (req, res) => {
       .sort({ lastWatchedAt: -1, updatedAt: -1 })
       .populate({
         path: 'courseId',
-        select: 'title slug thumbnail category durationMinutes lessonsCount',
-        populate: { path: 'category', select: 'name color' },
+        select: 'title slug thumbnail durationMinutes lessonsCount',
       })
       .populate('lastLessonId', 'title order')
       .lean();
@@ -221,7 +220,6 @@ export const getContinueLearning = async (req, res) => {
         slug: progress.courseId.slug,
         title: progress.courseId.title,
         thumbnail: progress.courseId.thumbnail,
-        category: progress.courseId.category || null,
         durationMinutes: progress.courseId.durationMinutes || 0,
         lessonsCount: progress.courseId.lessonsCount || 0,
         progressPct: progress.progressPct || 0,

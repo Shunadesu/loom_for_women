@@ -8,7 +8,8 @@ import { safeUnlink, UPLOAD_COURSE_DIR } from '../middleware/upload.js';
 const filenameFromUrl = (url) => {
   if (!url) return null;
   try {
-    const u = new URL(url);
+    // base cần thiết vì url có thể là relative path (/uploads/courses/x.png)
+    const u = new URL(url, 'http://localhost');
     const last = u.pathname.split('/').pop();
     return last || null;
   } catch {
@@ -44,16 +45,14 @@ async function buildProgressMap(userId) {
  * GET /api/courses
  * Query:
  *   - status: 'all' | 'unstarted' | 'ongoing' | 'completed' | 'featured'
- *   - category: categoryId
  *   - q: search string (title + description)
  *   - limit, skip
  */
 export const listCourses = async (req, res) => {
   try {
-    const { status = 'all', category, q, featured, limit = 50, skip = 0 } = req.query;
+    const { status = 'all', q, featured, limit = 50, skip = 0 } = req.query;
     const filter = { isActive: true, isPublished: true };
 
-    if (category) filter.category = category;
     if (q) {
       const safe = String(q).slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
@@ -64,7 +63,7 @@ export const listCourses = async (req, res) => {
     if (featured === 'true') filter.isFeatured = true;
 
     let courses = await Course.find(filter)
-      .populate('category', 'name slug color')
+      .select('-category')
       .sort({ order: 1, createdAt: -1 })
       .skip(Number(skip) || 0)
       .limit(Math.min(Number(limit) || 50, 100))
@@ -122,7 +121,7 @@ export const getCourseBySlug = async (req, res) => {
       isActive: true,
       isPublished: true,
     })
-      .populate('category', 'name slug color')
+      .select('-category')
       .lean();
 
     if (!course) {

@@ -20,6 +20,7 @@ import { useAuthStore } from '../store/authStore.js';
 import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
 import { useNotification } from '../store/notificationStore.js';
 import { addFavorite, removeFavorite } from '../services/favoriteApi.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 
 export default function CourseDetail() {
   const { slug } = useParams();
@@ -175,10 +176,14 @@ export default function CourseDetail() {
     );
   }
 
-  const categoryName = course.category?.name || 'Khác';
-  const categoryColor = course.category?.color || '#E60067';
   const progressPct = myProgress?.progressPct || 0;
   const courseComments = comments[course._id] || [];
+  const heroImage = course.bannerUrl
+    ? resolveImageUrl(course.bannerUrl)
+    : course.thumbnail
+      ? resolveImageUrl(course.thumbnail)
+      : '';
+  const hasHeroImage = Boolean(heroImage);
 
   return (
     <motion.div
@@ -199,99 +204,189 @@ export default function CourseDetail() {
         </button>
 
         <div className="space-y-4">
-          {/* Header */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="mb-2 flex items-center gap-2">
-                  <span
-                    className="inline-block rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white"
-                    style={{ backgroundColor: categoryColor }}
-                  >
-                    {categoryName}
-                  </span>
-                  {course.isFeatured && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                      NỔI BẬT
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
-                  {course.title}
-                </h1>
-                <p className="mt-2 text-xs text-slate-600 sm:text-sm">
-                  {course.description}
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] font-medium text-slate-500">
-                  {course.rating > 0 && (
-                    <div className="flex items-center gap-1 font-bold text-amber-500">
-                      <StarIcon
-                        aria-hidden="true"
-                        className="h-3 w-3 fill-amber-400 stroke-amber-400"
-                      />
-                      <span>{Number(course.rating).toFixed(1)}</span>
-                    </div>
-                  )}
-                  {course.durationMinutes > 0 && (
-                    <>
-                      <span className="text-slate-300">|</span>
-                      <div className="flex items-center gap-1">
-                        <ClockIcon
-                          aria-hidden="true"
-                          className="h-3 w-3 text-slate-400"
-                        />
-                        <span>{formatDuration(course.durationMinutes)}</span>
-                      </div>
-                    </>
-                  )}
-                  {lessons.length > 0 && (
-                    <>
-                      <span className="text-slate-300">|</span>
-                      <span>{lessons.length} bài học</span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleToggleFavorite}
-                className="shrink-0 rounded-full p-2 transition-colors hover:bg-pink-50"
-              >
-                {isFavorite(course._id) ? (
-                  <HeartFillIcon
-                    aria-hidden="true"
-                    className="h-6 w-6 text-[#E60067]"
-                  />
-                ) : (
-                  <HeartIcon
-                    aria-hidden="true"
-                    className="h-6 w-6 text-slate-400"
-                  />
-                )}
-              </button>
-            </div>
-
-            {progressPct > 0 && (
-              <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                <div className="mb-1 flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-700">Tiến độ của bạn</span>
-                  <span className="font-extrabold text-teal-600">
-                    {progressPct}%
-                  </span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full rounded-full bg-teal-500 transition-all duration-500"
-                    style={{ width: `${progressPct}%` }}
-                  />
-                </div>
-              </div>
+          {/* Hero */}
+          <div
+            className={[
+              'relative overflow-hidden rounded-2xl border border-slate-200/80 shadow-sm',
+              hasHeroImage
+                ? 'bg-slate-900'
+                : 'bg-white p-4 sm:p-6',
+            ].join(' ')}
+          >
+            {hasHeroImage && (
+              <>
+                <img
+                  src={heroImage}
+                  alt={course.title}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/25" />
+              </>
             )}
+            <div className={hasHeroImage ? 'relative p-4 sm:p-6' : ''}>
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="mb-2 flex items-center gap-2">
+                    {course.isFeatured && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                        NỔI BẬT
+                      </span>
+                    )}
+                    {course.videoId && (
+                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
+                        CÓ VIDEO
+                      </span>
+                    )}
+                  </div>
+                  <h1
+                    className={[
+                      'text-xl font-extrabold sm:text-2xl',
+                      hasHeroImage ? 'text-white' : 'text-slate-900',
+                    ].join(' ')}
+                  >
+                    {course.title}
+                  </h1>
+                  {course.description && (
+                    <p
+                      className={[
+                        'mt-2 text-xs sm:text-sm',
+                        hasHeroImage ? 'text-white/85' : 'text-slate-600',
+                      ].join(' ')}
+                    >
+                      {course.description}
+                    </p>
+                  )}
+                  <div
+                    className={[
+                      'mt-3 flex flex-wrap items-center gap-3 text-[11px] font-medium',
+                      hasHeroImage ? 'text-white/75' : 'text-slate-500',
+                    ].join(' ')}
+                  >
+                    {course.rating > 0 && (
+                      <div className="flex items-center gap-1 font-bold text-amber-500">
+                        <StarIcon
+                          aria-hidden="true"
+                          className="h-3 w-3 fill-amber-400 stroke-amber-400"
+                        />
+                        <span>{Number(course.rating).toFixed(1)}</span>
+                      </div>
+                    )}
+                    {course.durationMinutes > 0 && (
+                      <>
+                        <span
+                          className={hasHeroImage ? 'text-white/40' : 'text-slate-300'}
+                        >
+                          |
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <ClockIcon
+                            aria-hidden="true"
+                            className={
+                              hasHeroImage
+                                ? 'h-3 w-3 text-white/60'
+                                : 'h-3 w-3 text-slate-400'
+                            }
+                          />
+                          <span>{formatDuration(course.durationMinutes)}</span>
+                        </div>
+                      </>
+                    )}
+                    {lessons.length > 0 && (
+                      <>
+                        <span
+                          className={hasHeroImage ? 'text-white/40' : 'text-slate-300'}
+                        >
+                          |
+                        </span>
+                        <span>{lessons.length} bài học</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  className={[
+                    'shrink-0 rounded-full p-2 transition-colors',
+                    hasHeroImage
+                      ? 'bg-black/30 text-white hover:bg-black/50'
+                      : 'hover:bg-pink-50',
+                  ].join(' ')}
+                >
+                  {isFavorite(course._id) ? (
+                    <HeartFillIcon
+                      aria-hidden="true"
+                      className="h-6 w-6 text-[#E60067]"
+                    />
+                  ) : (
+                    <HeartIcon
+                      aria-hidden="true"
+                      className={[
+                        'h-6 w-6',
+                        hasHeroImage ? 'text-white' : 'text-slate-400',
+                      ].join(' ')}
+                    />
+                  )}
+                </button>
+              </div>
+
+              {progressPct > 0 && (
+                <div
+                  className={[
+                    'mt-4 rounded-xl p-3',
+                    hasHeroImage ? 'bg-black/35' : 'bg-slate-50',
+                  ].join(' ')}
+                >
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span
+                      className={[
+                        'font-bold',
+                        hasHeroImage ? 'text-white' : 'text-slate-700',
+                      ].join(' ')}
+                    >
+                      Tiến độ của bạn
+                    </span>
+                    <span className="font-extrabold text-teal-600">
+                      {progressPct}%
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-teal-500 transition-all duration-500"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Player + Lessons */}
           <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
+              {/* Video giới thiệu khóa học */}
+              {course.videoId && (
+                <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                  <div className="aspect-video w-full bg-black">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${course.videoId}?rel=0`}
+                      title={`Video giới thiệu ${course.title}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-full w-full"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h2 className="text-base font-bold text-slate-900">
+                      Video giới thiệu khóa học
+                    </h2>
+                  </div>
+                </div>
+              )}
+
               {/* YouTube Player */}
               {currentLesson && (
                 <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">

@@ -4,7 +4,6 @@ import { useLoginDrawerStore } from '../../store/loginDrawerStore.js';
 import {
   HomeIcon,
   GraduationCapIcon,
-  ShopIcon,
   UserIcon,
 } from '../icons/index.jsx';
 
@@ -24,13 +23,6 @@ export default function BottomNav() {
       to: '/khoa-hoc',
       label: 'Khóa học',
       icon: GraduationCapIcon,
-      end: false,
-      requireAuth: false,
-    },
-    {
-      to: '/cua-hang',
-      label: 'Cửa hàng',
-      icon: ShopIcon,
       end: false,
       requireAuth: false,
     },

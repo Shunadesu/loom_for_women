@@ -11,9 +11,6 @@ import { resolveImageUrl } from '../../utils/imageUrl.js';
  *   - onImageClick: click vào vùng thumbnail
  */
 export default function CourseCard({ course, onProgressClick, onImageClick }) {
-  const categoryName = course.category?.name || 'Khác';
-  const categoryColor = course.category?.color || '#E60067';
-
   // Nếu user đang học dở → deep-link tới đúng bài đó
   const detailHref = course.lastLessonId
     ? `/khoa-hoc/${course.slug}?lesson=${course.lastLessonId}`
@@ -26,11 +23,11 @@ export default function CourseCard({ course, onProgressClick, onImageClick }) {
         <Link to={detailHref} className="block h-full w-full">
           <img
             alt={course.title}
-            src={resolveImageUrl(course.thumbnail)}
+            src={resolveImageUrl(course.bannerUrl || course.thumbnail)}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
-              e.currentTarget.src =
+              e.currentTarget.src = resolveImageUrl(course.thumbnail) ||
                 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600';
             }}
           />
@@ -55,12 +52,6 @@ export default function CourseCard({ course, onProgressClick, onImageClick }) {
       <div className="flex flex-1 flex-col justify-between p-3">
         <div>
           <div className="mb-1 flex items-center justify-between gap-1">
-            <span
-              className="rounded-full px-1.5 py-0.5 text-[9px] font-extrabold tracking-wide text-white"
-              style={{ backgroundColor: categoryColor }}
-            >
-              {categoryName}
-            </span>
             {course.isFeatured && (
               <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
                 NỔI BẬT

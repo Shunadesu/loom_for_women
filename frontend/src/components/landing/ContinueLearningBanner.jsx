@@ -25,11 +25,9 @@ export default function ContinueLearningBanner() {
 
   if (!isAuthenticated || !continueItem) return null;
 
-  const { slug, title, thumbnail, category, progressPct, lessonsCount, durationMinutes } =
+  const { slug, title, thumbnail, progressPct, lessonsCount, durationMinutes } =
     continueItem;
   const detailLink = `/khoa-hoc/${slug}`;
-  const categoryColor = category?.color || '#E60067';
-  const categoryName = category?.name || '';
 
   return (
     <div className="overflow-hidden rounded-2xl border border-pink-100 bg-gradient-to-r from-pink-50 via-white to-pink-50 p-3 shadow-xs">
@@ -38,14 +36,6 @@ export default function ContinueLearningBanner() {
           <span className="inline-block rounded-full bg-[#E60067] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-white shadow-xs">
             Tiếp tục học
           </span>
-          {categoryName && (
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-              style={{ backgroundColor: categoryColor }}
-            >
-              {categoryName}
-            </span>
-          )}
         </div>
         <Link
           to="/khoa-hoc?tab=ongoing"

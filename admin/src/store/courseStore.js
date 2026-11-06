@@ -4,10 +4,6 @@ import {
   createCourseAdmin,
   updateCourseAdmin,
   deleteCourseAdmin,
-  fetchAllCategoriesAdmin,
-  createCategoryAdmin,
-  updateCategoryAdmin,
-  deleteCategoryAdmin,
   fetchLessonsAdmin,
   createLessonAdmin,
   updateLessonAdmin,
@@ -16,7 +12,6 @@ import {
 
 export const useCourseStore = create((set, get) => ({
   courses: [],
-  categories: [],
   loading: false,
   error: null,
 
@@ -31,15 +26,6 @@ export const useCourseStore = create((set, get) => ({
       set({ courses: items, loading: false });
     } catch (err) {
       set({ error: err?.response?.data?.error || 'Lỗi tải khóa học.', loading: false });
-    }
-  },
-
-  fetchCategories: async () => {
-    try {
-      const cats = await fetchAllCategoriesAdmin();
-      set({ categories: cats });
-    } catch (err) {
-      set({ error: err?.response?.data?.error || 'Lỗi tải danh mục khóa học.' });
     }
   },
 
@@ -60,25 +46,6 @@ export const useCourseStore = create((set, get) => ({
   remove: async (id) => {
     await deleteCourseAdmin(id);
     set({ courses: get().courses.filter((c) => c._id !== id) });
-  },
-
-  createCategory: async (payload) => {
-    const cat = await createCategoryAdmin(payload);
-    set({ categories: [...get().categories, cat] });
-    return cat;
-  },
-
-  updateCategory: async (id, payload) => {
-    const cat = await updateCategoryAdmin(id, payload);
-    set({
-      categories: get().categories.map((c) => (c._id === id ? cat : c)),
-    });
-    return cat;
-  },
-
-  removeCategory: async (id) => {
-    await deleteCategoryAdmin(id);
-    set({ categories: get().categories.filter((c) => c._id !== id) });
   },
 
   // Lessons

@@ -30,22 +30,6 @@ export default function Dashboard() {
         </a>
 
         <a
-          href="/categories"
-          className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-xs transition-all hover:border-pink-200 hover:shadow-sm"
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-50 text-base text-[#E60067]">
-            📁
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-slate-900">Danh mục KH</h3>
-            <p className="text-[11px] text-slate-500">Quản lý danh mục khóa học</p>
-          </div>
-          <span className="ml-auto text-slate-300 transition-colors group-hover:text-[#E60067]">
-            ›
-          </span>
-        </a>
-
-        <a
           href="/courses"
           className="group flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-xs transition-all hover:border-pink-200 hover:shadow-sm"
         >

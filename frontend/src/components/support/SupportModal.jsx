@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon, ShieldCheckIcon, PhoneCallIcon, SendIcon } from '../icons/index.jsx';
 import { useSupportStore } from '../../store/supportStore.js';
+import BrandLogo from '../layout/BrandLogo.jsx';
 
 export default function SupportModal() {
   const { isOpen, messages, closeModal, addMessage } = useSupportStore();
@@ -76,10 +77,9 @@ export default function SupportModal() {
               <div className="bg-gradient-to-r from-[#E60067] to-rose-600 text-white p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-10 h-10 rounded-xl bg-[#E60067] p-1 flex items-center justify-center overflow-hidden shrink-0 border border-white/20">
-                    <img
-                      src="https://drive.google.com/thumbnail?id=1asdIo2tmk_ouFc-psQb51vzMoAFOPNXP&sz=w1000"
-                      alt="Loom Logo"
+                    <BrandLogo
                       className="w-full h-full object-contain"
+                      alt="Loom Logo"
                       style={{ filter: 'brightness(0) invert(1)' }}
                     />
                   </div>

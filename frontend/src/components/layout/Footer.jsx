@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { SmartphoneIcon } from '../icons/index.jsx';
+import BrandLogo from './BrandLogo.jsx';
 
 // Cột 2: các link khám phá — map 1-1 với PRIMARY trong NavBar
 const EXPLORE_LINKS = [
@@ -53,10 +54,9 @@ export default function Footer() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#E60067] shadow-xs">
-                <img
-                  src="/logo.png"
-                  alt="Logo Loom for Women"
+                <BrandLogo
                   className="h-full w-auto max-w-full object-contain"
+                  alt="Logo Loom for Women"
                 />
               </div>
               <span className="text-sm font-extrabold text-slate-900">

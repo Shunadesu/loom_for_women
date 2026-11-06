@@ -80,22 +80,10 @@ export const lessonDistributionData = [
   { name: 'Thủ công & Móc len', value: 25, color: '#3B82F6' },
 ];
 
-export const courseCategories = [
-  'Phòng chống lừa đảo',
-  'Quản lý tài chính',
-  'Kỹ năng thủ công',
-  'Quyền lợi lao động',
-  'Móc len & Handmade',
-  'Kỹ năng phát triển bản thân',
-  'Móc len cơ bản',
-  'Quyền lợi Lao động',
-];
-
 export const mockCourses = [
   {
     id: 'c1',
     title: 'Nhận diện và phòng chống lừa đảo trực tuyến',
-    category: 'Phòng chống lừa đảo',
     duration: '3 Tiếng 5 Phút',
     cover:
       'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=600',
@@ -124,7 +112,6 @@ export const mockCourses = [
   {
     id: 'c2',
     title: 'Quản lý tài chính',
-    category: 'Kỹ năng phát triển bản thân',
     duration: '2 Tiếng 5 Phút',
     cover:
       'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=600',
@@ -153,7 +140,6 @@ export const mockCourses = [
   {
     id: 'c3',
     title: 'Học cách móc len tại nhà',
-    category: 'Móc len cơ bản',
     duration: '3 Tiếng 5 Phút',
     cover:
       'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&q=80&w=600',
@@ -182,7 +168,6 @@ export const mockCourses = [
   {
     id: 'c4',
     title: 'Kế hoạch An sinh & Bảo hiểm Xã hội một lần',
-    category: 'Quyền lợi Lao động',
     duration: '1 Tiếng 45 Phút',
     cover:
       'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&q=80&w=600',
@@ -211,7 +196,6 @@ export const mockCourses = [
   {
     id: 'c5',
     title: 'Tự tay làm trang sức hạt gốm & đá may mắn',
-    category: 'Móc len & Handmade',
     duration: '2 Tiếng 15 Phút',
     cover:
       'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=600',
