@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CirclePlusIcon,
-  ShoppingBagIcon,
   UserIcon,
   ChevronDownIcon,
   LogOutIcon,
@@ -15,7 +14,6 @@ import {
 import { useAuthStore } from '../../../store/authStore.js';
 import { useCartStore } from '../../../store/cartStore.js';
 import { useLoginDrawerStore } from '../../../store/loginDrawerStore.js';
-import CartDrawer from '../../cart/CartDrawer.jsx';
 import BrandLogo from '../BrandLogo.jsx';
 import QuickSellModal from '../../marketplace/QuickSellModal.jsx';
 
@@ -31,7 +29,6 @@ function getInitial(name) {
 
 export default function BrandBar() {
   const navigate = useNavigate();
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isQuickSellOpen, setIsQuickSellOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -41,7 +38,6 @@ export default function BrandBar() {
   const points = useAuthStore((s) => s.points);
   const level = useAuthStore((s) => s.level);
   const logout = useAuthStore((s) => s.logout);
-  const count = useCartStore((s) => s.count);
   const clearCart = useCartStore((s) => s.clear);
   const openLoginDrawer = useLoginDrawerStore((s) => s.openLoginDrawer);
 
@@ -113,20 +109,6 @@ export default function BrandBar() {
         >
           <CirclePlusIcon className="h-4 w-4" />
           <span>Đăng bán sản phẩm</span>
-        </button>
-
-        <button
-          type="button"
-          title="Giỏ hàng của bạn"
-          onClick={() => setIsCartOpen(true)}
-          className="relative cursor-pointer rounded-xl border border-slate-200 p-2 text-slate-700 transition-all hover:border-pink-300 hover:bg-pink-50 hover:text-[#E60067]"
-        >
-          <ShoppingBagIcon className="h-5 w-5" />
-          {count > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white bg-[#E60067] text-[10px] font-black text-white shadow-xs">
-              {count}
-            </span>
-          )}
         </button>
 
         {/* Auth Section */}
@@ -259,9 +241,6 @@ export default function BrandBar() {
           </div>
         )}
       </div>
-
-      {/* Cart Drawer */}
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
       {/* Quick Sell Modal (Đăng bán sản phẩm 1-Click) */}
       <QuickSellModal

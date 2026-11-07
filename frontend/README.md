@@ -18,20 +18,18 @@ npm run dev
 Mở trình duyệt: http://localhost:3012
 
 ## Luồng khi vào trang
-1. Check `sessionStorage.popup_completed`.
-2. Chưa có → hiện **Welcome popup** → click "Bắt Đầu" → hiện **Register popup**.
-3. Đóng Register (Để sau / Đăng ký thành công) → set sessionStorage → vào Landing.
+1. Vào thẳng Landing — không còn popup chào mừng / popup đăng ký tài khoản.
+2. Đăng nhập / đăng ký thực hiện qua **LoginDrawer** (mở từ header, icon tài khoản).
 
 ## Cấu trúc
 ```
 src/
 ├── components/
-│   ├── popups/          # WelcomePopup, RegisterPopup, PopupContainer
 │   ├── layout/          # Header, Footer
 │   ├── landing/         # Hero, AboutSection, CTABanner
 │   └── ui/              # (reserved)
 ├── pages/Home.jsx
-├── store/               # popupStore, authStore, configStore
+├── store/               # authStore, configStore
 ├── services/api.js      # axios → http://localhost:3010/api
 └── App.jsx
 ```

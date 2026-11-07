@@ -23,7 +23,7 @@ export default function NewsDetail() {
 
   if (!item) {
     return (
-      <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
         <Link
           to="/"
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-xs transition-colors hover:border-pink-300 hover:text-[#E60067]"
@@ -65,7 +65,7 @@ export default function NewsDetail() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
+    <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
       {/* Top bar: back + share */}
       <div className="mb-4 flex items-center justify-between">
         <button

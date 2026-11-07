@@ -51,7 +51,7 @@ export default function TermsOfUse() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
+    <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
       {/* Top bar */}
       <div className="mb-4 flex items-center justify-between">
         <button

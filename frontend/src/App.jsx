@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import PopupContainer from './components/popups/PopupContainer.jsx';
 import LoginDrawer from './components/auth/LoginDrawer.jsx';
 import CartDrawer from './components/cart/CartDrawer.jsx';
 import ExpertQAModal from './components/expert/ExpertQAModal.jsx';
@@ -26,7 +25,6 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import TermsOfUse from './pages/TermsOfUse.jsx';
 import EsgCommitment from './pages/EsgCommitment.jsx';
 import UserProtectedRoute from './components/auth/UserProtectedRoute.jsx';
-import { usePopupStore } from './store/popupStore.js';
 import { useForumStore } from './store/forumStore.js';
 import { useCartStore } from './store/cartStore.js';
 import { useAuthStore } from './store/authStore.js';
@@ -109,7 +107,6 @@ function AppRoutes() {
 }
 
 export default function App() {
-  const init = usePopupStore((s) => s.init);
   const isForumOpen = useForumStore((s) => s.isOpen);
   const closeForum = useForumStore((s) => s.closeForum);
   const isCartOpen = useCartStore((s) => s.isOpen);
@@ -118,10 +115,6 @@ export default function App() {
   const token = useAuthStore((s) => s.token);
   const fetchConfig = useConfigStore((s) => s.fetchConfig);
   const logoUrl = useConfigStore((s) => s.config?.logoUrl);
-
-  useEffect(() => {
-    init();
-  }, [init]);
 
   // Tải config (logo, text popup) sớm để header/footer có logo ngay
   useEffect(() => {
@@ -153,7 +146,6 @@ export default function App() {
         <ExpertQAModal />
         <SupportModal />
         <ForumModal isOpen={isForumOpen} onClose={closeForum} />
-        <PopupContainer />
         <NotificationContainer />
         <BottomNav />
         <Footer />
