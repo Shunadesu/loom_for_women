@@ -21,6 +21,7 @@ import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
 import { useNotification } from '../store/notificationStore.js';
 import { addFavorite, removeFavorite } from '../services/favoriteApi.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
+import { buildVideoEmbedUrl } from '../utils/videoSource.js';
 
 export default function CourseDetail() {
   const { slug } = useParams();
@@ -387,18 +388,68 @@ export default function CourseDetail() {
                 </div>
               )}
 
-              {/* YouTube Player */}
+              {/* Nội dung bài học — render theo contentType */}
               {currentLesson && (
                 <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-                  <div className="aspect-video w-full bg-black">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${currentLesson.youtubeId}?rel=0`}
-                      title={currentLesson.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="h-full w-full"
-                    />
-                  </div>
+                  {currentLesson.contentType === 'image_pdf' ? (
+                    <div className="space-y-3 bg-slate-50 p-3">
+                      {currentLesson.imageUrl ? (
+                        <img
+                          src={currentLesson.imageUrl}
+                          alt={currentLesson.title}
+                          className="mx-auto max-h-[70vh] w-auto rounded-lg object-contain"
+                        />
+                      ) : (
+                        <p className="py-6 text-center text-xs text-slate-400">
+                          Bài học chưa có ảnh.
+                        </p>
+                      )}
+                      {currentLesson.pdfUrl && (
+                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                          <iframe
+                            src={resolveImageUrl(currentLesson.pdfUrl)}
+                            title={`Tài liệu ${currentLesson.title}`}
+                            className="h-[70vh] w-full"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : currentLesson.contentType === 'video_pdf' ? (
+                    <div>
+                      <div className="aspect-video w-full bg-black">
+                        <iframe
+                          src={buildVideoEmbedUrl(currentLesson)}
+                          title={currentLesson.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="h-full w-full"
+                        />
+                      </div>
+                      {currentLesson.pdfUrl && (
+                        <div className="border-t border-slate-100 p-3">
+                          <a
+                            href={resolveImageUrl(currentLesson.pdfUrl)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[#E60067] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                          >
+                            <BookIcon aria-hidden="true" className="h-3.5 w-3.5" />
+                            Tải tài liệu PDF
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="aspect-video w-full bg-black">
+                      <iframe
+                        src={buildVideoEmbedUrl(currentLesson)}
+                        title={currentLesson.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="h-full w-full"
+                      />
+                    </div>
+                  )}
                   <div className="p-4">
                     <h2 className="text-base font-bold text-slate-900">
                       {currentLesson.title}
@@ -563,11 +614,21 @@ export default function CourseDetail() {
                         >
                           {l.title}
                         </p>
-                        {l.durationSeconds > 0 && (
-                          <span className="mt-0.5 block text-[10px] text-slate-400">
-                            {Math.floor(l.durationSeconds / 60)} phút
+                        <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-400">
+                          <span
+                            className={[
+                              'inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold',
+                              lessonTypeBadge(l.contentType).className,
+                            ].join(' ')}
+                          >
+                            {lessonTypeBadge(l.contentType).label}
                           </span>
-                        )}
+                          {l.durationSeconds > 0 && (
+                            <span>
+                              {Math.floor(l.durationSeconds / 60)} phút
+                            </span>
+                          )}
+                        </span>
                       </div>
                       {isActive && (
                         <PlayIcon
@@ -585,6 +646,17 @@ export default function CourseDetail() {
       </main>
     </motion.div>
   );
+}
+
+/** Nhãn + màu badge của loại nội dung bài học. */
+function lessonTypeBadge(contentType) {
+  if (contentType === 'video_pdf') {
+    return { label: 'PDF + Video', className: 'bg-violet-100 text-violet-700' };
+  }
+  if (contentType === 'image_pdf') {
+    return { label: 'Ảnh + PDF', className: 'bg-amber-100 text-amber-700' };
+  }
+  return { label: 'Chỉ Video', className: 'bg-sky-100 text-sky-700' };
 }
 
 function formatDuration(min) {

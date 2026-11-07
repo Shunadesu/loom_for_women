@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { uploadCourse } from '../middleware/upload.js';
+import { uploadCourse, uploadLessonPdf } from '../middleware/upload.js';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import {
   listAllCourses,
   getCourseById,
@@ -17,11 +18,14 @@ import {
 
 const router = Router();
 
+// Toàn bộ endpoint quản trị khóa học yêu cầu JWT + role=admin
+router.use(requireAuth, requireAdmin);
+
 router.get('/', listAllCourses);
 
 // Lesson routes (nested under course) — đặt trước route /:id để tránh xung đột
 router.get('/:courseId/lessons', listLessonsByCourse);
-router.post('/:courseId/lessons', createLesson);
+router.post('/:courseId/lessons', uploadLessonPdf.single('pdf'), createLesson);
 router.post('/:courseId/lessons/reorder', reorderLessons);
 
 // Chi tiết 1 khóa học (dùng cho trang Sửa khóa học)

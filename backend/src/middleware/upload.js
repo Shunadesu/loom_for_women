@@ -37,6 +37,12 @@ if (!fs.existsSync(UPLOAD_BRAND_DIR)) {
   fs.mkdirSync(UPLOAD_BRAND_DIR, { recursive: true });
 }
 
+// ─── Lesson PDF upload dir ───────────────────────────────────
+const UPLOAD_LESSON_DIR = path.join(__dirname, '../../uploads/lessons');
+if (!fs.existsSync(UPLOAD_LESSON_DIR)) {
+  fs.mkdirSync(UPLOAD_LESSON_DIR, { recursive: true });
+}
+
 const imageFileFilter = (_req, file, cb) => {
   const ok = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
     file.mimetype
@@ -59,6 +65,14 @@ const documentFileFilter = (_req, file, cb) => {
       new Error('Chỉ chấp nhận file PDF, Excel (xls/xlsx) hoặc ảnh (jpg, png, webp).')
     );
   }
+  cb(null, true);
+};
+
+const lessonPdfFileFilter = (_req, file, cb) => {
+  const ok =
+    file.mimetype === 'application/pdf' ||
+    (file.originalname || '').toLowerCase().endsWith('.pdf');
+  if (!ok) return cb(new Error('Chỉ chấp nhận file PDF cho bài học.'));
   cb(null, true);
 };
 
@@ -130,12 +144,19 @@ export const uploadLogo = multer({
   limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
 });
 
+export const uploadLessonPdf = multer({
+  storage: makeDocumentStorage(UPLOAD_LESSON_DIR),
+  fileFilter: lessonPdfFileFilter,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+});
+
 export {
   UPLOAD_HERO_DIR,
   UPLOAD_COURSE_DIR,
   UPLOAD_PRODUCT_DIR,
   UPLOAD_DOC_DIR,
   UPLOAD_BRAND_DIR,
+  UPLOAD_LESSON_DIR,
 };
 
 /** Xoá file vật lý nếu thuộc thư gốc uploads của mình. */
@@ -148,7 +169,8 @@ export const safeUnlink = (absPath) => {
       (UPLOAD_COURSE_DIR && norm.startsWith(UPLOAD_COURSE_DIR)) ||
       (UPLOAD_PRODUCT_DIR && norm.startsWith(UPLOAD_PRODUCT_DIR)) ||
       (UPLOAD_DOC_DIR && norm.startsWith(UPLOAD_DOC_DIR)) ||
-      (UPLOAD_BRAND_DIR && norm.startsWith(UPLOAD_BRAND_DIR));
+      (UPLOAD_BRAND_DIR && norm.startsWith(UPLOAD_BRAND_DIR)) ||
+      (UPLOAD_LESSON_DIR && norm.startsWith(UPLOAD_LESSON_DIR));
     if (isInUploads && fs.existsSync(norm)) {
       fs.unlinkSync(norm);
     }

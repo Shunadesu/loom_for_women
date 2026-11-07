@@ -8,7 +8,8 @@ import {
   deleteLessonAdmin,
   reorderLessonsAdmin,
 } from '../services/lessonApi.js';
-import { extractYoutubeId } from '../utils/youtube.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
+import { buildVideoEmbedUrl } from '../utils/videoSource.js';
 import {
   PlusIcon,
   EditIcon,
@@ -21,6 +22,12 @@ import {
   XIcon,
   FileTextIcon,
 } from '../components/icons.jsx';
+import LessonContentForm, {
+  createEmptyLessonDraft,
+  lessonToDraft,
+  draftToFormData,
+  describeContentType,
+} from '../components/LessonContentForm.jsx';
 import DocumentManagerModal from '../components/DocumentManagerModal.jsx';
 import { useNotification } from '../store/notificationStore.js';
 
@@ -89,13 +96,14 @@ export default function LessonManager() {
     }
   }
 
-  async function handleSave(form) {
+  async function handleSave(draft) {
     try {
+      const payload = draftToFormData(draft);
       if (editingItem) {
-        const updated = await updateLessonAdmin(editingItem._id, form);
+        const updated = await updateLessonAdmin(editingItem._id, payload);
         setItems(items.map((l) => (l._id === updated._id ? updated : l)));
       } else {
-        const created = await createLessonAdmin(courseId, form);
+        const created = await createLessonAdmin(courseId, payload);
         setItems([...items, created]);
       }
       setModalOpen(false);
@@ -214,7 +222,13 @@ export default function LessonManager() {
                   Tiêu đề
                 </th>
                 <th className="px-2 py-2 text-left text-[11px] font-bold uppercase text-slate-700">
-                  YouTube ID
+                  Nội dung
+                </th>
+                <th className="px-2 py-2 text-left text-[11px] font-bold uppercase text-slate-700">
+                  Video
+                </th>
+                <th className="px-2 py-2 text-left text-[11px] font-bold uppercase text-slate-700">
+                  PDF
                 </th>
                 <th className="px-2 py-2 text-center text-[11px] font-bold uppercase text-slate-700">
                   Thời lượng
@@ -236,8 +250,38 @@ export default function LessonManager() {
                   <td className="px-2 py-2">
                     <p className="text-xs font-bold text-slate-900">{item.title}</p>
                   </td>
+                  <td className="px-2 py-2">
+                    <span
+                      className={[
+                        'inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+                        describeContentType(item).className,
+                      ].join(' ')}
+                    >
+                      {describeContentType(item).label}
+                    </span>
+                  </td>
                   <td className="px-2 py-2 font-mono text-[10px] text-slate-600">
-                    {item.youtubeId}
+                    {item.videoProvider === 'drive'
+                      ? `Drive: ${item.driveFileId}`
+                      : item.youtubeId
+                        ? item.youtubeId
+                        : '—'}
+                  </td>
+                  <td className="px-2 py-2">
+                    {item.pdfUrl ? (
+                      <a
+                        href={resolveImageUrl(item.pdfUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={item.pdfName || 'Mở PDF'}
+                        className="inline-flex items-center gap-1 rounded-full border border-pink-200 bg-pink-50 px-2 py-0.5 text-[10px] font-bold text-[#E60067] hover:bg-pink-100"
+                      >
+                        <FileTextIcon aria-hidden="true" className="h-3 w-3" />
+                        {item.pdfName || 'PDF'}
+                      </a>
+                    ) : (
+                      <span className="text-[10px] text-slate-300">—</span>
+                    )}
                   </td>
                   <td className="px-2 py-2 text-center text-[11px] text-slate-600">
                     {formatDuration(item.durationSeconds)}
@@ -329,31 +373,31 @@ export default function LessonManager() {
 }
 
 function LessonFormModal({ item, onClose, onSave }) {
-  const [title, setTitle] = useState(item?.title || '');
-  const [youtubeUrl, setYoutubeUrl] = useState(item?.youtubeId ? `https://youtu.be/${item.youtubeId}` : '');
-  const [durationSeconds, setDurationSeconds] = useState(item?.durationSeconds || 0);
+  const [draft, setDraft] = useState(() =>
+    item ? lessonToDraft(item) : createEmptyLessonDraft()
+  );
   const [saving, setSaving] = useState(false);
   const { notify } = useNotification();
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!title.trim()) {
+    if (!draft.title.trim()) {
       notify({ type: 'warning', title: 'Thiếu thông tin', message: 'Tiêu đề không được trống.' });
       return;
     }
-    const ytId = extractYoutubeId(youtubeUrl);
-    if (!ytId) {
-      notify({ type: 'warning', title: 'Link không hợp lệ', message: 'YouTube URL/ID không hợp lệ.' });
+    const needsPdf = draft.contentType === 'video_pdf' || draft.contentType === 'image_pdf';
+    if (needsPdf && !draft.pdfFile && !draft.pdfUrl) {
+      notify({ type: 'warning', title: 'Thiếu file PDF', message: 'Vui lòng chọn file PDF.' });
+      return;
+    }
+    if (draft.contentType === 'image_pdf' && !draft.imageUrl.trim()) {
+      notify({ type: 'warning', title: 'Thiếu ảnh', message: 'Vui lòng nhập URL ảnh.' });
       return;
     }
 
     setSaving(true);
     try {
-      await onSave({
-        title: title.trim(),
-        youtubeId: ytId,
-        durationSeconds: Number(durationSeconds) || 0,
-      });
+      await onSave(draft);
     } finally {
       setSaving(false);
     }
@@ -361,50 +405,12 @@ function LessonFormModal({ item, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-8 w-full max-w-lg rounded-lg bg-white p-4 shadow-xl">
+      <div className="my-8 w-full max-w-2xl rounded-lg bg-white p-4 shadow-xl">
         <h2 className="mb-3 text-sm font-extrabold text-slate-900">
           {item ? 'Sửa bài học' : 'Thêm bài học'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="mb-1 block text-[11px] font-bold text-slate-700">
-              Tiêu đề *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
-              placeholder="VD: Giới thiệu kim móc & len sợi"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-bold text-slate-700">
-              YouTube URL / ID *
-            </label>
-            <input
-              type="text"
-              value={youtubeUrl}
-              onChange={(e) => setYoutubeUrl(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
-              placeholder="https://www.youtube.com/watch?v=... hoặc 11 ký tự ID"
-            />
-            <p className="mt-0.5 text-[10px] text-slate-400">
-              Hỗ trợ: link youtube.com, youtu.be, hoặc ID trực tiếp.
-            </p>
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-bold text-slate-700">
-              Thời lượng (giây)
-            </label>
-            <input
-              type="number"
-              value={durationSeconds}
-              onChange={(e) => setDurationSeconds(+e.target.value || 0)}
-              className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
-              min="0"
-            />
-          </div>
+          <LessonContentForm value={draft} onChange={setDraft} />
           <div className="flex gap-2">
             <button
               type="button"
@@ -428,6 +434,10 @@ function LessonFormModal({ item, onClose, onSave }) {
 }
 
 function PreviewModal({ item, onClose }) {
+  const type = item.contentType || 'video';
+  const embedUrl = buildVideoEmbedUrl(item);
+  const pdfUrl = item.pdfUrl ? resolveImageUrl(item.pdfUrl) : '';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-2xl">
@@ -441,17 +451,67 @@ function PreviewModal({ item, onClose }) {
             <XIcon aria-hidden="true" className="h-4 w-4 text-slate-600" />
           </button>
         </div>
-        <div className="aspect-video w-full bg-black">
-          <iframe
-            src={`https://www.youtube.com/embed/${item.youtubeId}?rel=0`}
-            title={item.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="h-full w-full"
-          />
-        </div>
+
+        {type === 'image_pdf' ? (
+          <div className="space-y-2 bg-slate-50 p-3">
+            {item.imageUrl && (
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                className="max-h-[45vh] w-full rounded object-contain"
+              />
+            )}
+            {pdfUrl && (
+              <iframe
+                src={pdfUrl}
+                title="Xem trước PDF"
+                className="h-[45vh] w-full rounded border border-slate-200 bg-white"
+              />
+            )}
+          </div>
+        ) : (
+          <div className="aspect-video w-full bg-black">
+            {embedUrl ? (
+              <iframe
+                src={embedUrl}
+                title={item.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="h-full w-full"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                Không có video để xem trước.
+              </div>
+            )}
+          </div>
+        )}
+
+        {type !== 'image_pdf' && pdfUrl && (
+          <div className="border-t border-slate-200 px-3 py-2">
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#E60067] hover:underline"
+            >
+              <FileTextIcon aria-hidden="true" className="h-3.5 w-3.5" />
+              Mở tài liệu PDF ({item.pdfName || 'PDF'})
+            </a>
+          </div>
+        )}
+
         <div className="bg-slate-50 px-3 py-1.5 text-[10px] text-slate-500">
-          YouTube ID: <span className="font-mono">{item.youtubeId}</span>
+          Loại: <span className="font-bold text-slate-700">{describeContentType(item).label}</span>
+          {item.videoProvider === 'drive' ? (
+            <span className="ml-3">
+              · Drive ID: <span className="font-mono">{item.driveFileId}</span>
+            </span>
+          ) : item.youtubeId ? (
+            <span className="ml-3">
+              · YouTube ID: <span className="font-mono">{item.youtubeId}</span>
+            </span>
+          ) : null}
           {item.durationSeconds > 0 && (
             <span className="ml-3">
               · {Math.floor(item.durationSeconds / 60)} phút{' '}

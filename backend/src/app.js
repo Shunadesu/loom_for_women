@@ -13,6 +13,7 @@ import eventRoutes from './routes/events.js';
 import adminRoutes from './routes/admin.js';
 import heroRoutes from './routes/heroes.js';
 import courseRoutes from './routes/courses.js';
+import visitRoutes from './routes/visits.js';
 import progressRoutes from './routes/progress.js';
 import favoriteRoutes from './routes/favorites.js';
 import commentRoutes from './routes/comments.js';
@@ -82,6 +83,11 @@ const limiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Bạn gửi quá nhiều request, vui lòng thử lại sau ít phút.' },
 });
+
+// Tracking lượt truy cập — đặt TRƯỚC rate limit chung để không bị chặn
+// (fire-and-forget, không nên ảnh hưởng trải nghiệm người dùng).
+app.use('/api/visits', visitRoutes);
+
 app.use('/api', limiter);
 
 // Health

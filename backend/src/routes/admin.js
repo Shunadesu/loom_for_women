@@ -20,6 +20,10 @@ import {
   reorderHeroes,
 } from '../controllers/heroController.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import {
+  getVisitStats,
+  listRecentVisits,
+} from '../controllers/adminVisitController.js';
 
 const router = Router();
 
@@ -31,6 +35,10 @@ router.get('/users/:id', getUser);
 router.delete('/users/:id', deleteUser);
 
 router.get('/stats', getStats);
+
+// Thống kê lượt truy cập
+router.get('/visits/stats', getVisitStats);
+router.get('/visits/recent', listRecentVisits);
 
 router.put('/config', updateConfig);
 

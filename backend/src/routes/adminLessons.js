@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { uploadLessonPdf } from '../middleware/upload.js';
 import {
   updateLesson,
   deleteLesson,
@@ -6,7 +7,7 @@ import {
 
 const router = Router();
 
-router.put('/:id', updateLesson);
+router.put('/:id', uploadLessonPdf.single('pdf'), updateLesson);
 router.delete('/:id', deleteLesson);
 
 export default router;

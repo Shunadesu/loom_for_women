@@ -9,6 +9,7 @@ import ForumModal from './components/forum/ForumModal.jsx';
 import Footer from './components/layout/Footer.jsx';
 import BottomNav from './components/layout/BottomNav.jsx';
 import ScrollToTop from './components/layout/ScrollToTop.jsx';
+import VisitTracker from './components/analytics/VisitTracker.jsx';
 import PageTransition from './components/layout/PageTransition.jsx';
 import NotificationContainer from './components/notification/NotificationContainer.jsx';
 import Home from './pages/Home.jsx';
@@ -144,6 +145,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <VisitTracker />
       <div className="flex min-h-screen flex-col bg-primary-50">
         <AppRoutes />
         <LoginDrawer />

@@ -4,6 +4,7 @@ import Login from './pages/Login.jsx';
 import Layout from './pages/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import DashboardShowcase from './pages/DashboardShowcase.jsx';
+import Analytics from './pages/Analytics.jsx';
 import HeroManager from './pages/HeroManager.jsx';
 import LogoManager from './pages/LogoManager.jsx';
 import CourseManager from './pages/CourseManager.jsx';
@@ -32,6 +33,7 @@ export default function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="showcase" element={<DashboardShowcase />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="heroes" element={<HeroManager />} />
           <Route path="logo" element={<LogoManager />} />
           <Route path="courses" element={<CourseManager />} />

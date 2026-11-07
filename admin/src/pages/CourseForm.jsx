@@ -5,9 +5,20 @@ import {
   createCourseAdmin,
   updateCourseAdmin,
 } from '../services/courseApi.js';
+import {
+  fetchLessonsByCourseAdmin,
+  createLessonAdmin,
+  updateLessonAdmin,
+  deleteLessonAdmin,
+} from '../services/lessonApi.js';
+import LessonContentForm, {
+  createEmptyLessonDraft,
+  lessonToDraft,
+  draftToFormData,
+} from '../components/LessonContentForm.jsx';
 import { resolveImageUrl } from '../utils/imageUrl.js';
 import { extractYoutubeId } from '../utils/youtube.js';
-import { ArrowLeftIcon, ImageIcon } from '../components/icons.jsx';
+import { ArrowLeftIcon, ImageIcon, PlusIcon } from '../components/icons.jsx';
 import { useNotification } from '../store/notificationStore.js';
 
 /**
@@ -37,6 +48,10 @@ export default function CourseForm() {
   const [bannerUrl, setBannerUrl] = useState('');
   const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState('');
 
+  // Danh sách bài học nháp (dùng chung cho cả chế độ Thêm và Sửa)
+  const [lessons, setLessons] = useState([]);
+  const [removedLessonIds, setRemovedLessonIds] = useState([]);
+
   const videoId = extractYoutubeId(videoUrl);
   const videoInvalid = videoUrl.trim().length > 0 && !videoId;
 
@@ -61,6 +76,15 @@ export default function CourseForm() {
         setVideoUrl(data.videoId ? `https://youtu.be/${data.videoId}` : '');
         setBannerUrl(data.bannerUrl || '');
         setCurrentThumbnailUrl(data.thumbnail || '');
+        // Nạp bài học hiện có vào danh sách nháp
+        try {
+          const existing = await fetchLessonsByCourseAdmin(courseId);
+          if (cancelled) return;
+          setLessons(existing.map(lessonToDraft));
+        } catch {
+          if (cancelled) return;
+          setLessons([]);
+        }
       } catch (err) {
         if (cancelled) return;
         notify({
@@ -96,6 +120,36 @@ export default function CourseForm() {
     ? resolveImageUrl(bannerUrl.trim())
     : currentThumbnail;
 
+  function handleAddLesson() {
+    setLessons((prev) => [...prev, createEmptyLessonDraft()]);
+  }
+
+  function handleLessonChange(index, nextDraft) {
+    setLessons((prev) =>
+      prev.map((item, i) => (i === index ? nextDraft : item))
+    );
+  }
+
+  function handleRemoveLesson(index) {
+    setLessons((prev) => {
+      const target = prev[index];
+      if (target?.id) {
+        setRemovedLessonIds((ids) => [...ids, target.id]);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
+  function handleMoveLesson(index, direction) {
+    setLessons((prev) => {
+      const next = [...prev];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim()) {
@@ -123,6 +177,36 @@ export default function CourseForm() {
       return;
     }
 
+    // Kiểm tra nhanh các bài học nháp trước khi gửi
+    for (let i = 0; i < lessons.length; i += 1) {
+      const l = lessons[i];
+      if (!l.title.trim()) {
+        notify({
+          type: 'warning',
+          title: 'Thiếu tiêu đề',
+          message: `Bài học #${i + 1} chưa có tiêu đề.`,
+        });
+        return;
+      }
+      const needsPdf = l.contentType === 'video_pdf' || l.contentType === 'image_pdf';
+      if (needsPdf && !l.pdfFile && !l.pdfUrl) {
+        notify({
+          type: 'warning',
+          title: 'Thiếu file PDF',
+          message: `Bài học #${i + 1} cần file PDF.`,
+        });
+        return;
+      }
+      if (l.contentType === 'image_pdf' && !l.imageUrl.trim()) {
+        notify({
+          type: 'warning',
+          title: 'Thiếu ảnh',
+          message: `Bài học #${i + 1} cần URL ảnh.`,
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const formData = new FormData();
@@ -137,19 +221,59 @@ export default function CourseForm() {
       formData.append('bannerUrl', bannerUrl.trim());
       if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
 
+      let savedCourse;
       if (isEdit) {
-        await updateCourseAdmin(courseId, formData);
+        savedCourse = await updateCourseAdmin(courseId, formData);
+      } else {
+        savedCourse = await createCourseAdmin(formData);
+      }
+
+      const courseId2 = savedCourse?._id || courseId;
+
+      // Xoá các bài học đã bị gỡ khỏi danh sách
+      for (const id of removedLessonIds) {
+        try {
+          await deleteLessonAdmin(id);
+        } catch {
+          // bỏ qua lỗi xoá — không chặn luồng chính
+        }
+      }
+
+      // Tạo / cập nhật bài học theo thứ tự hiển thị
+      const failed = [];
+      for (let i = 0; i < lessons.length; i += 1) {
+        const draft = lessons[i];
+        const payload = draftToFormData(draft, i);
+        try {
+          if (draft.id) {
+            await updateLessonAdmin(draft.id, payload);
+          } else {
+            await createLessonAdmin(courseId2, payload);
+          }
+        } catch (err) {
+          failed.push({
+            index: i + 1,
+            title: draft.title || `Bài ${i + 1}`,
+            error: err?.response?.data?.error || 'Lưu bài học thất bại.',
+          });
+        }
+      }
+
+      if (failed.length > 0) {
+        notify({
+          type: 'warning',
+          title: 'Đã lưu khóa học, nhưng có bài học lỗi',
+          message: failed
+            .map((f) => `Bài ${f.index} (${f.title}): ${f.error}`)
+            .join(' | '),
+        });
+      } else {
         toast({
           type: 'success',
           title: 'Cập nhật thành công',
-          message: 'Khóa học đã được cập nhật.',
-        });
-      } else {
-        await createCourseAdmin(formData);
-        toast({
-          type: 'success',
-          title: 'Tạo thành công',
-          message: 'Khóa học đã được thêm.',
+          message: isEdit
+            ? 'Khóa học và bài học đã được cập nhật.'
+            : 'Khóa học đã được thêm.',
         });
       }
       navigate('/courses');
@@ -344,6 +468,49 @@ export default function CourseForm() {
               >
                 Xoá ảnh nền
               </button>
+            </div>
+          )}
+        </div>
+        <div className="rounded-md border border-slate-200 bg-white p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                Nội dung bài học
+              </p>
+              <p className="mt-0.5 text-[10px] text-slate-400">
+                Chọn 1 trong 3 loại cho mỗi bài. Dùng nút Lên / Xuống để đặt thứ tự
+                video xuất hiện.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddLesson}
+              className="flex shrink-0 items-center gap-1 rounded-md bg-primary-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-primary-700"
+            >
+              <PlusIcon aria-hidden="true" className="h-3.5 w-3.5" />
+              Thêm bài học
+            </button>
+          </div>
+
+          {lessons.length === 0 ? (
+            <p className="rounded-md border border-dashed border-slate-200 px-3 py-4 text-center text-[11px] text-slate-400">
+              Chưa có bài học nào. Bấm "Thêm bài học" để bắt đầu.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {lessons.map((draft, i) => (
+                <LessonContentForm
+                  key={draft.key}
+                  value={draft}
+                  onChange={(next) => handleLessonChange(i, next)}
+                  onRemove={() => handleRemoveLesson(i)}
+                  onMoveUp={() => handleMoveLesson(i, -1)}
+                  onMoveDown={() => handleMoveLesson(i, 1)}
+                  disableUp={i === 0}
+                  disableDown={i === lessons.length - 1}
+                  compact
+                />
+              ))}
             </div>
           )}
         </div>

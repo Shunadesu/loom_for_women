@@ -1,6 +1,31 @@
+import path from 'path';
 import Lesson from '../models/Lesson.js';
 import Course from '../models/Course.js';
-import { extractYoutubeId } from '../utils/youtube.js';
+import { resolveVideoSource } from '../utils/videoSource.js';
+import { safeUnlink, UPLOAD_LESSON_DIR } from '../middleware/upload.js';
+
+const VALID_CONTENT_TYPES = ['video', 'video_pdf', 'image_pdf'];
+
+const publicUrlFor = (filename) => `/uploads/lessons/${filename}`;
+
+const filenameFromUrl = (url) => {
+  if (!url) return null;
+  try {
+    const u = new URL(url, 'http://localhost');
+    return u.pathname.split('/').pop() || null;
+  } catch {
+    return null;
+  }
+};
+
+const absFromFilename = (filename) =>
+  filename ? path.join(UPLOAD_LESSON_DIR, filename) : null;
+
+/** Xoá file PDF vật lý theo url đã lưu (nếu thuộc thư mục uploads/lessons). */
+const removePdfFile = (pdfUrl) => {
+  const name = filenameFromUrl(pdfUrl);
+  if (name) safeUnlink(absFromFilename(name));
+};
 
 const recomputeCourseMeta = async (courseId) => {
   const count = await Lesson.countDocuments({ courseId });
@@ -13,6 +38,95 @@ const recomputeCourseMeta = async (courseId) => {
     lessonsCount: count,
     durationMinutes: Math.round(totalSeconds / 60),
   });
+};
+
+/**
+ * Validate + chuẩn hoá dữ liệu bài học theo contentType.
+ * @param {object} body - req.body
+ * @param {object|null} file - req.file (PDF)
+ * @param {object|null} current - bài học hiện tại (dùng cho update)
+ * @returns {{ok: true, data: object} | {ok: false, error: string}}
+ */
+const buildLessonPayload = (body, file, current = null) => {
+  const contentType = String(body.contentType || current?.contentType || 'video');
+  if (!VALID_CONTENT_TYPES.includes(contentType)) {
+    return { ok: false, error: 'Loại nội dung bài học không hợp lệ.' };
+  }
+
+  const title = body.title !== undefined
+    ? String(body.title).trim()
+    : (current?.title || '');
+  if (!title) return { ok: false, error: 'Thiếu tiêu đề bài học.' };
+
+  const durationSeconds = Math.max(
+    0,
+    Number(body.durationSeconds !== undefined ? body.durationSeconds : current?.durationSeconds) || 0
+  );
+
+  const data = { contentType, title: title.slice(0, 200), durationSeconds };
+
+  // ─── Video (dùng chung cho 'video' và 'video_pdf') ───
+  const videoInput =
+    body.videoUrl !== undefined
+      ? body.videoUrl
+      : body.youtubeUrl !== undefined
+        ? body.youtubeUrl
+        : body.youtubeId !== undefined
+          ? body.youtubeId
+          : current?.driveFileId
+            ? current.driveFileId
+            : current?.youtubeId || '';
+
+  const source = resolveVideoSource(videoInput);
+
+  if (contentType === 'video' || contentType === 'video_pdf') {
+    if (!source.provider) {
+      return {
+        ok: false,
+        error: 'Link video không hợp lệ. Hỗ trợ YouTube hoặc Google Drive.',
+      };
+    }
+    data.videoProvider = source.provider;
+    data.youtubeId = source.youtubeId;
+    data.driveFileId = source.driveFileId;
+  } else {
+    // image_pdf — không có video
+    data.videoProvider = '';
+    data.youtubeId = '';
+    data.driveFileId = '';
+  }
+
+  // ─── Ảnh URL (chỉ dùng cho 'image_pdf') ───
+  if (contentType === 'image_pdf') {
+    const imageUrl = body.imageUrl !== undefined
+      ? String(body.imageUrl).trim()
+      : (current?.imageUrl || '');
+    if (!imageUrl) {
+      return { ok: false, error: 'Thiếu URL ảnh cho bài học dạng Ảnh URL + PDF.' };
+    }
+    data.imageUrl = imageUrl.slice(0, 1000);
+  } else {
+    data.imageUrl = '';
+  }
+
+  // ─── File PDF ───
+  if (file) {
+    data.pdfUrl = publicUrlFor(file.filename);
+    data.pdfName = String(file.originalname || file.filename).slice(0, 300);
+  } else if (contentType === 'video_pdf' || contentType === 'image_pdf') {
+    // Bắt buộc có PDF (giữ file cũ nếu đang sửa)
+    const existing = current?.pdfUrl || '';
+    if (!existing) {
+      return { ok: false, error: 'Thiếu file PDF cho bài học.' };
+    }
+    data.pdfUrl = existing;
+    data.pdfName = current?.pdfName || '';
+  } else {
+    data.pdfUrl = current?.pdfUrl || '';
+    data.pdfName = current?.pdfName || '';
+  }
+
+  return { ok: true, data };
 };
 
 export const listLessonsByCourse = async (req, res) => {
@@ -30,25 +144,32 @@ export const listLessonsByCourse = async (req, res) => {
 export const createLesson = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const { title, youtubeUrl, youtubeId, order = 0, durationSeconds = 0 } = req.body;
-    if (!title) return res.status(400).json({ error: 'Thiếu tiêu đề.' });
-    const ytId = extractYoutubeId(youtubeUrl || youtubeId);
-    if (!ytId) {
-      return res.status(400).json({ error: 'YouTube URL/ID không hợp lệ.' });
-    }
     const course = await Course.findById(courseId);
-    if (!course) return res.status(404).json({ error: 'Khóa học không tồn tại.' });
+    if (!course) {
+      if (req.file) safeUnlink(req.file.path);
+      return res.status(404).json({ error: 'Khóa học không tồn tại.' });
+    }
+
+    const built = buildLessonPayload(req.body, req.file, null);
+    if (!built.ok) {
+      if (req.file) safeUnlink(req.file.path);
+      return res.status(400).json({ error: built.error });
+    }
+
     const count = await Lesson.countDocuments({ courseId });
+    const order = Number.isFinite(+req.body.order) ? +req.body.order : count;
+
     const lesson = await Lesson.create({
       courseId,
-      title: String(title).slice(0, 200),
-      youtubeId: ytId,
-      order: Number.isFinite(+order) ? +order : count,
-      durationSeconds: Math.max(0, Number(durationSeconds) || 0),
+      ...built.data,
+      order,
     });
+
     await recomputeCourseMeta(courseId);
     res.status(201).json({ lesson });
   } catch (err) {
+    if (req.file) safeUnlink(req.file.path);
+    console.error('createLesson error', err);
     res.status(500).json({ error: 'Tạo bài học thất bại.' });
   }
 };
@@ -56,22 +177,36 @@ export const createLesson = async (req, res) => {
 export const updateLesson = async (req, res) => {
   try {
     const lesson = await Lesson.findById(req.params.id);
-    if (!lesson) return res.status(404).json({ error: 'Không tìm thấy.' });
-    const { title, youtubeUrl, youtubeId, order, durationSeconds } = req.body;
-    if (typeof title === 'string' && title.trim()) lesson.title = title.slice(0, 200);
-    if (youtubeUrl !== undefined || youtubeId !== undefined) {
-      const ytId = extractYoutubeId(youtubeUrl || youtubeId);
-      if (!ytId) return res.status(400).json({ error: 'YouTube URL/ID không hợp lệ.' });
-      lesson.youtubeId = ytId;
+    if (!lesson) {
+      if (req.file) safeUnlink(req.file.path);
+      return res.status(404).json({ error: 'Không tìm thấy.' });
     }
-    if (order !== undefined && Number.isFinite(+order)) lesson.order = +order;
-    if (durationSeconds !== undefined && durationSeconds !== '') {
-      lesson.durationSeconds = Math.max(0, Number(durationSeconds) || 0);
+
+    const built = buildLessonPayload(req.body, req.file, lesson);
+    if (!built.ok) {
+      if (req.file) safeUnlink(req.file.path);
+      return res.status(400).json({ error: built.error });
     }
+
+    const oldPdfUrl = lesson.pdfUrl;
+    Object.assign(lesson, built.data);
+
+    if (req.body.order !== undefined && Number.isFinite(+req.body.order)) {
+      lesson.order = +req.body.order;
+    }
+
     await lesson.save();
+
+    // File PDF cũ bị thay thế → xoá file vật lý
+    if (req.file && oldPdfUrl && oldPdfUrl !== lesson.pdfUrl) {
+      removePdfFile(oldPdfUrl);
+    }
+
     await recomputeCourseMeta(lesson.courseId);
     res.json({ lesson });
   } catch (err) {
+    if (req.file) safeUnlink(req.file.path);
+    console.error('updateLesson error', err);
     res.status(500).json({ error: 'Cập nhật thất bại.' });
   }
 };
@@ -81,6 +216,7 @@ export const deleteLesson = async (req, res) => {
     const lesson = await Lesson.findById(req.params.id);
     if (!lesson) return res.status(404).json({ error: 'Không tìm thấy.' });
     const courseId = lesson.courseId;
+    removePdfFile(lesson.pdfUrl);
     await lesson.deleteOne();
     await recomputeCourseMeta(courseId);
     res.json({ ok: true });

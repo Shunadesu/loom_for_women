@@ -5,11 +5,17 @@ export const fetchLessonsByCourseAdmin = (courseId) =>
 
 export const createLessonAdmin = (courseId, payload) =>
   api
-    .post(`/admin/courses/${courseId}/lessons`, payload)
+    .post(`/admin/courses/${courseId}/lessons`, payload, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
     .then((r) => r.data.lesson);
 
 export const updateLessonAdmin = (id, payload) =>
-  api.put(`/admin/lessons/${id}`, payload).then((r) => r.data.lesson);
+  api
+    .put(`/admin/lessons/${id}`, payload, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then((r) => r.data.lesson);
 
 export const deleteLessonAdmin = (id) =>
   api.delete(`/admin/lessons/${id}`).then((r) => r.data);

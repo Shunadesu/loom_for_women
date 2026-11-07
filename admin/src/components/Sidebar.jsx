@@ -3,6 +3,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from './icons.jsx';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '📊', end: true },
+  { to: '/analytics', label: 'Thống kê', icon: '📈' },
   { to: '/showcase', label: 'Dashboard Showcase', icon: '🎯' },
   { to: '/heroes', label: 'Hero Banner', icon: '🖼️' },
   { to: '/logo', label: 'Logo', icon: '🎨' },
