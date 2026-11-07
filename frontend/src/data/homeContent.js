@@ -62,7 +62,7 @@ export const QUICK_ACTIONS = [
 // ───────────────────────────────────────────────────────────────
 export const OA_NAME = 'Loom for Women';
 export const OA_DESCRIPTION =
-  'Quan tâm OA để theo dõi các hoạt động sắp diễn ra và các khóa học hấp dẫn';
+  'Quan tâm OA để theo dõi các hoạt động sắp diễn ra và các khóa học kỹ năng mới nhất';
 export const OA_LOGO_URL =
   'https://drive.google.com/thumbnail?id=1asdIo2tmk_ouFc-psQb51vzMoAFOPNXP&sz=w1000';
 
