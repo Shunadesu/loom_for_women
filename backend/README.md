@@ -1,15 +1,15 @@
 # Loom for Women — Backend
 
-API server cho frontend (port 3012) và admin (port 3011).
-Chạy ở port **3010**.
+API server cho frontend (dev port 3012) và admin (dev port 3013).
+Backend chạy ở port **3010**.
 
 ## Stack
 
-- Node.js (>= 18) + Express
-- MongoDB + Mongoose
+- Node.js (>= 18) + Express 4
+- MongoDB + Mongoose 8
 - bcryptjs, jsonwebtoken
 - helmet, cors, express-rate-limit
-- node-cron
+- node-cron 4
 
 ## Cài đặt
 
@@ -18,6 +18,12 @@ cd backend
 npm install
 cp .env.example .env
 # Sửa MONGODB_URI và JWT_SECRET trong .env
+```
+
+`JWT_SECRET` bắt buộc **≥ 32 ký tự ngẫu nhiên**. Sinh bằng:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
 ## Chạy MongoDB
@@ -34,13 +40,33 @@ docker run -d -p 27017:27017 --name loom-mongo mongo:7
 ## Chạy server
 
 ```bash
-npm run dev      # nodemon-style watch
+npm run dev      # watch (node --watch) — chỉ dùng ở local
 npm start        # production
 ```
 
 Server lắng nghe tại `http://localhost:3010`.
 
-Health check: `GET /api/health` → `{ status: 'ok' }`.
+Health check: `GET /api/health` → `{ status: 'ok' }`. Endpoint này được miễn rate limit
+để hệ thống giám sát (uptime check) không bị chặn.
+
+## Triển khai production (pm2)
+
+File `ecosystem.config.cjs` cấu hình sẵn cho pm2 trên VPS (aaPanel):
+
+```bash
+pm2 start ecosystem.config.cjs
+pm2 reload ecosystem.config.cjs --update-env
+pm2 logs loom-backend
+```
+
+Log ghi ra `/www/wwwlogs` (đổi qua biến môi trường `PM2_LOG_DIR`), **không** ghi vào thư mục
+project — tránh watcher theo dõi log và restart liên tục.
+
+Template cấu hình môi trường production: `.env.production.template` (đã được thêm vào
+`.gitignore` vì chứa `JWT_SECRET` thật).
+
+> `node-cron` đã được nâng lên v4. API dùng trong `src/jobs/cleanup.js`
+> (`cron.validate`, `cron.schedule`, `task.stop()`) không đổi giữa v3 và v4.
 
 ## Seed config mặc định
 
@@ -50,6 +76,16 @@ npm run seed
 
 Sẽ tạo / cập nhật bản ghi `Config` singleton với nội dung popup mặc định.
 
+Các script seed khác: `npm run seed:courses`, `npm run seed:products`, `npm run seed:documents`.
+
+## Tạo tài khoản admin
+
+```bash
+node scripts/create-default-admin.js <sdt> <mat-khau>
+```
+
+Mật khẩu bắt buộc **≥ 8 ký tự** (không còn mật khẩu mặc định).
+
 ## API Endpoints
 
 ### Public
@@ -58,9 +94,10 @@ Sẽ tạo / cập nhật bản ghi `Config` singleton với nội dung popup m�
 |---|---|---|
 | `GET` | `/api/health` | Health check |
 | `GET` | `/api/config` | Lấy config popup (text, theme color, primaryShade) |
-| `POST` | `/api/auth/register` | Đăng ký: `{ phone, password? }` |
-| `POST` | `/api/auth/login` | Đăng nhập: `{ phone, password? }` |
+| `POST` | `/api/auth/register` | Đăng ký: `{ phone, name?, password }` — `password` **bắt buộc** |
+| `POST` | `/api/auth/login` | Đăng nhập: `{ phone, password }` — `password` **bắt buộc** |
 | `POST` | `/api/events` | Track popup event: `{ eventType, popupId?, sessionId?, userId?, metadata? }` |
+| `POST` | `/api/visits` | Ghi lượt truy cập (giới hạn riêng, xem mục Rate limit) |
 
 ### User (cần JWT)
 
@@ -80,21 +117,54 @@ Sẽ tạo / cập nhật bản ghi `Config` singleton với nội dung popup m�
 
 ## Auth
 
-- Mặc định `password` không bắt buộc (cho MVP). Sau khi đăng ký, server trả JWT.
-- Production nên bật OTP SMS hoặc bắt buộc password.
+- **Đăng ký bắt buộc mật khẩu** tối thiểu 6 ký tự. Trước đây cho phép đăng ký không mật khẩu
+  ⇒ tài khoản "mở", và logic login bỏ qua kiểm tra mật khẩu khi `passwordHash` rỗng ⇒ ai cũng
+  đăng nhập được. Đã sửa cả hai chiều.
+- Tài khoản cũ **chưa có mật khẩu** sẽ không đăng nhập được. Server trả 401 với thông báo
+  "Tài khoản chưa được đặt mật khẩu. Vui lòng liên hệ quản trị viên."
+  Muốn mở lại thì đặt mật khẩu qua admin, hoặc chạy lại
+  `node scripts/create-default-admin.js <sdt> <mat-khau>`.
 - Header: `Authorization: Bearer <token>`
+- Production nên bật OTP SMS để chặn đăng ký hàng loạt bằng SĐT ảo.
 
 ## CORS
 
-Cấu hình qua biến `CORS_ORIGINS` trong `.env`:
+Cấu hình qua biến `CORS_ORIGINS` trong `.env` — danh sách origin được phép gọi API,
+phân cách dấu phẩy, **không** có dấu `/` cuối:
 
 | Giá trị | Hành vi |
 |:--|:--|
-| `*` hoặc để trống | Chấp nhận **mọi origin** (echo lại origin để vẫn tương thích `credentials: true`) |
-| `a.com,b.com` | Chỉ cho phép origin nằm trong danh sách |
+| `*` | Chấp nhận mọi origin, **nhưng `credentials` bị tắt** ⇒ header `Authorization` không được gửi |
+| `a.com,b.com` | Chỉ cho phép origin nằm trong danh sách, giữ `credentials: true` |
+| để trống | Chỉ cho phép origin nằm trong danh sách dev mặc định (xem bên dưới) |
 
-Lưu ý: server luôn echo lại origin cụ thể (không gửi `Access-Control-Allow-Origin: *`) để browser chấp nhận cookie/Authorization header khi `credentials: true`.
-- Header: `Authorization: Bearer <token>`
+Ở môi trường `NODE_ENV !== production`, các origin dev sau luôn được thêm vào whitelist:
+`http://localhost:3000`, `http://localhost:3001`, `http://localhost:5173`.
+
+> Trước đây dùng `origin: true` (phản chiếu **mọi** origin) kèm `credentials: true` trong khi
+> biến `CORS_ORIGINS` thực tế không được dùng. Đã chuyển sang whitelist theo `CORS_ORIGINS`.
+> Không dùng `*` ở production.
+
+## Rate limit
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `RATE_LIMIT_WINDOW_MS` | `60000` | Cửa sổ tính rate limit (ms) |
+| `RATE_LIMIT_MAX` | `120` | Số request tối đa mỗi cửa sổ cho toàn bộ `/api` |
+| `VISIT_RATE_LIMIT_MAX` | `30` | Số request tối đa mỗi cửa sổ riêng cho `POST /api/visits` |
+
+`/api/health` được miễn rate limit.
+
+Endpoint ghi lượt truy cập có limiter riêng và được mount **sau** limiter chung. Trước đây nó
+được mount trước ⇒ không bị chặn ⇒ collection `Visit` phình vô hạn.
+
+## TTL dữ liệu lượt truy cập
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `VISIT_TTL_DAYS` | `0` | Số ngày giữ bản ghi `Visit`. `0` = không giới hạn |
+
+Đặt `400` ở production để vẫn tra cứu được dữ liệu 1 năm mà collection không phình vô hạn.
 
 ## Cron
 
@@ -105,17 +175,20 @@ Lưu ý: server luôn echo lại origin cụ thể (không gửi `Access-Control
 ```
 backend/
 ├── package.json
+├── ecosystem.config.cjs      # cấu hình pm2 cho production
 ├── .env.example
-├── scripts/
-│   └── seed.js
+├── .env.production.template   # template production (đã gitignore)
+├── .htaccess
+├── scripts/                  # seed + tạo admin + verify
+├── uploads/                  # ảnh upload từ admin (heroes, products, courses)
 └── src/
-    ├── index.js
-    ├── app.js
+    ├── index.js              # khởi động server, xử lý signal & crash
+    ├── app.js                # middleware, CORS, rate limit, mount routes
     ├── config/db.js
-    ├── models/{User,Config,PopupEvent}.js
-    ├── middleware/{auth,error}.js
-    ├── routes/{auth,config,events,admin}.js
-    ├── controllers/{auth,config,event,admin}Controller.js
-    ├── jobs/cleanup.js
-    └── utils/jwt.js
+    ├── models/               # User, Course, Lesson, Product, Order, Visit, …
+    ├── middleware/           # auth, error, upload (multer)
+    ├── routes/               # auth, admin*, courses, products, visits, …
+    ├── controllers/          # logic cho từng nhóm route
+    ├── jobs/cleanup.js       # cron dọn PopupEvent cũ
+    └── utils/                # jwt, points, income, certificate, slugify, …
 ```

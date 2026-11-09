@@ -42,6 +42,7 @@ export async function getUserPoints(userId) {
 // Điểm mặc định theo hành động — admin có thể chỉnh trong Config (TODO).
 export const POINT_RULES = {
   LESSON_COMPLETE: 5,
+  QUIZ_CORRECT: 5,
   COURSE_FINISH: 100,
   COMMENT: 2,
 };

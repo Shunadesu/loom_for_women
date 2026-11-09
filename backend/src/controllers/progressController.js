@@ -4,8 +4,7 @@ import Lesson from '../models/Lesson.js';
 import Course from '../models/Course.js';
 import Favorite from '../models/Favorite.js';
 import Certificate from '../models/Certificate.js';
-import { awardPoints, POINT_RULES } from '../utils/points.js';
-import { issueCertificateIfNeeded } from '../utils/certificate.js';
+import { completeLessonForUser } from '../services/lessonCompletionService.js';
 
 /**
  * POST /api/progress/lessons/:lessonId/complete
@@ -25,90 +24,14 @@ export const markLessonComplete = async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy bài học.' });
     }
 
-    const courseId = lesson.courseId;
-    const userId = req.user._id;
-
-    let progress = await UserProgress.findOne({ userId, courseId });
-    if (!progress) {
-      progress = await UserProgress.create({
-        userId,
-        courseId,
-        completedLessons: [lesson._id],
-        lastLessonId: lesson._id,
-        lastWatchedAt: new Date(),
-        progressPct: 0,
-      });
-    } else {
-      if (!progress.completedLessons.some((id) => String(id) === String(lesson._id))) {
-        progress.completedLessons.push(lesson._id);
-      }
-      progress.lastLessonId = lesson._id;
-      progress.lastWatchedAt = new Date();
-      await progress.save();
-    }
-
-    // Tính lại progressPct
-    const totalLessons = await Lesson.countDocuments({ courseId });
-    const pct = totalLessons > 0
-      ? Math.round((progress.completedLessons.length / totalLessons) * 100)
-      : 0;
-    progress.progressPct = pct;
-    await progress.save();
-
-    // Cộng điểm cho lần complete lesson đầu tiên (không cộng nếu tick lại)
-    const alreadyCompleted = progress.completedLessons.length === totalLessons
-      ? false
-      : true; // chỉ là hint, không quan trọng
-    void alreadyCompleted;
-
-    // Đếm số lần đã award lesson_complete cho lesson này (chống double-count)
-    const txCount = await import('../models/PointTransaction.js').then((m) =>
-      m.default.countDocuments({
-        userId,
-        type: 'lesson_complete',
-        refId: String(lesson._id),
-      })
-    );
-    if (txCount === 0) {
-      await awardPoints({
-        userId,
-        delta: POINT_RULES.LESSON_COMPLETE,
-        type: 'lesson_complete',
-        refId: String(lesson._id),
-        description: `Hoàn thành bài học: ${lesson.title}`,
-      });
-    }
-
-    // Nếu đạt 100% → cấp Certificate + cộng điểm course_finish (chống double)
-    if (pct >= 100) {
-      const certResult = await issueCertificateIfNeeded(userId, courseId);
-      if (certResult.created) {
-        const courseFinishTxCount = await import('../models/PointTransaction.js').then(
-          (m) =>
-            m.default.countDocuments({
-              userId,
-              type: 'course_finish',
-              refId: String(courseId),
-            })
-        );
-        if (courseFinishTxCount === 0) {
-          const course = await Course.findById(courseId).lean();
-          await awardPoints({
-            userId,
-            delta: POINT_RULES.COURSE_FINISH,
-            type: 'course_finish',
-            refId: String(courseId),
-            description: `Hoàn thành khóa học: ${course?.title || ''}`,
-          });
-        }
-      }
-    }
+    const result = await completeLessonForUser(req.user._id, lesson);
 
     res.json({
       ok: true,
-      progressPct: pct,
-      completedCount: progress.completedLessons.length,
-      totalLessons,
+      progressPct: result.progressPct,
+      completedCount: result.completedCount,
+      totalLessons: result.totalLessons,
+      certificateCreated: result.certificateCreated,
     });
   } catch (err) {
     console.error('markLessonComplete error', err);

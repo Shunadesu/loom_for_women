@@ -1,22 +1,22 @@
 /**
- * Tạo (hoặc cập nhật) tài khoản admin mặc định của hệ thống.
+ * Tạo (hoặc cập nhật) tài khoản admin của hệ thống.
  *
  *   SĐT:      0900000000
- *   Mật khẩu: admin123
+ *   Mật khẩu: (bắt buộc truyền qua CLI — KHÔNG có mật khẩu mặc định)
  *   Tên:      Admin
  *   Role:     admin
  *
- * Cách dùng (từ thư mục `backend/`):
- *   node scripts/create-default-admin.js
- *
- * Có thể override qua CLI:
- *   node scripts/create-default-admin.js [phone] [password] [name]
+ * Cách dùng (từ thư mục gốc project):
+ *   node scripts/create-default-admin.js <sdt> <mat-khau> [ten]
  *
  *   Ví dụ:
- *     node scripts/create-default-admin.js 0912345678 mypass "Quản trị"
+ *     node scripts/create-default-admin.js 0912345678 "M4tKh@uNgAnToan!" "Quản trị"
  *
  * Lưu ý: hệ thống dùng SĐT làm tên đăng nhập — nếu đổi SĐT, hãy dùng SĐT
  * thật theo định dạng VN (10 số, đầu 0 + 3/5/7/8/9) hoặc 84xxxxxxxxx.
+ *
+ * ⚠️  KHÔNG dùng mật khẩu mặc định yếu (ví dụ "admin123") — tài khoản admin
+ *     bị lộ mật khẩu là lỗ hổng chí mạng.
  */
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
@@ -35,16 +35,22 @@ function normalizePhone(input) {
 }
 
 const DEFAULT_PHONE = '0900000000';
-const DEFAULT_PASSWORD = 'admin123';
 const DEFAULT_NAME = 'Admin';
+const MIN_PASSWORD_LENGTH = 8;
 
-const [
-  ,
-  ,
-  phoneArg = DEFAULT_PHONE,
-  passwordArg = DEFAULT_PASSWORD,
-  nameArg = DEFAULT_NAME,
-] = process.argv;
+const [, , phoneArg = DEFAULT_PHONE, passwordArg, nameArg = DEFAULT_NAME] = process.argv;
+
+if (!passwordArg) {
+  console.error('❌ Thiếu mật khẩu. Cách dùng:');
+  console.error('   node scripts/create-default-admin.js <sdt> <mat-khau> [ten]');
+  console.error('   Ví dụ: node scripts/create-default-admin.js 0912345678 "M4tKh@uNgAnToan!"');
+  process.exit(1);
+}
+
+if (String(passwordArg).length < MIN_PASSWORD_LENGTH) {
+  console.error(`❌ Mật khẩu phải có ít nhất ${MIN_PASSWORD_LENGTH} ký tự.`);
+  process.exit(1);
+}
 
 const phone = normalizePhone(phoneArg);
 if (!phone) {

@@ -21,6 +21,21 @@ const courseSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    // Danh mục nội dung (dùng để lọc khóa học) — xem CATEGORY_OPTIONS.
+    category: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 100,
+      index: true,
+    },
+    // Ảnh bìa khóa học (URL ngoài) — khác thumbnail (ảnh upload local).
+    coverUrl: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 1000,
+    },
     description: {
       type: String,
       default: '',

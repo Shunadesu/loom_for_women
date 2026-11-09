@@ -8,6 +8,7 @@ import {
   deleteLessonAdmin,
   reorderLessonsAdmin,
 } from '../services/lessonApi.js';
+import { fetchCourseContent } from '../services/courseIntakeApi.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
 import { buildVideoEmbedUrl } from '../utils/videoSource.js';
 import {
@@ -29,6 +30,7 @@ import LessonContentForm, {
   describeContentType,
 } from '../components/LessonContentForm.jsx';
 import DocumentManagerModal from '../components/DocumentManagerModal.jsx';
+import CourseIntakeForm from '../components/CourseIntakeForm.jsx';
 import { useNotification } from '../store/notificationStore.js';
 
 export default function LessonManager() {
@@ -37,11 +39,13 @@ export default function LessonManager() {
 
   const [course, setCourse] = useState(null);
   const [items, setItems] = useState([]);
+  const [contentMap, setContentMap] = useState({});
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [previewingItem, setPreviewingItem] = useState(null);
   const [docsModalFor, setDocsModalFor] = useState(null);
+  const [intakeLessonId, setIntakeLessonId] = useState(null);
   const { notify } = useNotification();
 
   useEffect(() => {
@@ -49,6 +53,19 @@ export default function LessonManager() {
     loadCourse();
     loadLessons();
   }, [courseId]);
+
+  async function loadContentMap() {
+    try {
+      const data = await fetchCourseContent(courseId);
+      const map = {};
+      for (const item of data.items || []) {
+        map[String(item._id)] = item.content || {};
+      }
+      setContentMap(map);
+    } catch {
+      setContentMap({});
+    }
+  }
 
   async function loadCourse() {
     try {
@@ -65,6 +82,7 @@ export default function LessonManager() {
     try {
       const data = await fetchLessonsByCourseAdmin(courseId);
       setItems(sortByOrder(data));
+      await loadContentMap();
     } catch (err) {
       notify({ type: 'error', title: 'Tải dữ liệu thất bại', message: 'Không tải được bài học.' });
     } finally {
@@ -236,6 +254,9 @@ export default function LessonManager() {
                 <th className="px-2 py-2 text-center text-[11px] font-bold uppercase text-slate-700">
                   Tài liệu
                 </th>
+                <th className="px-2 py-2 text-center text-[11px] font-bold uppercase text-slate-700">
+                  4 Phần
+                </th>
                 <th className="px-2 py-2 text-right text-[11px] font-bold uppercase text-slate-700">
                   Thao tác
                 </th>
@@ -298,7 +319,37 @@ export default function LessonManager() {
                     </button>
                   </td>
                   <td className="px-2 py-2">
+                    <div className="flex flex-wrap items-center justify-center gap-1">
+                      {PART_BADGES.map((p) => {
+                        const content = contentMap[String(item._id)] || {};
+                        const ok = p.check(content);
+                        return (
+                          <span
+                            key={p.key}
+                            title={p.label}
+                            className={[
+                              'rounded-full px-1.5 py-0.5 text-[9px] font-bold',
+                              ok
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-slate-100 text-slate-400',
+                            ].join(' ')}
+                          >
+                            {ok ? '✓' : '–'} {p.short}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </td>
+                  <td className="px-2 py-2">
                     <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setIntakeLessonId(item._id)}
+                        className="rounded bg-pink-50 p-1 hover:bg-pink-100"
+                        title="Sửa nội dung 4 phần"
+                      >
+                        <FileTextIcon aria-hidden="true" className="h-3.5 w-3.5 text-[#E60067]" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handlePreview(item)}
@@ -368,9 +419,42 @@ export default function LessonManager() {
           onClose={() => setDocsModalFor(null)}
         />
       )}
+
+      {intakeLessonId && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4">
+          <div className="mx-auto my-4 w-full max-w-3xl">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-extrabold text-white">
+                Sửa nội dung 4 phần của bài học
+              </span>
+              <button
+                type="button"
+                onClick={() => setIntakeLessonId(null)}
+                className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold text-white hover:bg-white/30"
+              >
+                Đóng
+              </button>
+            </div>
+            <CourseIntakeForm
+              lessonId={intakeLessonId}
+              onSaved={() => {
+                setIntakeLessonId(null);
+                loadLessons();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const PART_BADGES = [
+  { key: 'slide', short: 'Slide', label: 'Cung cấp kiến thức', check: (c) => (c.slides || []).length > 0 },
+  { key: 'sim', short: 'Mô phỏng', label: 'Mô phỏng tình huống', check: (c) => (c.simulations || []).length > 0 },
+  { key: 'sum', short: 'Tóm tắt', label: 'Tóm tắt bài học', check: (c) => Boolean(c.summary) },
+  { key: 'quiz', short: 'Quiz', label: 'Đánh giá trắc nghiệm', check: (c) => (c.quizzes || []).length > 0 },
+];
 
 function LessonFormModal({ item, onClose, onSave }) {
   const [draft, setDraft] = useState(() =>

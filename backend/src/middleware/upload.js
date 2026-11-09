@@ -76,6 +76,21 @@ const lessonPdfFileFilter = (_req, file, cb) => {
   cb(null, true);
 };
 
+const lessonMediaFileFilter = (_req, file, cb) => {
+  const name = (file.originalname || '').toLowerCase();
+  const mime = file.mimetype || '';
+  const isPdf = mime === 'application/pdf' || name.endsWith('.pdf');
+  const isImage =
+    ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(mime) ||
+    /\.(jpg|jpeg|png|webp|gif)$/.test(name);
+  if (!isPdf && !isImage) {
+    return cb(
+      new Error('Chỉ chấp nhận file PDF hoặc ảnh (jpg, png, webp, gif).')
+    );
+  }
+  cb(null, true);
+};
+
 const slugify = (text) =>
   String(text || '')
     .normalize('NFD')
@@ -147,6 +162,18 @@ export const uploadLogo = multer({
 export const uploadLessonPdf = multer({
   storage: makeDocumentStorage(UPLOAD_LESSON_DIR),
   fileFilter: lessonPdfFileFilter,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+});
+
+/**
+ * Upload media cho bài học 4 phần:
+ *   - slidePdf     : file PDF slide bài giảng
+ *   - summaryImage : ảnh/URL PDF infographic tóm tắt (admin có thể upload ảnh)
+ *   - summaryPdf   : file PDF tóm tắt
+ */
+export const uploadLessonMedia = multer({
+  storage: makeDocumentStorage(UPLOAD_LESSON_DIR),
+  fileFilter: lessonMediaFileFilter,
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 

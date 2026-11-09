@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '../components/layout/Header.jsx';
+import LessonPlayerModal from '../components/course/LessonPlayerModal.jsx';
 import {
   PlayIcon,
   CheckCircleIcon,
@@ -40,6 +41,7 @@ export default function CourseDetail() {
 
   const progressStore = useProgressStore((s) => s.byCourse);
   const completeLesson = useProgressStore((s) => s.complete);
+  const applyQuizResult = useProgressStore((s) => s.applyQuizResult);
   const fetchContinue = useProgressStore((s) => s.fetchContinue);
   const fetchStats = useProgressStore((s) => s.fetchStats);
   const isFavorite = useProgressStore((s) => s.isFavorite);
@@ -52,18 +54,26 @@ export default function CourseDetail() {
 
   const data = detailCache[slug];
   const course = data?.course;
-  const lessons = data?.lessons || [];
+  // API trả lessons nằm trong course.lessons — hỗ trợ cả 2 shape cho an toàn.
+  const lessons = data?.course?.lessons || data?.lessons || [];
   const myProgress = data?.myProgress;
 
   const [currentLessonId, setCurrentLessonId] = useState(null);
+  const [playerOpen, setPlayerOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commentRating, setCommentRating] = useState(5);
 
   useEffect(() => {
     if (!slug) return;
     fetchDetail(slug).catch(() => {});
-    fetchComments(slug).catch(() => {});
-  }, [slug, fetchDetail, fetchComments]);
+  }, [slug, fetchDetail]);
+
+  // Bình luận luôn dùng course._id làm khoá (store đọc theo comments[course._id]).
+  // Chờ có course rồi mới tải, tránh gọi 2 lần với 2 kiểu tham số.
+  useEffect(() => {
+    if (!course?._id) return;
+    fetchComments(course._id).catch(() => {});
+  }, [course?._id, fetchComments]);
 
   useEffect(() => {
     if (lessons.length === 0) return;
@@ -86,6 +96,41 @@ export default function CourseDetail() {
       String
     )
   );
+
+  /** Bài học có dữ liệu 4 phần (slide / mô phỏng / tóm tắt / quiz) hay không. */
+  const hasStructuredContent = (l) =>
+    Boolean(
+      l &&
+        ((l.slides?.length || 0) > 0 ||
+          (l.simulations?.length || 0) > 0 ||
+          (l.quizzes?.length || 0) > 0 ||
+          l.summary)
+    );
+
+  function handleSelectLesson(lesson) {
+    setCurrentLessonId(lesson._id);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('lesson', String(lesson._id));
+        return next;
+      },
+      { replace: true }
+    );
+    // Bài học có nội dung 4 phần → mở thẳng trình phát
+    if (hasStructuredContent(lesson)) setPlayerOpen(true);
+  }
+
+  function handleQuizPassed(result) {
+    applyQuizResult(course?._id, currentLesson?._id, result);
+    fetchContinue().catch(() => {});
+    fetchStats().catch(() => {});
+    notify({
+      type: 'success',
+      title: 'Chúc mừng!',
+      message: 'Bạn đã trả lời đúng. Bài học được đánh dấu hoàn thành.',
+    });
+  }
 
   async function handleComplete(lessonId) {
     if (!isAuthenticated) {
@@ -454,7 +499,17 @@ export default function CourseDetail() {
                     <h2 className="text-base font-bold text-slate-900">
                       {currentLesson.title}
                     </h2>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {hasStructuredContent(currentLesson) && (
+                        <button
+                          type="button"
+                          onClick={() => setPlayerOpen(true)}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-[#E60067] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#c90059]"
+                        >
+                          <PlayIcon aria-hidden="true" className="h-3.5 w-3.5" />
+                          Học bài học 4 phần
+                        </button>
+                      )}
                       {completedSet.has(String(currentLesson._id)) ? (
                         <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
                           <CheckCircleIcon
@@ -577,17 +632,7 @@ export default function CourseDetail() {
                     <button
                       key={l._id}
                       type="button"
-                      onClick={() => {
-                        setCurrentLessonId(l._id);
-                        setSearchParams(
-                          (prev) => {
-                            const next = new URLSearchParams(prev);
-                            next.set('lesson', String(l._id));
-                            return next;
-                          },
-                          { replace: true }
-                        );
-                      }}
+                      onClick={() => handleSelectLesson(l)}
                       className={[
                         'group flex w-full items-start gap-3 p-3 text-left transition-colors',
                         isActive
@@ -614,7 +659,7 @@ export default function CourseDetail() {
                         >
                           {l.title}
                         </p>
-                        <span className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-400">
+                        <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400">
                           <span
                             className={[
                               'inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold',
@@ -623,6 +668,11 @@ export default function CourseDetail() {
                           >
                             {lessonTypeBadge(l.contentType).label}
                           </span>
+                          {hasStructuredContent(l) && (
+                            <span className="inline-block rounded-full bg-pink-100 px-1.5 py-0.5 text-[9px] font-bold text-[#E60067]">
+                              4 phần
+                            </span>
+                          )}
                           {l.durationSeconds > 0 && (
                             <span>
                               {Math.floor(l.durationSeconds / 60)} phút
@@ -644,6 +694,21 @@ export default function CourseDetail() {
           </div>
         </div>
       </main>
+
+      {/* Trình phát bài học 4 phần */}
+      <LessonPlayerModal
+        open={playerOpen}
+        onClose={() => setPlayerOpen(false)}
+        course={course}
+        lesson={currentLesson}
+        isAuthenticated={isAuthenticated}
+        onRequireLogin={() => openLoginDrawer()}
+        onPassed={handleQuizPassed}
+        onOpenCertificate={() => {
+          setPlayerOpen(false);
+          navigate('/chung-chi');
+        }}
+      />
     </motion.div>
   );
 }

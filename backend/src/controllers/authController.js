@@ -53,15 +53,20 @@ export const register = async (req, res) => {
     return res.status(400).json({ error: 'Số điện thoại không hợp lệ.' });
   }
 
+  // Bắt buộc có mật khẩu khi đăng ký.
+  // Trước đây cho phép đăng ký không mật khẩu ⇒ tài khoản "mở", và logic login
+  // bỏ qua kiểm tra mật khẩu khi passwordHash rỗng ⇒ ai cũng đăng nhập được.
+  if (typeof password !== 'string' || password.trim().length < 6) {
+    return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+  }
+
   try {
     const existing = await User.findOne({ phone });
     if (existing) {
       return res.status(409).json({ error: 'Số điện thoại đã được đăng ký.' });
     }
 
-    const passwordHash = password
-      ? await bcrypt.hash(password, 10)
-      : '';
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       phone,
@@ -94,14 +99,19 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Số điện thoại chưa đăng ký.' });
     }
 
-    // Nếu user đã đặt password thì bắt buộc verify
-    if (user.passwordHash) {
-      if (!password) {
-        return res.status(401).json({ error: 'Vui lòng nhập mật khẩu.' });
-      }
-      const ok = await bcrypt.compare(password, user.passwordHash);
-      if (!ok) return res.status(401).json({ error: 'Mật khẩu không đúng.' });
+    // Tài khoản không có mật khẩu (do dữ liệu cũ tạo ra) ⇒ KHÔNG cho đăng nhập.
+    // Nếu muốn mở lại tài khoản này, hãy đặt mật khẩu qua admin.
+    if (!user.passwordHash) {
+      return res.status(401).json({
+        error: 'Tài khoản chưa được đặt mật khẩu. Vui lòng liên hệ quản trị viên.',
+      });
     }
+
+    if (!password) {
+      return res.status(401).json({ error: 'Vui lòng nhập mật khẩu.' });
+    }
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: 'Mật khẩu không đúng.' });
 
     user.lastLoginAt = new Date();
     await user.save();

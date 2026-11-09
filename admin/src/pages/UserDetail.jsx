@@ -45,6 +45,7 @@ const TIER_STYLES = {
 
 const POINT_TYPE_LABELS = {
   lesson_complete: 'Hoàn thành bài học',
+  quiz_correct: 'Trả lời đúng trắc nghiệm',
   course_finish: 'Hoàn thành khóa học',
   comment: 'Bình luận',
   admin_award: 'Thưởng từ admin',

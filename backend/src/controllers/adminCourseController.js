@@ -8,6 +8,8 @@ import Favorite from '../models/Favorite.js';
 import { safeUnlink, UPLOAD_COURSE_DIR } from '../middleware/upload.js';
 import { slugify } from '../utils/slugify.js';
 import { extractYoutubeId } from '../utils/youtube.js';
+import { normalizeCategory } from '../utils/categories.js';
+import { purgeLessonContent } from '../services/lessonContentService.js';
 
 const publicUrlFor = (filename) => {
   return `/uploads/courses/${filename}`;
@@ -42,7 +44,6 @@ const ensureUniqueSlug = async (base, excludeId = null) => {
 export const listAllCourses = async (_req, res) => {
   try {
     const items = await Course.find()
-      .select('-category')
       .sort({ order: 1, createdAt: -1 })
       .lean();
     res.json({ items });
@@ -53,7 +54,7 @@ export const listAllCourses = async (_req, res) => {
 
 export const getCourseById = async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id).select('-category').lean();
+    const course = await Course.findById(req.params.id).lean();
     if (!course) return res.status(404).json({ error: 'Không tìm thấy.' });
     res.json({ course });
   } catch (err) {
@@ -67,6 +68,7 @@ export const createCourse = async (req, res) => {
       title,
       description = '',
       thumbnail: thumbnailInput = '',
+      coverUrl: coverInput = '',
       bannerUrl: bannerInput = '',
       videoId: videoInput = '',
       rating = 0,
@@ -75,6 +77,7 @@ export const createCourse = async (req, res) => {
       isFeatured = false,
       order = 0,
       isActive = true,
+      category = '',
       lessons: lessonsJson = null,
     } = req.body;
 
@@ -94,7 +97,9 @@ export const createCourse = async (req, res) => {
       title: String(title).slice(0, 200),
       slug,
       description: String(description).slice(0, 2000),
+      category: normalizeCategory(category),
       thumbnail: String(thumbnail).slice(0, 1000),
+      coverUrl: String(coverInput || '').trim().slice(0, 1000),
       bannerUrl: String(bannerInput || '').trim().slice(0, 1000),
       videoId,
       rating: Math.max(0, Math.min(5, Number(rating) || 0)),
@@ -134,7 +139,7 @@ export const createCourse = async (req, res) => {
       }
     }
 
-    const populated = await Course.findById(course._id).select('-category').lean();
+    const populated = await Course.findById(course._id).lean();
     res.status(201).json({ course: populated });
   } catch (err) {
     if (req.file) safeUnlink(req.file.path);
@@ -152,6 +157,7 @@ export const updateCourse = async (req, res) => {
       title,
       description,
       thumbnail: thumbnailInput,
+      coverUrl: coverInput,
       bannerUrl: bannerInput,
       videoId: videoInput,
       rating,
@@ -160,6 +166,7 @@ export const updateCourse = async (req, res) => {
       isFeatured,
       order,
       isActive,
+      category,
     } = req.body;
 
     if (typeof title === 'string' && title.trim()) {
@@ -170,6 +177,12 @@ export const updateCourse = async (req, res) => {
       }
     }
     if (typeof description === 'string') course.description = description.slice(0, 2000);
+    if (typeof coverInput === 'string') {
+      course.coverUrl = coverInput.trim().slice(0, 1000);
+    }
+    if (category !== undefined) {
+      course.category = normalizeCategory(category);
+    }
     if (typeof bannerInput === 'string') {
       course.bannerUrl = bannerInput.trim().slice(0, 1000);
     }
@@ -202,7 +215,7 @@ export const updateCourse = async (req, res) => {
     }
 
     await course.save();
-    const populated = await Course.findById(course._id).select('-category').lean();
+    const populated = await Course.findById(course._id).lean();
     res.json({ course: populated });
   } catch (err) {
     if (req.file) safeUnlink(req.file.path);
@@ -226,6 +239,8 @@ export const deleteCourse = async (req, res) => {
 
     const oldName = filenameFromUrl(course.thumbnail);
     if (oldName) safeUnlink(absFromFilename(oldName));
+    const lessons = await Lesson.find({ courseId: course._id }).select('_id').lean();
+    await Promise.all(lessons.map((l) => purgeLessonContent(l._id)));
     await Lesson.deleteMany({ courseId: course._id });
     await CourseComment.deleteMany({ courseId: course._id });
     await Favorite.deleteMany({ courseId: course._id });
@@ -248,7 +263,6 @@ export const reorderCourses = async (req, res) => {
       )
     );
     const list = await Course.find()
-      .select('-category')
       .sort({ order: 1, createdAt: -1 })
       .lean();
     res.json({ items: list });

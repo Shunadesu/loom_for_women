@@ -4,6 +4,7 @@ import Lesson from '../models/Lesson.js';
 import UserProgress from '../models/UserProgress.js';
 import Favorite from '../models/Favorite.js';
 import { safeUnlink, UPLOAD_COURSE_DIR } from '../middleware/upload.js';
+import { getLessonContentMap } from '../services/lessonContentService.js';
 
 const filenameFromUrl = (url) => {
   if (!url) return null;
@@ -63,7 +64,6 @@ export const listCourses = async (req, res) => {
     if (featured === 'true') filter.isFeatured = true;
 
     let courses = await Course.find(filter)
-      .select('-category')
       .sort({ order: 1, createdAt: -1 })
       .skip(Number(skip) || 0)
       .limit(Math.min(Number(limit) || 50, 100))
@@ -121,7 +121,6 @@ export const getCourseBySlug = async (req, res) => {
       isActive: true,
       isPublished: true,
     })
-      .select('-category')
       .lean();
 
     if (!course) {
@@ -131,6 +130,34 @@ export const getCourseBySlug = async (req, res) => {
     const lessons = await Lesson.find({ courseId: course._id })
       .sort({ order: 1, createdAt: 1 })
       .lean();
+
+    // Nội dung 4 phần cho từng bài học (slide / mô phỏng / tóm tắt / quiz)
+    const contentMap = await getLessonContentMap(lessons.map((l) => l._id));
+    const lessonsWithContent = lessons.map((l) => {
+      const content = contentMap.get(String(l._id)) || {
+        slides: [],
+        quizzes: [],
+        simulations: [],
+        summary: null,
+      };
+      return {
+        ...l,
+        slides: content.slides,
+        simulations: content.simulations,
+        summary: content.summary,
+        // Ẩn đáp án đúng — frontend tự chấm qua API
+        quizzes: content.quizzes.map((q) => ({
+          _id: q._id,
+          question: q.question,
+          options: q.options,
+          type: q.type,
+          videoUrl: q.videoUrl,
+          videoDescription: q.videoDescription,
+          points: q.points,
+          order: q.order,
+        })),
+      };
+    });
 
     let myProgress = null;
     if (req.user) {
@@ -150,7 +177,7 @@ export const getCourseBySlug = async (req, res) => {
     res.json({
       course: {
         ...course,
-        lessons,
+        lessons: lessonsWithContent,
       },
       myProgress: myProgress || {
         progressPct: 0,

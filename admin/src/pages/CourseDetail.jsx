@@ -1,187 +1,152 @@
-import { useMemo } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { mockCourses } from '../data/mockDashboardData.js';
-import { extractYoutubeId } from '../utils/youtube.js';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { fetchCourseAdmin } from '../services/courseApi.js';
+import { fetchCourseContent } from '../services/courseIntakeApi.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
+import { extractYoutubeId } from '../utils/youtube.js';
+import { ArrowLeftIcon, FileTextIcon, VideoIcon, EditIcon } from '../components/icons.jsx';
+import { useNotification } from '../store/notificationStore.js';
+import CourseIntakeForm from '../components/CourseIntakeForm.jsx';
 
-const LESSON_TYPE_LABELS = {
-  video: { label: 'Video YouTube / Embed', color: 'bg-rose-50 text-rose-600' },
-  audio: { label: 'Audio Podcast', color: 'bg-violet-50 text-violet-600' },
-  infographic: { label: 'Infographic Tài Liệu', color: 'bg-amber-50 text-amber-700' },
-};
-
+/**
+ * Chi tiết khóa học (admin): hiển thị 4 phần nội dung của từng bài học.
+ */
 export default function CourseDetail() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
+  const { notify } = useNotification();
 
-  const course = useMemo(() => {
-    // Ưu tiên course truyền qua location state (khi click từ CourseImportPanel)
-    const fromState = location.state?.course;
-    if (fromState && String(fromState.id) === String(courseId)) {
-      return fromState;
-    }
-    // Fallback: tra trong mock data
-    return mockCourses.find((c) => String(c.id) === String(courseId)) || null;
-  }, [courseId, location.state]);
+  const [course, setCourse] = useState(null);
+  const [lessons, setLessons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingLessonId, setEditingLessonId] = useState(null);
 
-  if (!course) {
+  async function loadContent() {
+    const contentData = await fetchCourseContent(courseId);
+    setLessons(contentData.items || []);
+  }
+
+  useEffect(() => {
+    if (!courseId) return undefined;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const [courseData, contentData] = await Promise.all([
+          fetchCourseAdmin(courseId),
+          fetchCourseContent(courseId),
+        ]);
+        if (cancelled) return;
+        setCourse(courseData);
+        setLessons(contentData.items || []);
+      } catch (err) {
+        if (cancelled) return;
+        notify({
+          type: 'error',
+          title: 'Tải dữ liệu thất bại',
+          message: err?.response?.data?.error || 'Không tải được khóa học.',
+        });
+        navigate('/courses', { replace: true });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, navigate, notify]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
-        <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-xs">
-          <div className="mx-auto w-14 h-14 rounded-full bg-rose-50 flex items-center justify-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-7 h-7 text-rose-500"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12 8v4"></path>
-              <path d="M12 16h.01"></path>
-            </svg>
-          </div>
-          <h2 className="text-base font-extrabold text-slate-900">
-            Không tìm thấy khóa học
-          </h2>
-          <p className="text-xs text-slate-500">
-            Khóa học với mã <span className="font-mono font-bold text-slate-700">{courseId}</span> không tồn tại hoặc đã bị xoá.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#E60067] hover:bg-[#c90059] px-4 py-2 text-xs font-extrabold text-white shadow-md transition-all"
-          >
-            ← Quay lại
-          </button>
-        </div>
+      <div className="rounded-md border border-slate-200 bg-white p-6 text-center text-xs text-slate-500">
+        Đang tải...
       </div>
     );
   }
 
-  const lesson = course.firstLesson;
-  const quiz = course.quiz;
-  const typeMeta = lesson ? LESSON_TYPE_LABELS[lesson.type] : null;
-  const youtubeId = lesson?.type === 'video' ? extractYoutubeId(lesson.url || '') : null;
+  if (!course) {
+    return (
+      <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xs">
+        <h2 className="text-base font-extrabold text-slate-900">
+          Không tìm thấy khóa học
+        </h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Khóa học với mã{' '}
+          <span className="font-mono font-bold text-slate-700">{courseId}</span> không tồn tại
+          hoặc đã bị xoá.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#E60067] px-4 py-2 text-xs font-extrabold text-white shadow-md transition-all hover:bg-[#c90059]"
+        >
+          ← Quay lại
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans space-y-4">
-      {/* Top bar */}
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#E60067]"
+          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-[#E60067]"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-3.5 h-3.5"
-          >
-            <path d="m12 19-7-7 7-7"></path>
-            <path d="M19 12H5"></path>
-          </svg>
+          <ArrowLeftIcon aria-hidden="true" className="w-3.5 h-3.5" />
           Quay lại danh sách
         </button>
-        <span className="text-[10px] font-mono text-slate-400">Mã: {course.id}</span>
+        <span className="font-mono text-[10px] text-slate-400">Mã: {course._id}</span>
       </div>
 
       {/* Hero card */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-0">
-          <div className="md:col-span-2 bg-slate-100">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+        <div className="grid grid-cols-1 gap-0 md:grid-cols-5">
+          <div className="bg-slate-100 md:col-span-2">
             <img
-              src={resolveImageUrl(course.cover)}
+              src={resolveImageUrl(course.coverUrl || course.thumbnail)}
               alt={course.title}
-              className="w-full h-48 md:h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src =
-                  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="1.5"><rect width="24" height="24" fill="%23f1f5f9"/><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-              }}
+              className="h-48 w-full object-cover md:h-full"
             />
           </div>
-          <div className="md:col-span-3 p-5 md:p-6 space-y-3">
+          <div className="space-y-3 p-5 md:col-span-3 md:p-6">
             <div className="flex flex-wrap items-center gap-2">
-              {lesson && typeMeta && (
-                <span
-                  className={`font-extrabold text-[10px] px-2.5 py-1 rounded-md border border-current/20 ${typeMeta.color}`}
-                >
-                  {typeMeta.label}
+              {course.category && (
+                <span className="rounded-md border border-pink-200 bg-pink-50 px-2.5 py-1 text-[10px] font-extrabold text-[#E60067]">
+                  {course.category}
                 </span>
               )}
+              <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-extrabold text-slate-600">
+                {lessons.length} bài học
+              </span>
             </div>
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-xl font-black tracking-tight text-slate-900 md:text-2xl">
               {course.title}
             </h1>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs leading-relaxed text-slate-600">
               {course.description || (
                 <span className="italic text-slate-400">(Chưa có mô tả cho khóa học này.)</span>
               )}
             </p>
 
             <div className="grid grid-cols-3 gap-2 pt-2">
-              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200">
-                <p className="text-[10px] font-bold uppercase text-slate-500">⏱ Thời lượng</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-0.5">
-                  {course.duration || '—'}
-                </p>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200">
-                <p className="text-[10px] font-bold uppercase text-slate-500">📚 Số bài học</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-0.5">
-                  {course.lessons ?? 0} bài
-                </p>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200">
-                <p className="text-[10px] font-bold uppercase text-slate-500">⭐ Đánh giá</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-0.5">
-                  {course.rating ? `${course.rating} / 5` : '—'}
-                </p>
-              </div>
+              <Stat label="⏱ Thời lượng" value={`${course.durationMinutes || 0} phút`} />
+              <Stat label="📚 Số bài học" value={`${lessons.length} bài`} />
+              <Stat label="⭐ Đánh giá" value={course.rating ? `${course.rating} / 5` : '—'} />
             </div>
 
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() =>
-                  navigate(`/admin/courses/${course.id}/lessons`)
-                }
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#E60067] hover:bg-[#c90059] px-4 py-2 text-xs font-extrabold text-white shadow-md transition-all"
+              <Link
+                to={`/admin/courses/${course._id}/lessons`}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#E60067] px-4 py-2 text-xs font-extrabold text-white shadow-md transition-all hover:bg-[#c90059]"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-3.5 h-3.5"
-                >
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                </svg>
+                <VideoIcon aria-hidden="true" className="h-3.5 w-3.5" />
                 Quản lý danh sách bài học
-              </button>
+              </Link>
               <Link
                 to="/admin/showcase"
-                state={{ tab: 'lessons' }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2 text-xs font-extrabold text-slate-700 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-extrabold text-slate-700 transition-all hover:bg-slate-50"
               >
                 🎓 Về trang Nhập Bài Học
               </Link>
@@ -190,176 +155,298 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* Lesson + Quiz */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Bài học đầu tiên */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-4 h-4 text-[#E60067]"
-            >
-              <path d="m22 8-6 4 6 4V8Z"></path>
-              <rect width="14" height="12" x="2" y="6" rx="2" ry="2"></rect>
-            </svg>
-            <h3 className="text-sm font-extrabold text-slate-900">Bài học đầu tiên</h3>
+      {/* Danh sách bài học + 4 phần */}
+      <div className="space-y-3">
+        {lessons.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
+            Khóa học này chưa có bài học nào.
           </div>
+        )}
+        {lessons.map((lesson, index) => (
+          <LessonContentCard
+            key={lesson._id}
+            lesson={lesson}
+            index={index}
+            onEdit={setEditingLessonId}
+          />
+        ))}
+      </div>
 
-          {!lesson ? (
-            <div className="p-6 text-center text-xs text-slate-500">
-              Khóa học này chưa có bài học nào.
+      {/* Modal sửa nội dung 4 phần */}
+      {editingLessonId && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4">
+          <div className="mx-auto my-4 w-full max-w-3xl">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-extrabold text-white">
+                Sửa nội dung 4 phần của bài học
+              </span>
+              <button
+                type="button"
+                onClick={() => setEditingLessonId(null)}
+                className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold text-white hover:bg-white/30"
+              >
+                Đóng
+              </button>
             </div>
-          ) : (
-            <div className="p-5 space-y-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase text-slate-500">Tên bài học</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-0.5">
-                  {lesson.title || <span className="italic text-slate-400">(Chưa đặt tên)</span>}
-                </p>
-              </div>
+            <CourseIntakeForm
+              lessonId={editingLessonId}
+              onSaved={async () => {
+                setEditingLessonId(null);
+                try {
+                  await loadContent();
+                } catch {
+                  // im lặng — đã hiển thị thông báo ở form
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
-              {/* Media preview */}
-              {lesson.type === 'video' && youtubeId && (
-                <div className="aspect-video w-full rounded-xl overflow-hidden bg-black">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
-                    title={lesson.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="h-full w-full"
-                  />
-                </div>
-              )}
-              {lesson.type === 'video' && !youtubeId && lesson.url && (
-                <div className="rounded-xl border border-dashed border-slate-200 p-3 text-[11px] text-slate-500 break-all">
-                  Link video: <span className="font-mono">{lesson.url}</span>
-                </div>
-              )}
-              {lesson.type === 'audio' && lesson.url && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <audio controls className="w-full" src={lesson.url}>
-                    Trình duyệt không hỗ trợ phát audio.
-                  </audio>
-                </div>
-              )}
-              {lesson.type === 'infographic' && lesson.url && (
-                <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
-                  <img
-                    src={resolveImageUrl(lesson.url)}
-                    alt={lesson.title}
-                    className="w-full max-h-80 object-contain bg-white"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
+function Stat({ label, value }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+      <p className="text-[10px] font-bold uppercase text-slate-500">{label}</p>
+      <p className="mt-0.5 text-sm font-extrabold text-slate-900">{value}</p>
+    </div>
+  );
+}
 
-              {lesson.notes && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase text-slate-500">
-                    Tóm tắt lời giảng / Ghi chú
-                  </p>
-                  <p className="text-xs text-slate-700 mt-1 whitespace-pre-line leading-relaxed">
-                    {lesson.notes}
-                  </p>
-                </div>
-              )}
+const PART_STYLES = {
+  slide: { label: '1. Cung cấp kiến thức', box: 'border-pink-200 bg-pink-50/60', chip: 'bg-pink-100 text-[#E60067]' },
+  simulation: { label: '2. Mô phỏng tình huống', box: 'border-teal-200 bg-teal-50/60', chip: 'bg-teal-100 text-teal-800' },
+  summary: { label: '3. Tóm tắt bài học', box: 'border-slate-200 bg-slate-50', chip: 'bg-slate-200 text-slate-700' },
+  quiz: { label: '4. Đánh giá nội dung học', box: 'border-amber-200 bg-amber-50/60', chip: 'bg-amber-100 text-amber-900' },
+};
 
-              {lesson.url && (
-                <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-[10px] text-slate-500 break-all">
-                  <span className="font-bold text-slate-600">URL nội dung: </span>
-                  <span className="font-mono">{lesson.url}</span>
-                </div>
-              )}
-            </div>
+function LessonContentCard({ lesson, index, onEdit }) {
+  const content = lesson.content || {};
+  const slides = content.slides || [];
+  const simulations = content.simulations || [];
+  const quizzes = content.quizzes || [];
+  const summary = content.summary;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[10px] font-black text-white">
+            {index + 1}
+          </span>
+          <h3 className="truncate text-sm font-extrabold text-slate-900">
+            {lesson.title}
+          </h3>
+          {lesson.knowledgeTitle && lesson.knowledgeTitle !== lesson.title && (
+            <span className="hidden truncate text-[11px] text-slate-500 sm:inline">
+              — {lesson.knowledgeTitle}
+            </span>
           )}
         </div>
-
-        {/* Quiz */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-4 h-4 text-teal-600"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-              <path d="M12 17h.01"></path>
-            </svg>
-            <h3 className="text-sm font-extrabold text-slate-900">Câu hỏi trắc nghiệm</h3>
-          </div>
-
-          {!quiz || !quiz.question ? (
-            <div className="p-6 text-center text-xs text-slate-500">
-              Khóa học này chưa có bài trắc nghiệm.
-            </div>
-          ) : (
-            <div className="p-5 space-y-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase text-slate-500">Câu hỏi</p>
-                <p className="text-sm font-extrabold text-slate-900 mt-1 leading-relaxed">
-                  {quiz.question}
-                </p>
-              </div>
-              <ul className="space-y-1.5">
-                {['A', 'B', 'C', 'D'].map((key) => {
-                  const value = quiz.options?.[key];
-                  if (!value) return null;
-                  const isCorrect = quiz.correct === key;
-                  return (
-                    <li
-                      key={key}
-                      className={`flex items-start gap-2.5 rounded-lg border px-3 py-2 text-xs ${
-                        isCorrect
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                          : 'border-slate-200 bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <span
-                        className={`mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${
-                          isCorrect
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-white text-slate-500 border border-slate-200'
-                        }`}
-                      >
-                        {key}
-                      </span>
-                      <span className="flex-1">{value}</span>
-                      {isCorrect && (
-                        <span className="text-[10px] font-extrabold text-emerald-600">
-                          Đúng
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              {!quiz.correct && (
-                <p className="text-[10px] italic text-slate-400">
-                  (Chưa đánh dấu đáp án đúng)
-                </p>
-              )}
-            </div>
-          )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onEdit?.(lesson._id)}
+            className="inline-flex items-center gap-1 rounded-lg border border-pink-200 bg-pink-50 px-2 py-1 text-[10px] font-bold text-[#E60067] hover:bg-pink-100"
+          >
+            <EditIcon aria-hidden="true" className="h-3 w-3" />
+            Sửa 4 phần
+          </button>
+          <Link
+            to={`/admin/courses/${lesson.courseId}/lessons`}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-50"
+          >
+            <FileTextIcon aria-hidden="true" className="h-3 w-3" />
+            Danh sách bài học
+          </Link>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 gap-3 p-4 lg:grid-cols-2">
+        {/* Phần 1 */}
+        <Section box={PART_STYLES.slide.box} title={PART_STYLES.slide.label}>
+          {lesson.knowledgeContent && (
+            <p className="mb-2 text-[11px] leading-relaxed text-slate-600">
+              {lesson.knowledgeContent}
+            </p>
+          )}
+          {lesson.slidePdfUrl && (
+            <a
+              href={resolveImageUrl(lesson.slidePdfUrl)}
+              target="_blank"
+              rel="noreferrer"
+              className="mb-2 inline-flex items-center gap-1 rounded-full border border-pink-200 bg-white px-2 py-0.5 text-[10px] font-bold text-[#E60067]"
+            >
+              <FileTextIcon aria-hidden="true" className="h-3 w-3" />
+              {lesson.slidePdfTitle || lesson.slidePdfName || 'File PDF slide'}
+            </a>
+          )}
+          {slides.length === 0 ? (
+            <Empty text="Chưa có slide nào." />
+          ) : (
+            <ul className="space-y-1.5">
+              {slides.map((s) => (
+                <li
+                  key={s._id || s.title}
+                  className="rounded-lg border border-pink-200 bg-white px-2.5 py-2"
+                >
+                  <p className="text-[11px] font-extrabold text-slate-800">{s.title}</p>
+                  {(s.bullets || []).length > 0 && (
+                    <ul className="mt-1 list-disc pl-4 text-[10px] text-slate-600">
+                      {s.bullets.map((b, bi) => (
+                        <li key={bi}>{b}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {s.note && (
+                    <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-[10px] text-amber-800">
+                      {s.noteLabel ? `${s.noteLabel}: ` : ''}
+                      {s.note}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        {/* Phần 2 */}
+        <Section box={PART_STYLES.simulation.box} title={PART_STYLES.simulation.label}>
+          {simulations.length === 0 ? (
+            <Empty text="Chưa có video mô phỏng." />
+          ) : (
+            simulations.map((sim) => {
+              const ytId = sim.youtubeId || extractYoutubeId(sim.videoUrl || '');
+              return (
+                <div key={sim._id} className="space-y-1.5">
+                  {ytId && (
+                    <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${ytId}?rel=0`}
+                        title={sim.description || 'Video mô phỏng'}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="h-full w-full"
+                      />
+                    </div>
+                  )}
+                  {sim.description && (
+                    <p className="text-[11px] text-slate-600">{sim.description}</p>
+                  )}
+                  {sim.statement && (
+                    <p className="rounded-lg border border-teal-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-700">
+                      <span className="font-bold">Đúng/Sai:</span> {sim.statement}
+                    </p>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </Section>
+
+        {/* Phần 3 */}
+        <Section box={PART_STYLES.summary.box} title={PART_STYLES.summary.label}>
+          {!summary ? (
+            <Empty text="Chưa có phần tóm tắt." />
+          ) : (
+            <div className="space-y-2">
+              <span
+                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  PART_STYLES.summary.chip
+                }`}
+              >
+                {summary.format === 'pdf_video'
+                  ? 'PDF Infographic + Video'
+                  : summary.format === 'pdf'
+                    ? 'Chỉ PDF Infographic'
+                    : 'Chỉ Video Tóm Tắt'}
+              </span>
+              {summary.imageUrl && (
+                <img
+                  src={resolveImageUrl(summary.imageUrl)}
+                  alt={summary.title || 'Infographic'}
+                  className="max-h-40 w-full rounded-lg object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
+              {summary.videoUrl && (
+                <p className="break-all font-mono text-[10px] text-slate-500">
+                  {summary.videoUrl}
+                </p>
+              )}
+            </div>
+          )}
+        </Section>
+
+        {/* Phần 4 */}
+        <Section box={PART_STYLES.quiz.box} title={PART_STYLES.quiz.label}>
+          {quizzes.length === 0 ? (
+            <Empty text="Chưa có câu hỏi trắc nghiệm." />
+          ) : (
+            quizzes.map((q) => (
+              <div key={q._id} className="space-y-1.5">
+                <p className="text-[11px] font-bold text-slate-800">{q.question}</p>
+                <ul className="space-y-1">
+                  {['A', 'B', 'C', 'D'].map((key) => {
+                    const value = q.options?.[key];
+                    if (!value) return null;
+                    const isCorrect = q.correct === key;
+                    return (
+                      <li
+                        key={key}
+                        className={`flex items-start gap-2 rounded-lg border px-2 py-1.5 text-[11px] ${
+                          isCorrect
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                            : 'border-slate-200 bg-white text-slate-700'
+                        }`}
+                      >
+                        <span
+                          className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-black ${
+                            isCorrect
+                              ? 'bg-emerald-500 text-white'
+                              : 'border border-slate-200 bg-slate-50 text-slate-500'
+                          }`}
+                        >
+                          {key}
+                        </span>
+                        <span className="flex-1">{value}</span>
+                        {isCorrect && (
+                          <span className="text-[9px] font-extrabold text-emerald-600">
+                            Đúng
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))
+          )}
+        </Section>
+      </div>
     </div>
+  );
+}
+
+function Section({ box, title, children }) {
+  return (
+    <div className={`rounded-xl border p-3 ${box}`}>
+      <p className="mb-2 text-[11px] font-extrabold uppercase tracking-wide text-slate-700">
+        {title}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function Empty({ text }) {
+  return (
+    <p className="rounded-lg border border-dashed border-slate-200 bg-white/70 px-2.5 py-3 text-center text-[11px] text-slate-400">
+      {text}
+    </p>
   );
 }

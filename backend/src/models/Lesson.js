@@ -70,6 +70,46 @@ const lessonSchema = new mongoose.Schema(
       trim: true,
       maxlength: 300,
     },
+    // ─── Phần 1: Cung cấp kiến thức (Slide & Nội dung) ───────────────
+    // Tên bài học kiến thức (hiển thị ở phần 1 của modal học).
+    knowledgeTitle: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 300,
+    },
+    // Nội dung dạng slide & text chi tiết.
+    knowledgeContent: {
+      type: String,
+      default: '',
+      maxlength: 8000,
+    },
+    // File PDF slide đính kèm (nếu admin upload).
+    slidePdfUrl: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 1000,
+    },
+    slidePdfName: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 300,
+    },
+    slidePdfTitle: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 300,
+    },
+    // Ảnh bìa khóa học dạng URL ngoài (dùng cho form nhập nhanh).
+    coverUrl: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 1000,
+    },
     order: {
       type: Number,
       default: 0,

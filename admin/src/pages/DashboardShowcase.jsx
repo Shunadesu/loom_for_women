@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import KPICard from '../components/KPICard.jsx';
 import { IncomeGrowthChart, LessonDistributionChart } from '../components/DashboardCharts.jsx';
-import CourseImportPanel from '../components/CourseImportPanel.jsx';
+import CourseIntakeForm from '../components/CourseIntakeForm.jsx';
+import { fetchAllCoursesAdmin } from '../services/courseApi.js';
+import { fetchCourseContent } from '../services/courseIntakeApi.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
+import { useNotification } from '../store/notificationStore.js';
 import {
   kpiMetrics,
   uxMetrics,
@@ -18,8 +23,49 @@ export default function DashboardShowcase() {
   const [tabs, setTabs] = useState(initialTabs);
   const activeTab = tabs.find((t) => t.active)?.id || 'overview';
 
+  // ─── Dữ liệu khóa học thật cho tab "Nhập Bài Học" ───
+  const [courses, setCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState(null);
+  const [courseLessons, setCourseLessons] = useState([]);
+  const { notify } = useNotification();
+
   function selectTab(id) {
     setTabs((prev) => prev.map((t) => ({ ...t, active: t.id === id })));
+  }
+
+  async function loadCourses() {
+    setLoadingCourses(true);
+    try {
+      const items = await fetchAllCoursesAdmin();
+      setCourses(items);
+    } catch (err) {
+      notify({
+        type: 'error',
+        title: 'Tải dữ liệu thất bại',
+        message: err?.response?.data?.error || 'Không tải được khóa học.',
+      });
+    } finally {
+      setLoadingCourses(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'lessons') return;
+    loadCourses();
+  }, [activeTab]);
+
+  async function openLessonEditor(lessonId) {
+    setEditingLessonId(lessonId);
+  }
+
+  async function loadCourseLessons(courseId) {
+    try {
+      const data = await fetchCourseContent(courseId);
+      setCourseLessons(data.items || []);
+    } catch {
+      setCourseLessons([]);
+    }
   }
 
   return (
@@ -140,12 +186,180 @@ export default function DashboardShowcase() {
         </>
       )}
 
-      {activeTab === 'lessons' && <CourseImportPanel />}
+      {activeTab === 'lessons' && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Form column */}
+          <div className="lg:col-span-5">
+            <CourseIntakeForm
+              lessonId={editingLessonId}
+              onSaved={() => {
+                setEditingLessonId(null);
+                loadCourses();
+              }}
+            />
+            {editingLessonId && (
+              <button
+                type="button"
+                onClick={() => setEditingLessonId(null)}
+                className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
+              >
+                ← Huỷ chỉnh sửa, tạo bài học mới
+              </button>
+            )}
+          </div>
+
+          {/* List column */}
+          <div className="lg:col-span-7 space-y-3">
+            <h3 className="flex items-center justify-between text-sm font-extrabold text-slate-900">
+              <span>Danh Sách Khóa Học Hiện Có ({courses.length})</span>
+              <span className="text-xs font-normal text-slate-500">
+                Đồng bộ trực tiếp Zalo Mini App
+              </span>
+            </h3>
+
+            {loadingCourses ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-xs text-slate-500">
+                Đang tải...
+              </div>
+            ) : courses.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-xs text-slate-500">
+                Chưa có khóa học nào. Hãy nhập khóa học đầu tiên từ form bên trái.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {courses.map((course) => (
+                  <div
+                    key={course._id}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <img
+                        alt={course.title}
+                        className="h-24 w-24 shrink-0 rounded-xl border border-slate-200 object-cover"
+                        src={resolveImageUrl(course.coverUrl || course.thumbnail)}
+                      />
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="line-clamp-1 text-sm font-extrabold text-slate-900">
+                            {course.title}
+                          </h4>
+                          <Link
+                            to={`/admin/courses/${course._id}`}
+                            className="shrink-0 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-50"
+                          >
+                            Chi tiết
+                          </Link>
+                        </div>
+                        <p className="line-clamp-2 text-xs text-slate-500">
+                          {course.description || (
+                            <span className="italic text-slate-400">(Chưa có mô tả)</span>
+                          )}
+                        </p>
+                        <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-500">
+                          <span>⏱️ {course.durationMinutes || 0} phút</span>
+                          <span>📚 {course.lessonsCount || 0} bài học</span>
+                          <span>⭐ {course.rating || '—'}</span>
+                          {course.category && (
+                            <span className="rounded-full bg-pink-50 px-2 py-0.5 text-[10px] font-bold text-[#E60067]">
+                              {course.category}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Danh sách bài học + trạng thái 4 phần */}
+                    <CourseLessonList
+                      courseId={course._id}
+                      lessons={courseLessons}
+                      loadCourseLessons={loadCourseLessons}
+                      onEdit={openLessonEditor}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {!['overview', 'lessons'].includes(activeTab) && (
         <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-8 text-center text-xs text-slate-500">
           Tab <span className="font-bold text-slate-700">{activeTab}</span> đang được
           xây dựng. Vui lòng quay lại sau.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Danh sách bài học của 1 khóa + badge trạng thái 4 phần. */
+function CourseLessonList({
+  courseId,
+  lessons,
+  loadCourseLessons,
+  onEdit,
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!expanded) return;
+    loadCourseLessons(courseId);
+  }, [expanded, courseId, loadCourseLessons]);
+
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="text-[11px] font-bold text-[#E60067] hover:underline"
+      >
+        {expanded ? '− Ẩn danh sách bài học' : '+ Xem danh sách bài học & trạng thái 4 phần'}
+      </button>
+
+      {expanded && (
+        <div className="mt-2 space-y-1.5">
+          {lessons.length === 0 && (
+            <p className="text-[11px] text-slate-400">Chưa có bài học nào.</p>
+          )}
+          {lessons.map((l) => {
+            const content = l.content || {};
+            const parts = [
+              { label: 'Slide', ok: (content.slides || []).length > 0 },
+              { label: 'Mô phỏng', ok: (content.simulations || []).length > 0 },
+              { label: 'Tóm tắt', ok: Boolean(content.summary) },
+              { label: 'Quiz', ok: (content.quizzes || []).length > 0 },
+            ];
+            return (
+              <div
+                key={l._id}
+                className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2"
+              >
+                <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-slate-800">
+                  {l.title}
+                </span>
+                {parts.map((p) => (
+                  <span
+                    key={p.label}
+                    className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                      p.ok
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-slate-200 text-slate-500'
+                    }`}
+                  >
+                    {p.ok ? '✓' : '–'} {p.label}
+                  </span>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => onEdit(l._id)}
+                  className="rounded-lg border border-pink-200 bg-pink-50 px-2 py-1 text-[10px] font-bold text-[#E60067] hover:bg-pink-100"
+                >
+                  Sửa 4 phần
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

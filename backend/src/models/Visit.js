@@ -75,7 +75,16 @@ const visitSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-visitSchema.index({ visitedAt: 1 });
+// TTL index (tuỳ chọn): chỉ bật khi đặt VISIT_TTL_DAYS > 0 trong .env.
+// Giữ dữ liệu đủ lâu để tra cứu theo năm, nhưng tránh collection phình vô hạn.
+const VISIT_TTL_DAYS = Number(process.env.VISIT_TTL_DAYS) || 0;
+
+visitSchema.index(
+  { visitedAt: 1 },
+  VISIT_TTL_DAYS > 0
+    ? { expireAfterSeconds: VISIT_TTL_DAYS * 24 * 60 * 60 }
+    : {}
+);
 visitSchema.index({ path: 1, visitedAt: -1 });
 visitSchema.index({ courseId: 1, visitedAt: -1 });
 visitSchema.index({ pageType: 1, visitedAt: -1 });

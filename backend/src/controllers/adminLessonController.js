@@ -3,6 +3,7 @@ import Lesson from '../models/Lesson.js';
 import Course from '../models/Course.js';
 import { resolveVideoSource } from '../utils/videoSource.js';
 import { safeUnlink, UPLOAD_LESSON_DIR } from '../middleware/upload.js';
+import { purgeLessonContent } from '../services/lessonContentService.js';
 
 const VALID_CONTENT_TYPES = ['video', 'video_pdf', 'image_pdf'];
 
@@ -217,6 +218,7 @@ export const deleteLesson = async (req, res) => {
     if (!lesson) return res.status(404).json({ error: 'Không tìm thấy.' });
     const courseId = lesson.courseId;
     removePdfFile(lesson.pdfUrl);
+    await purgeLessonContent(lesson._id);
     await lesson.deleteOne();
     await recomputeCourseMeta(courseId);
     res.json({ ok: true });

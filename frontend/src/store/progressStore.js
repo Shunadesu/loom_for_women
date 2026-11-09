@@ -96,6 +96,30 @@ export const useProgressStore = create((set, get) => ({
     }
   },
 
+  /**
+   * Cập nhật tiến độ sau khi học viên trả lời đúng trắc nghiệm.
+   * Backend đã tự tick hoàn thành bài học, ta chỉ cập nhật state local.
+   */
+  applyQuizResult: (courseId, lessonId, result = {}) => {
+    if (!courseId) return;
+    const map = { ...get().byCourse };
+    const cid = String(courseId);
+    const lid = String(lessonId);
+    const prev = map[cid] || {};
+    const completed = new Set((prev.completedLessons || []).map(String));
+    completed.add(lid);
+    map[cid] = {
+      ...prev,
+      lastLessonId: lid,
+      completedLessons: Array.from(completed),
+      progressPct:
+        typeof result.progressPct === 'number'
+          ? result.progressPct
+          : prev.progressPct,
+    };
+    set({ byCourse: map });
+  },
+
   isFavorite: (courseId) => get().favoriteIds.has(String(courseId)),
   toggleFavoriteLocal: (courseId) => {
     const set1 = new Set(get().favoriteIds);

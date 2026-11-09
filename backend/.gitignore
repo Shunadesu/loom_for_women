@@ -3,6 +3,9 @@ node_modules/
 *.log
 dist/
 
+# Chứa JWT_SECRET thật — không được commit
+.env.production.template
+
 # Ảnh upload từ admin — không commit; giữ .gitkeep cho thư mục
 uploads/heroes/*
 !uploads/heroes/.gitkeep

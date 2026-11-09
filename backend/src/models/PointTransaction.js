@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 /**
  * PointTransaction — Lịch sử cộng/trừ điểm của user.
- * type: 'lesson_complete' | 'course_finish' | 'comment' | 'admin_award' | 'spent'
+ * type: 'lesson_complete' | 'quiz_correct' | 'course_finish' | 'comment' | 'admin_award' | 'spent'
  */
 const pointTransactionSchema = new mongoose.Schema(
   {
@@ -21,6 +21,7 @@ const pointTransactionSchema = new mongoose.Schema(
       required: true,
       enum: [
         'lesson_complete',
+        'quiz_correct',
         'course_finish',
         'comment',
         'admin_award',

@@ -19,15 +19,22 @@ const recomputeRating = async (courseId) => {
 export const listComments = async (req, res) => {
   try {
     const { id } = req.params;
+    // Cho phép truyền cả ObjectId lẫn slug của khóa học.
+    let courseId = id;
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Course ID không hợp lệ.' });
+      const course = await Course.findOne({ slug: String(id) }).select('_id').lean();
+      if (!course) {
+        return res.status(404).json({ error: 'Không tìm thấy khóa học.' });
+      }
+      courseId = course._id;
     }
-    const comments = await CourseComment.find({ courseId: id, isHidden: false })
+    const comments = await CourseComment.find({ courseId, isHidden: false })
       .populate('userId', 'name phone')
       .sort({ createdAt: -1 })
       .lean();
     res.json({ items: comments });
   } catch (err) {
+    console.error('listComments error', err);
     res.status(500).json({ error: 'Lỗi server.' });
   }
 };
