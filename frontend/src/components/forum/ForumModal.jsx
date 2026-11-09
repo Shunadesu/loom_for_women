@@ -18,7 +18,7 @@ import { useNotification } from '../../store/notificationStore.js';
 export default function ForumModal({ isOpen, onClose }) {
   const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
   const { posts, loading, selectedCategory, setCategory, fetchPosts, createPost, likePost } = useForumPostStore();
-  const { user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const { openLoginDrawer } = useLoginDrawerStore();
   const { toast } = useNotification();
 
@@ -46,7 +46,7 @@ export default function ForumModal({ isOpen, onClose }) {
 
   // Handle Đăng bài button
   const handleNewPostClick = () => {
-    if (!user) {
+    if (!isAuthenticated) {
       openLoginDrawer('/');
       return;
     }
@@ -67,7 +67,7 @@ export default function ForumModal({ isOpen, onClose }) {
 
   // Handle like post
   const handleLike = async (postId) => {
-    if (!user) {
+    if (!isAuthenticated) {
       openLoginDrawer('/');
       return;
     }

@@ -11,9 +11,7 @@ import { resolveImageUrl } from '../../utils/imageUrl.js';
  * - Ẩn nếu chưa đăng nhập hoặc không có course ongoing.
  */
 export default function ContinueLearningBanner() {
-  const token = useAuthStore((s) => s.token);
-  const user = useAuthStore((s) => s.user);
-  const isAuthenticated = Boolean(token || user?._id);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const continueItem = useProgressStore((s) => s.continueItem);
   const fetchContinue = useProgressStore((s) => s.fetchContinue);
 

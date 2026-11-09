@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRightIcon } from '../icons/index.jsx';
+import ProtectedLink from '../auth/ProtectedLink.jsx';
 import { useCartStore } from '../../store/cartStore.js';
 import { useForumStore } from '../../store/forumStore.js';
 import { useExpertQAStore } from '../../store/expertQAStore.js';
@@ -29,7 +30,7 @@ export default function CategoryNav({ title, titleIcon: TitleIcon, items }) {
   const openExpertQA = useExpertQAStore((s) => s.openModal);
   const openSupport = useSupportStore((s) => s.openModal);
   const setDocumentFilter = useDocumentStore((s) => s.setFilter);
-  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openLoginDrawer = useLoginDrawerStore((s) => s.openLoginDrawer);
 
   function handleAction(item, e) {
@@ -42,7 +43,7 @@ export default function CategoryNav({ title, titleIcon: TitleIcon, items }) {
     } else if (item.action === 'support') {
       openSupport();
     } else if (item.action === 'cart') {
-      if (!user) {
+      if (!isAuthenticated) {
         openLoginDrawer('/gio-hang');
         return;
       }
@@ -67,7 +68,17 @@ export default function CategoryNav({ title, titleIcon: TitleIcon, items }) {
       </div>
       <div className="grid grid-cols-4 gap-2 text-center">
         {items.map((item) => {
-          const { id, label, Icon, to, action, badge, ping, tone = 'default' } = item;
+          const {
+            id,
+            label,
+            Icon,
+            to,
+            action,
+            badge,
+            ping,
+            tone = 'default',
+            requireAuth = false,
+          } = item;
           const boxClass = TONE_STYLES[tone] || TONE_STYLES.default;
 
           const inner = (
@@ -109,6 +120,16 @@ export default function CategoryNav({ title, titleIcon: TitleIcon, items }) {
           }
 
           // Mục điều hướng tới route.
+          // Route cần đăng nhập → dùng ProtectedLink để mở drawer đăng nhập
+          // ngay tại chỗ, không chuyển trang trước.
+          if (requireAuth) {
+            return (
+              <ProtectedLink key={id} to={to} className={shell}>
+                {inner}
+              </ProtectedLink>
+            );
+          }
+
           return (
             <Link key={id} to={to} className={shell}>
               {inner}

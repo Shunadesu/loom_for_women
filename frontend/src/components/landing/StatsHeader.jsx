@@ -9,9 +9,7 @@ import { PlayIcon, ClockIcon, AwardIcon, FlameIcon } from '../icons/index.jsx';
  * Ẩn hoàn toàn nếu user chưa đăng nhập.
  */
 export default function StatsHeader() {
-  const token = useAuthStore((s) => s.token);
-  const user = useAuthStore((s) => s.user);
-  const isAuthenticated = Boolean(token || user?._id);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const stats = useProgressStore((s) => s.stats);
   const fetchStats = useProgressStore((s) => s.fetchStats);
 

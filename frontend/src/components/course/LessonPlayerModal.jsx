@@ -17,7 +17,7 @@ import { resolveImageUrl } from '../../utils/imageUrl.js';
  * - course        : object khóa học (title, category, rating, durationMinutes...)
  * - lesson        : object bài học (title, slides, simulations, summary, quizzes, slidePdfUrl, slidePdfTitle)
  * - isAuthenticated
- * - onRequireLogin
+ * - onRequireLogin : callback mở LoginDrawer (có thể nhận redirectPath) khi học viên chưa đăng nhập
  * - onPassed      : callback(result) khi học viên trả lời đúng trắc nghiệm
  * - onOpenCertificate : callback mở trang chứng nhận
  * - onComplete    : callback(lessonId) đánh dấu hoàn thành (dùng cho bài học chỉ có media)
@@ -99,6 +99,23 @@ export default function LessonPlayerModal({
     setStep(next);
   };
 
+  /**
+   * Mở trang chứng chỉ.
+   * - Chưa đăng nhập → mở LoginDrawer NGAY TẠI TRANG HIỆN TẠI (không chuyển
+   *   trang trước). Sau khi đăng nhập thành công, LoginDrawer sẽ tự chuyển
+   *   tới '/chung-chi'.
+   * - Đã đăng nhập → điều hướng thẳng tới trang chứng chỉ.
+   */
+  const handleOpenCertificate = () => {
+    if (!isAuthenticated) {
+      // Đóng modal bài học trước để LoginDrawer (z-50) không bị modal (z-[9999]) che khuất.
+      onClose?.();
+      onRequireLogin?.('/chung-chi');
+      return;
+    }
+    onOpenCertificate?.();
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-0 sm:p-4">
       <div className="flex h-full max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-white sm:h-[92vh] sm:max-h-[92vh] sm:rounded-2xl sm:shadow-2xl">
@@ -137,7 +154,7 @@ export default function LessonPlayerModal({
             {onOpenCertificate && (
               <button
                 type="button"
-                onClick={onOpenCertificate}
+                onClick={handleOpenCertificate}
                 className="hidden items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-xs transition-colors hover:bg-amber-300 sm:flex"
               >
                 <svg
@@ -310,7 +327,12 @@ export default function LessonPlayerModal({
 
           {structured && step === 2 && (
             <div className="space-y-4">
-              <SimulationStep simulation={simulations[0] || null} />
+              {simulations.map((sim, si) => (
+                <SimulationStep
+                  key={sim?._id || `simulation-${si}`}
+                  simulation={sim || null}
+                />
+              ))}
               <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row">
                 <div className="text-xs text-slate-600">
                   <span className="font-bold text-slate-900">
@@ -399,7 +421,7 @@ export default function LessonPlayerModal({
             {onOpenCertificate && (
               <button
                 type="button"
-                onClick={onOpenCertificate}
+                onClick={handleOpenCertificate}
                 className="flex cursor-pointer items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-emerald-700 shadow-xs transition-all hover:bg-emerald-100"
               >
                 <svg

@@ -1,10 +1,24 @@
 import { useNavigate } from 'react-router-dom';
 import { GraduationCapIcon, ShoppingBagIcon } from '../icons/index.jsx';
 import { useCartStore } from '../../store/cartStore.js';
+import { useAuthStore } from '../../store/authStore.js';
+import { useLoginDrawerStore } from '../../store/loginDrawerStore.js';
 
 export default function PassportActionCards() {
   const navigate = useNavigate();
   const cartCount = useCartStore((s) => s.count);
+  const openCart = useCartStore((s) => s.openCart);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const openLoginDrawer = useLoginDrawerStore((s) => s.openLoginDrawer);
+
+  function handleOpenCart() {
+    if (!isAuthenticated) {
+      // Chưa đăng nhập → mở drawer đăng nhập ngay, sau khi login sẽ mở giỏ hàng.
+      openLoginDrawer('/gio-hang');
+      return;
+    }
+    openCart();
+  }
 
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -22,6 +36,8 @@ export default function PassportActionCards() {
       </button>
 
       <button
+        type="button"
+        onClick={handleOpenCart}
         className="bg-white hover:bg-pink-50/50 p-3.5 rounded-2xl border border-slate-100 shadow-xs text-left transition-all group flex flex-col justify-between relative"
       >
         <div className="flex items-center justify-between mb-2">

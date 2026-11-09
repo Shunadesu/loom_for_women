@@ -7,6 +7,7 @@ import { extractYoutubeId } from '../utils/youtube.js';
 import { ArrowLeftIcon, FileTextIcon, VideoIcon, EditIcon } from '../components/icons.jsx';
 import { useNotification } from '../store/notificationStore.js';
 import LessonFourPartModal from '../components/LessonFourPartModal.jsx';
+import { toStatements } from '../components/lessonDraft.js';
 
 /**
  * Chi tiết khóa học (admin): hiển thị 4 phần nội dung của từng bài học.
@@ -311,6 +312,7 @@ function LessonContentCard({ lesson, index, onEdit }) {
           ) : (
             simulations.map((sim) => {
               const ytId = sim.youtubeId || extractYoutubeId(sim.videoUrl || '');
+              const statements = toStatements(sim);
               return (
                 <div key={sim._id} className="space-y-1.5">
                   {ytId && (
@@ -327,11 +329,18 @@ function LessonContentCard({ lesson, index, onEdit }) {
                   {sim.description && (
                     <p className="text-[11px] text-slate-600">{sim.description}</p>
                   )}
-                  {sim.statement && (
-                    <p className="rounded-lg border border-teal-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-700">
-                      <span className="font-bold">Đúng/Sai:</span> {sim.statement}
+                  {statements.map((st, si) => (
+                    <p
+                      key={`st-${si}`}
+                      className="rounded-lg border border-teal-200 bg-white px-2.5 py-1.5 text-[11px] text-slate-700"
+                    >
+                      <span className="font-bold">Đúng/Sai {si + 1}:</span>{' '}
+                      {st.text}{' '}
+                      <span className="font-bold text-teal-700">
+                        ({st.isCorrect ? 'Đúng' : 'Sai'})
+                      </span>
                     </p>
-                  )}
+                  ))}
                 </div>
               );
             })

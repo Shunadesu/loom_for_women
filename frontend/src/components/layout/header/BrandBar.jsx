@@ -14,6 +14,7 @@ import { useAuthStore } from '../../../store/authStore.js';
 import { useCartStore } from '../../../store/cartStore.js';
 import { useLoginDrawerStore } from '../../../store/loginDrawerStore.js';
 import BrandLogo from '../BrandLogo.jsx';
+import ProtectedLink from '../../auth/ProtectedLink.jsx';
 
 const BRAND_TITLE = 'HỘ CHIẾU AN TOÀN';
 const BRAND_BADGE = 'Loom for Women';
@@ -31,7 +32,7 @@ export default function BrandBar() {
   const dropdownRef = useRef(null);
 
   const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const points = useAuthStore((s) => s.points);
   const level = useAuthStore((s) => s.level);
   const logout = useAuthStore((s) => s.logout);
@@ -88,7 +89,7 @@ export default function BrandBar() {
       {/* Phải: actions */}
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {/* Auth Section */}
-        {!token ? (
+        {!isAuthenticated ? (
           /* Chưa đăng nhập - Hiển thị nút Đăng nhập */
           <button
             onClick={() => openLoginDrawer('/')}
@@ -155,14 +156,15 @@ export default function BrandBar() {
 
                   {/* Menu Items */}
                   <div className="p-1">
-                    <Link
+                    <ProtectedLink
                       to="/he-chieu"
+                      requireAuth
                       onClick={() => setIsDropdownOpen(false)}
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-pink-50 hover:text-[#E60067]"
                     >
                       <UserIcon className="h-4 w-4" />
                       Hộ Chiếu An Toàn
-                    </Link>
+                    </ProtectedLink>
                     
                     <Link
                       to="/khoa-hoc"
@@ -173,32 +175,35 @@ export default function BrandBar() {
                       Khóa học của tôi
                     </Link>
 
-                    <Link
+                    <ProtectedLink
                       to="/yeu-thich"
+                      requireAuth
                       onClick={() => setIsDropdownOpen(false)}
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-pink-50 hover:text-[#E60067]"
                     >
                       <HeartIcon className="h-4 w-4" />
                       Yêu thích
-                    </Link>
+                    </ProtectedLink>
 
-                    <Link
+                    <ProtectedLink
                       to="/chung-chi"
+                      requireAuth
                       onClick={() => setIsDropdownOpen(false)}
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-pink-50 hover:text-[#E60067]"
                     >
                       <FileTextIcon className="h-4 w-4" />
                       Chứng chỉ
-                    </Link>
+                    </ProtectedLink>
 
-                    <Link
+                    <ProtectedLink
                       to="/diem"
+                      requireAuth
                       onClick={() => setIsDropdownOpen(false)}
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-pink-50 hover:text-[#E60067]"
                     >
                       <TrophyIcon className="h-4 w-4" />
                       Điểm thưởng
-                    </Link>
+                    </ProtectedLink>
 
                     <div className="my-1 border-t border-slate-100"></div>
 

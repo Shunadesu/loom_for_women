@@ -94,7 +94,7 @@ export const CATEGORY_AN_TOAN = {
   icon: ShieldCheckIcon,
   items: [
     { id: 'workshop', label: 'Workshop', Icon: CalendarIcon, to: '/workshop' },
-    { id: 'he-chieu', label: 'Hộ chiếu', Icon: ShieldCheckIcon, to: '/he-chieu' },
+    { id: 'he-chieu', label: 'Hộ chiếu', Icon: ShieldCheckIcon, to: '/he-chieu', requireAuth: true },
     {
       id: 'sos',
       label: 'SOS 24/7',

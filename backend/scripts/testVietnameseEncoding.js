@@ -140,6 +140,13 @@ const login = async () => {
   const simDoc = await LessonSimulation.findOne({ lessonId }).lean();
   assert('Mô tả mô phỏng khớp tuyệt đối', simDoc.description === T.simDesc);
   assert('Phát biểu mô phỏng khớp tuyệt đối', simDoc.statement === T.simStatement);
+  assert(
+    'Phát biểu mô phỏng nằm trong danh sách statements',
+    Array.isArray(simDoc.statements) &&
+      simDoc.statements.length === 1 &&
+      simDoc.statements[0].text === T.simStatement &&
+      simDoc.statements[0].isCorrect === true
+  );
 
   const summaryDoc = await LessonSummary.findOne({ lessonId }).lean();
   assert('Tiêu đề tóm tắt khớp tuyệt đối', summaryDoc.title === T.summaryTitle);

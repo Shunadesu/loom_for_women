@@ -3,6 +3,32 @@
  * để có thể kiểm thử bằng Node (không cần transform JSX).
  */
 
+/**
+ * Chuẩn hoá danh sách phát biểu Đúng/Sai của 1 mô phỏng.
+ * Hỗ trợ dữ liệu mới (`statements[]`) và dữ liệu cũ (`statement` + `isCorrect`).
+ * @param {object} simulation
+ * @returns {Array<{text:string,isCorrect:boolean}>}
+ */
+export function toStatements(simulation) {
+  const list = Array.isArray(simulation?.statements) ? simulation.statements : [];
+  const mapped = list
+    .map((s) => ({
+      text: String(s?.text ?? '').trim(),
+      isCorrect: s?.isCorrect !== false,
+    }))
+    .filter((s) => s.text);
+  if (mapped.length > 0) return mapped;
+  // Fallback dữ liệu cũ: 1 phát biểu phẳng
+  const legacyText = String(simulation?.statement ?? '').trim();
+  if (!legacyText) return [];
+  return [{ text: legacyText, isCorrect: simulation?.isCorrect !== false }];
+}
+
+/** Mô phỏng có ít nhất 1 phát biểu Đúng/Sai hay không. */
+export function hasStatements(simulation) {
+  return toStatements(simulation).length > 0;
+}
+
 /** Bản nháp bài học mới — đủ 4 phần + media. */
 export function createLessonDraft(contentType = 'video') {
   return {
@@ -19,7 +45,7 @@ export function createLessonDraft(contentType = 'video') {
     slidePdfUrl: '',
     slides: [],
     // ─── Phần 2: mô phỏng ───
-    simulation: { videoUrl: '', description: '', statement: '', isCorrect: false },
+    simulation: { videoUrl: '', description: '', statements: [] },
     // ─── Phần 3: tóm tắt ───
     summary: { format: 'pdf_video', imageUrl: '', videoUrl: '', title: '' },
     summaryImageFile: null,
@@ -66,10 +92,9 @@ export function lessonToDraft(lesson, content = null) {
       ? {
           videoUrl: content.simulations[0].videoUrl || '',
           description: content.simulations[0].description || '',
-          statement: content.simulations[0].statement || '',
-          isCorrect: content.simulations[0].isCorrect !== false,
+          statements: toStatements(content.simulations[0]),
         }
-      : { videoUrl: '', description: '', statement: '', isCorrect: false },
+      : { videoUrl: '', description: '', statements: [] },
     summary: content?.summary
       ? {
           format: content.summary.format || 'pdf_video',
@@ -121,11 +146,19 @@ export function draftToFormData(draft, order) {
 
   // Phần 2
   const sim = draft.simulation || {};
+  const statements = toStatements(sim);
+  const simulationPayload = {
+    videoUrl: (sim.videoUrl || '').trim(),
+    description: (sim.description || '').trim(),
+    statements,
+  };
   form.append(
     'simulations',
     JSON.stringify(
-      sim.videoUrl?.trim() || sim.description?.trim() || sim.statement?.trim()
-        ? [sim]
+      simulationPayload.videoUrl ||
+        simulationPayload.description ||
+        statements.length > 0
+        ? [simulationPayload]
         : []
     )
   );
@@ -150,7 +183,11 @@ export function missingParts(draft) {
   const missing = [];
   if (!(draft.slides || []).length) missing.push('slide');
   const sim = draft.simulation || {};
-  if (!sim.videoUrl?.trim() && !sim.description?.trim() && !sim.statement?.trim()) {
+  if (
+    !sim.videoUrl?.trim() &&
+    !sim.description?.trim() &&
+    !hasStatements(sim)
+  ) {
     missing.push('mô phỏng');
   }
   const sum = draft.summary || {};

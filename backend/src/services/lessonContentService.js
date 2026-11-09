@@ -100,16 +100,43 @@ export async function replaceSimulations(lessonId, courseId, simulations) {
     .map((sim, i) => {
       const videoUrl = clean(sim?.videoUrl, 1000);
       const description = clean(sim?.description, 2000);
-      const statement = clean(sim?.statement, 1000);
-      if (!videoUrl && !description && !statement) return null;
+
+      // Danh sách phát biểu Đúng/Sai (mới) — fallback về 1 câu legacy nếu chưa có
+      const rawStatements = toArray(sim?.statements);
+      const statements = rawStatements
+        .map((s, si) => {
+          const text = clean(s?.text, 1000);
+          if (!text) return null;
+          return {
+            text,
+            isCorrect: s?.isCorrect !== false,
+            order: Number.isFinite(+s?.order) ? +s.order : si,
+          };
+        })
+        .filter(Boolean);
+      if (statements.length === 0 && clean(sim?.statement, 1000)) {
+        statements.push({
+          text: clean(sim.statement, 1000),
+          isCorrect: sim?.isCorrect !== false,
+          order: 0,
+        });
+      }
+
+      // Giữ tương thích dữ liệu cũ: field phẳng luôn mirror phát biểu đầu tiên
+      const first = statements[0] || null;
+      const statement = first ? first.text : '';
+      const isCorrect = first ? first.isCorrect : sim?.isCorrect !== false;
+
+      if (!videoUrl && !description && statements.length === 0) return null;
       return {
         lessonId,
         courseId,
         videoUrl,
         youtubeId: extractYoutubeId(videoUrl) || '',
         description,
+        statements,
         statement,
-        isCorrect: sim?.isCorrect !== false,
+        isCorrect,
         order: Number.isFinite(+sim?.order) ? +sim.order : i,
       };
     })

@@ -41,8 +41,10 @@ draft.slides = [
 draft.simulation = {
   videoUrl: 'https://youtu.be/abc',
   description: 'Mô tả',
-  statement: 'Phát biểu',
-  isCorrect: false,
+  statements: [
+    { text: 'Phát biểu 1', isCorrect: false },
+    { text: 'Phát biểu 2', isCorrect: true },
+  ],
 };
 draft.summary = {
   format: 'pdf_video',
@@ -76,7 +78,13 @@ assert('slide giữ bullets', slides[0].bullets.length === 1);
 
 const sims = JSON.parse(get('simulations'));
 assert(`simulations có 1 phần tử (${sims.length})`, sims.length === 1);
-assert('simulation giữ isCorrect=false', sims[0].isCorrect === false);
+assert(
+  `simulation giữ 2 phát biểu (${sims[0].statements.length})`,
+  sims[0].statements.length === 2
+);
+assert('phát biểu 1 giữ isCorrect=false', sims[0].statements[0].isCorrect === false);
+assert('phát biểu 2 giữ isCorrect=true', sims[0].statements[1].isCorrect === true);
+assert('phát biểu 1 giữ nội dung', sims[0].statements[0].text === 'Phát biểu 1');
 
 const summary = JSON.parse(get('summary'));
 assert(`summary giữ format (${summary.format})`, summary.format === 'pdf_video');
@@ -91,7 +99,7 @@ assert('câu 2 giữ đáp án A', quizzes[1].correct === 'A');
 console.log('\n[3] Bài học không có mô phỏng');
 const d2 = createLessonDraft();
 d2.title = 'Bài không mô phỏng';
-d2.simulation = { videoUrl: '', description: '', statement: '', isCorrect: false };
+d2.simulation = { videoUrl: '', description: '', statements: [] };
 const sims2 = JSON.parse(draftToFormData(d2, 0).get('simulations'));
 assert(`simulations rỗng (${sims2.length})`, sims2.length === 0);
 
@@ -99,7 +107,7 @@ assert(`simulations rỗng (${sims2.length})`, sims2.length === 0);
 console.log('\n[4] Đánh dấu phần thiếu');
 const d3 = createLessonDraft();
 d3.slides = [{ title: 'S1' }];
-d3.simulation = { videoUrl: 'https://youtu.be/x', description: '', statement: '' };
+d3.simulation = { videoUrl: 'https://youtu.be/x', description: '', statements: [] };
 d3.summary = { imageUrl: 'https://img/a.png' };
 const miss3 = missingParts(d3);
 assert(`Thiếu đúng 1 phần (${miss3.join(',')})`, miss3.length === 1 && miss3[0] === 'trắc nghiệm');
@@ -121,7 +129,16 @@ const serverLesson = {
 const content = {
   slides: [{ title: 'S1', content: 'c', bullets: ['b'] }],
   quizzes: [{ question: 'Q1', options: { A: 'a', B: 'b' }, correct: 'A', type: 'single' }],
-  simulations: [{ videoUrl: 'https://youtu.be/z', description: 'd', statement: 's', isCorrect: true }],
+  simulations: [
+    {
+      videoUrl: 'https://youtu.be/z',
+      description: 'd',
+      statements: [
+        { text: 's1', isCorrect: true },
+        { text: 's2', isCorrect: false },
+      ],
+    },
+  ],
   summary: { format: 'pdf', imageUrl: 'https://img/b.png', title: 'T' },
 };
 const back = lessonToDraft(serverLesson, content);
@@ -133,6 +150,12 @@ assert('videoUrl dựng lại từ youtubeId', back.videoUrl.includes('dQw4w9WgX
 assert('slides nạp đủ', back.slides.length === 1);
 assert('quizzes nạp đủ', back.quizzes.length === 1);
 assert('simulation nạp đủ', back.simulation.videoUrl === 'https://youtu.be/z');
+assert(
+  'dữ liệu mới → nạp đủ 2 phát biểu',
+  back.simulation.statements.length === 2 &&
+    back.simulation.statements[0].text === 's1' &&
+    back.simulation.statements[1].isCorrect === false
+);
 assert('summary nạp đủ', back.summary.imageUrl === 'https://img/b.png');
 assert('Không còn thiếu phần nào', missingParts(back).length === 0);
 
@@ -147,6 +170,42 @@ assert(
   `quizzes round-trip (${JSON.parse(fd2.get('quizzes')).length})`,
   JSON.parse(fd2.get('quizzes')).length === 1
 );
+assert(
+  `simulations round-trip (${JSON.parse(fd2.get('simulations'))[0].statements.length})`,
+  JSON.parse(fd2.get('simulations'))[0].statements.length === 2
+);
+
+// ─── Dữ liệu cũ (statement phẳng) vẫn nạp được ───
+console.log('\n[6] Tương thích dữ liệu cũ');
+const legacy = lessonToDraft(serverLesson, {
+  ...content,
+  simulations: [
+    { videoUrl: 'https://youtu.be/z', description: 'd', statement: 's', isCorrect: true },
+  ],
+});
+assert(
+  'statement cũ → 1 phát biểu',
+  legacy.simulation.statements.length === 1 &&
+    legacy.simulation.statements[0].text === 's'
+);
+assert(
+  'statement cũ giữ isCorrect',
+  legacy.simulation.statements[0].isCorrect === true
+);
+const legacySims = JSON.parse(draftToFormData(legacy, 0).get('simulations'));
+assert(
+  'statement cũ → gửi lên dạng statements',
+  legacySims.length === 1 && legacySims[0].statements.length === 1
+);
+
+// ─── Mô phỏng chỉ có phát biểu (không video/mô tả) vẫn tính là "có phần" ───
+console.log('\n[7] Mô phỏng chỉ có phát biểu');
+const d4 = createLessonDraft();
+d4.slides = [{ title: 'S1' }];
+d4.simulation = { videoUrl: '', description: '', statements: [{ text: 'ST', isCorrect: true }] };
+d4.summary = { imageUrl: 'https://img/a.png' };
+d4.quizzes = [{ question: 'Q1', options: { A: 'a', B: 'b' }, correct: 'A', type: 'single' }];
+assert('Không thiếu phần nào', missingParts(d4).length === 0);
 
 console.log(`\n${failed === 0 ? '✅ TẤT CẢ KIỂM TRA PASS' : `❌ ${failed} KIỂM TRA THẤT BẠI`}`);
 process.exit(failed === 0 ? 0 : 1);

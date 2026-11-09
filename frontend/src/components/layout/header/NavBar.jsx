@@ -22,11 +22,11 @@ const PRIMARY = [
 const PORTAL_STATUS = 'Cổng thông tin Hộ Chiếu An Toàn Trực Tuyến';
 
 function PrimaryItem({ to, label, icon: Icon, end, requireAuth, onNavigate, mobile }) {
-  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openLoginDrawer = useLoginDrawerStore((s) => s.openLoginDrawer);
 
   const handleClick = (e) => {
-    if (requireAuth && !user) {
+    if (requireAuth && !isAuthenticated) {
       e.preventDefault();
       openLoginDrawer(to);
     }

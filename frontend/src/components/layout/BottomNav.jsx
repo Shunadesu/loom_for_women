@@ -8,7 +8,7 @@ import {
 } from '../icons/index.jsx';
 
 export default function BottomNav() {
-  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openLoginDrawer = useLoginDrawerStore((s) => s.openLoginDrawer);
 
   const tabs = [
@@ -36,7 +36,7 @@ export default function BottomNav() {
   ];
 
   function handleTabClick(e, tab) {
-    if (tab.requireAuth && !user) {
+    if (tab.requireAuth && !isAuthenticated) {
       e.preventDefault();
       openLoginDrawer(tab.to);
     }

@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '../components/layout/Header.jsx';
 import { PercentIcon, TrophyIcon, ArrowUpIcon } from '../components/icons/index.jsx';
@@ -8,7 +7,6 @@ import { useAuthStore } from '../store/authStore.js';
 import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
 
 export default function MyPoints() {
-  const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const total = usePointsStore((s) => s.total);
   const transactions = usePointsStore((s) => s.transactions);
@@ -18,13 +16,14 @@ export default function MyPoints() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      useLoginDrawerStore.getState().openLoginDrawer();
-      navigate('/');
+      // Chưa đăng nhập → mở drawer đăng nhập ngay tại trang này (không điều hướng đi),
+      // sau khi đăng nhập sẽ tự quay lại trang điểm thưởng.
+      useLoginDrawerStore.getState().openLoginDrawer('/diem');
       return;
     }
     fetch().catch(() => {});
     fetchTransactions().catch(() => {});
-  }, [isAuthenticated, navigate, fetch, fetchTransactions]);
+  }, [isAuthenticated, fetch, fetchTransactions]);
 
   return (
     <motion.div

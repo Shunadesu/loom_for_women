@@ -33,9 +33,7 @@ export default function CourseDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.token);
-  const isAuthenticated = Boolean(token || user?._id);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { openLoginDrawer } = useLoginDrawerStore();
   const { notify } = useNotification();
 
@@ -730,18 +728,13 @@ export default function CourseDetail() {
         course={course}
         lesson={currentLesson}
         isAuthenticated={isAuthenticated}
-        onRequireLogin={() => openLoginDrawer()}
+        onRequireLogin={(redirectPath) => openLoginDrawer(redirectPath || '/')}
         onPassed={handleQuizPassed}
         onComplete={handleComplete}
         isCompleted={completedSet.has(String(currentLesson?._id))}
         onOpenCertificate={() => {
-          // Đóng modal trước để LoginDrawer (z-50) không bị modal (z-[9999]) che khuất
+          // Đã đăng nhập (LessonPlayerModal đã tự kiểm tra) → sang thẳng trang chứng chỉ.
           setPlayerOpen(false);
-          if (!isAuthenticated) {
-            // Mở drawer đăng nhập ngay tại trang hiện tại, sau khi login sẽ tự sang /chung-chi
-            openLoginDrawer('/chung-chi');
-            return;
-          }
           navigate('/chung-chi');
         }}
       />

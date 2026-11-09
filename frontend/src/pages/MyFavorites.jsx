@@ -18,12 +18,13 @@ export default function MyFavorites() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      useLoginDrawerStore.getState().openLoginDrawer();
-      navigate('/');
+      // Chưa đăng nhập → mở drawer đăng nhập ngay tại trang này (không điều hướng đi),
+      // sau khi đăng nhập sẽ tự quay lại trang yêu thích.
+      useLoginDrawerStore.getState().openLoginDrawer('/yeu-thich');
       return;
     }
     fetch().catch(() => {});
-  }, [isAuthenticated, navigate, fetch]);
+  }, [isAuthenticated, fetch]);
 
   return (
     <motion.div

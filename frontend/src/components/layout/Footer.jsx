@@ -1,14 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
 import { SmartphoneIcon } from '../icons/index.jsx';
 import BrandLogo from './BrandLogo.jsx';
+import ProtectedLink from '../auth/ProtectedLink.jsx';
 
 // Cột 2: các link khám phá — map 1-1 với PRIMARY trong NavBar
+// `requireAuth`: route cần đăng nhập → mở drawer đăng nhập thay vì chuyển trang.
 const EXPLORE_LINKS = [
   { to: '/', label: 'Trang chủ & Tin tức hoạt động' },
   { to: '/khoa-hoc', label: 'Khóa học trực tuyến & Chứng chỉ' },
   { to: '/cua-hang', label: 'Cửa hàng phụ kiện & Nhu yếu phẩm' },
   { to: '/thu-vien', label: 'Thư viện tài liệu & Biểu mẫu' },
-  { to: '/he-chieu', label: 'Hộ chiếu an toàn & Đổi quà' },
+  { to: '/he-chieu', label: 'Hộ chiếu an toàn & Đổi quà', requireAuth: true },
 ];
 
 // Cột 3: hotline — `accent` quy định màu số (rose cho khẩn cấp quốc gia, pink cho Loom)
@@ -84,12 +86,13 @@ export default function Footer() {
             <ul className="space-y-1.5 text-[11px]">
               {EXPLORE_LINKS.map((item) => (
                 <li key={item.to}>
-                  <Link
+                  <ProtectedLink
                     to={item.to}
+                    requireAuth={Boolean(item.requireAuth)}
                     className="cursor-pointer transition-colors hover:text-[#E60067]"
                   >
                     • {item.label}
-                  </Link>
+                  </ProtectedLink>
                 </li>
               ))}
             </ul>
