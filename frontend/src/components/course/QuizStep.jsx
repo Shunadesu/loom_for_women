@@ -29,18 +29,28 @@ export default function QuizStep({
   const [results, setResults] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Số liệu tổng hợp do backend trả về (số câu đúng / tổng số câu)
+  const [serverCorrect, setServerCorrect] = useState(null);
+  const [serverAllCorrect, setServerAllCorrect] = useState(null);
 
   const current = list[index] || null;
   const currentId = current?._id ? String(current._id) : '';
   const currentResult = currentId ? results[currentId] : null;
   const answeredCount = Object.keys(results).length;
   const correctCount = Object.values(results).filter((r) => r?.isCorrect).length;
+  const total = list.length;
+
+  /** Số câu đã trả lời đúng / tổng số câu (dùng số liệu từ server nếu có). */
+  const correctTotal = serverCorrect ?? correctCount;
+  const allCorrect = serverAllCorrect ?? (total > 0 && correctCount === total);
 
   useEffect(() => {
     setIndex(0);
     setSelected({});
     setResults({});
     setError('');
+    setServerCorrect(null);
+    setServerAllCorrect(null);
   }, [lessonId]);
 
   if (list.length === 0) {
@@ -70,7 +80,19 @@ export default function QuizStep({
     try {
       const res = await submitQuizAnswer(lessonId, currentId, answer, true);
       setResults((prev) => ({ ...prev, [currentId]: res }));
-      if (res?.isCorrect && onPassed) {
+      if (typeof res?.correctQuizzes === 'number') {
+        setServerCorrect(res.correctQuizzes);
+      }
+      if (typeof res?.allCorrect === 'boolean') {
+        setServerAllCorrect(res.allCorrect);
+      }
+      // Bài học chỉ hoàn thành khi trả lời đúng TẤT CẢ câu.
+      // Backend trả về allCorrect; với bài 1 câu thì đúng 1 câu là xong.
+      const lessonCompleted =
+        typeof res?.allCorrect === 'boolean'
+          ? res.allCorrect
+          : Boolean(res?.isCorrect);
+      if (lessonCompleted && onPassed) {
         onPassed(res);
       }
     } catch (err) {
@@ -113,9 +135,19 @@ export default function QuizStep({
               Trắc Nghiệm Tổng Kết
             </h3>
             <p className="mt-0.5 text-[11px] text-slate-600">
-              Câu {index + 1}/{list.length} • Đã trả lời {answeredCount} • Đúng{' '}
-              {correctCount}
+              Câu {index + 1}/{total} • Đã trả lời {answeredCount} • Đúng{' '}
+              {correctTotal}/{total}
             </p>
+            {total > 1 && !allCorrect && (
+              <p className="mt-0.5 text-[10px] font-bold text-amber-600">
+                Trả lời đúng tất cả {total} câu để hoàn thành bài học.
+              </p>
+            )}
+            {total > 1 && allCorrect && (
+              <p className="mt-0.5 text-[10px] font-bold text-emerald-600">
+                Đã trả lời đúng đủ {total} câu — bài học đã hoàn thành.
+              </p>
+            )}
           </div>
         </div>
       </div>

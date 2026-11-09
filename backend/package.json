@@ -11,7 +11,8 @@
     "seed:courses": "node scripts/seed-courses.js",
     "seed:products": "node scripts/seed-products.js",
     "seed:documents": "node scripts/seed-documents.js",
-    "seed:admin": "node scripts/create-default-admin.js"
+    "seed:admin": "node scripts/create-default-admin.js",
+    "create:admin": "node scripts/create-admin-user.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

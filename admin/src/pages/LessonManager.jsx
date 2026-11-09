@@ -25,12 +25,10 @@ import {
 } from '../components/icons.jsx';
 import LessonContentForm, {
   createEmptyLessonDraft,
-  lessonToDraft,
-  draftToFormData,
   describeContentType,
 } from '../components/LessonContentForm.jsx';
+import LessonFourPartModal from '../components/LessonFourPartModal.jsx';
 import DocumentManagerModal from '../components/DocumentManagerModal.jsx';
-import CourseIntakeForm from '../components/CourseIntakeForm.jsx';
 import { useNotification } from '../store/notificationStore.js';
 
 export default function LessonManager() {
@@ -165,7 +163,7 @@ export default function LessonManager() {
     <div className="space-y-3">
       <button
         type="button"
-        onClick={() => navigate('/admin/courses')}
+        onClick={() => navigate('/courses')}
         className="flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-[#E60067]"
       >
         <ArrowLeftIcon aria-hidden="true" className="h-3 w-3" />
@@ -421,29 +419,15 @@ export default function LessonManager() {
       )}
 
       {intakeLessonId && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4">
-          <div className="mx-auto my-4 w-full max-w-3xl">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-extrabold text-white">
-                Sửa nội dung 4 phần của bài học
-              </span>
-              <button
-                type="button"
-                onClick={() => setIntakeLessonId(null)}
-                className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold text-white hover:bg-white/30"
-              >
-                Đóng
-              </button>
-            </div>
-            <CourseIntakeForm
-              lessonId={intakeLessonId}
-              onSaved={() => {
-                setIntakeLessonId(null);
-                loadLessons();
-              }}
-            />
-          </div>
-        </div>
+        <LessonFourPartModal
+          courseId={courseId}
+          lessonId={intakeLessonId}
+          onClose={() => setIntakeLessonId(null)}
+          onSaved={() => {
+            setIntakeLessonId(null);
+            loadLessons();
+          }}
+        />
       )}
     </div>
   );

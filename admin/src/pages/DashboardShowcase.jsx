@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import KPICard from '../components/KPICard.jsx';
 import { IncomeGrowthChart, LessonDistributionChart } from '../components/DashboardCharts.jsx';
-import CourseIntakeForm from '../components/CourseIntakeForm.jsx';
+import CourseForm from './CourseForm.jsx';
 import { fetchAllCoursesAdmin } from '../services/courseApi.js';
 import { fetchCourseContent } from '../services/courseIntakeApi.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
@@ -22,11 +22,11 @@ export default function DashboardShowcase() {
   }));
   const [tabs, setTabs] = useState(initialTabs);
   const activeTab = tabs.find((t) => t.active)?.id || 'overview';
+  const navigate = useNavigate();
 
   // ─── Dữ liệu khóa học thật cho tab "Nhập Bài Học" ───
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
-  const [editingLessonId, setEditingLessonId] = useState(null);
   const [courseLessons, setCourseLessons] = useState([]);
   const { notify } = useNotification();
 
@@ -54,10 +54,6 @@ export default function DashboardShowcase() {
     if (activeTab !== 'lessons') return;
     loadCourses();
   }, [activeTab]);
-
-  async function openLessonEditor(lessonId) {
-    setEditingLessonId(lessonId);
-  }
 
   async function loadCourseLessons(courseId) {
     try {
@@ -190,22 +186,11 @@ export default function DashboardShowcase() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Form column */}
           <div className="lg:col-span-5">
-            <CourseIntakeForm
-              lessonId={editingLessonId}
+            <CourseForm
               onSaved={() => {
-                setEditingLessonId(null);
                 loadCourses();
               }}
             />
-            {editingLessonId && (
-              <button
-                type="button"
-                onClick={() => setEditingLessonId(null)}
-                className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
-              >
-                ← Huỷ chỉnh sửa, tạo bài học mới
-              </button>
-            )}
           </div>
 
           {/* List column */}
@@ -244,7 +229,7 @@ export default function DashboardShowcase() {
                             {course.title}
                           </h4>
                           <Link
-                            to={`/admin/courses/${course._id}`}
+                            to={`/courses/${course._id}`}
                             className="shrink-0 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-50"
                           >
                             Chi tiết
@@ -273,7 +258,6 @@ export default function DashboardShowcase() {
                       courseId={course._id}
                       lessons={courseLessons}
                       loadCourseLessons={loadCourseLessons}
-                      onEdit={openLessonEditor}
                     />
                   </div>
                 ))}
@@ -298,9 +282,9 @@ function CourseLessonList({
   courseId,
   lessons,
   loadCourseLessons,
-  onEdit,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!expanded) return;
@@ -352,7 +336,7 @@ function CourseLessonList({
                 ))}
                 <button
                   type="button"
-                  onClick={() => onEdit(l._id)}
+                  onClick={() => navigate(`/courses/${courseId}/edit`)}
                   className="rounded-lg border border-pink-200 bg-pink-50 px-2 py-1 text-[10px] font-bold text-[#E60067] hover:bg-pink-100"
                 >
                   Sửa 4 phần

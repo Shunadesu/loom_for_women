@@ -6,7 +6,7 @@ import { resolveImageUrl } from '../utils/imageUrl.js';
 import { extractYoutubeId } from '../utils/youtube.js';
 import { ArrowLeftIcon, FileTextIcon, VideoIcon, EditIcon } from '../components/icons.jsx';
 import { useNotification } from '../store/notificationStore.js';
-import CourseIntakeForm from '../components/CourseIntakeForm.jsx';
+import LessonFourPartModal from '../components/LessonFourPartModal.jsx';
 
 /**
  * Chi tiết khóa học (admin): hiển thị 4 phần nội dung của từng bài học.
@@ -138,14 +138,20 @@ export default function CourseDetail() {
 
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <Link
-                to={`/admin/courses/${course._id}/lessons`}
+                to={`/courses/${course._id}/lessons`}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#E60067] px-4 py-2 text-xs font-extrabold text-white shadow-md transition-all hover:bg-[#c90059]"
               >
                 <VideoIcon aria-hidden="true" className="h-3.5 w-3.5" />
                 Quản lý danh sách bài học
               </Link>
               <Link
-                to="/admin/showcase"
+                to={`/courses/${course._id}/edit`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-extrabold text-slate-700 transition-all hover:bg-slate-50"
+              >
+                ✏️ Sửa khóa học (4 phần)
+              </Link>
+              <Link
+                to="/showcase"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-extrabold text-slate-700 transition-all hover:bg-slate-50"
               >
                 🎓 Về trang Nhập Bài Học
@@ -174,33 +180,19 @@ export default function CourseDetail() {
 
       {/* Modal sửa nội dung 4 phần */}
       {editingLessonId && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4">
-          <div className="mx-auto my-4 w-full max-w-3xl">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-extrabold text-white">
-                Sửa nội dung 4 phần của bài học
-              </span>
-              <button
-                type="button"
-                onClick={() => setEditingLessonId(null)}
-                className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold text-white hover:bg-white/30"
-              >
-                Đóng
-              </button>
-            </div>
-            <CourseIntakeForm
-              lessonId={editingLessonId}
-              onSaved={async () => {
-                setEditingLessonId(null);
-                try {
-                  await loadContent();
-                } catch {
-                  // im lặng — đã hiển thị thông báo ở form
-                }
-              }}
-            />
-          </div>
-        </div>
+        <LessonFourPartModal
+          courseId={courseId}
+          lessonId={editingLessonId}
+          onClose={() => setEditingLessonId(null)}
+          onSaved={async () => {
+            setEditingLessonId(null);
+            try {
+              await loadContent();
+            } catch {
+              // im lặng — đã hiển thị thông báo ở form
+            }
+          }}
+        />
       )}
     </div>
   );
@@ -255,7 +247,7 @@ function LessonContentCard({ lesson, index, onEdit }) {
             Sửa 4 phần
           </button>
           <Link
-            to={`/admin/courses/${lesson.courseId}/lessons`}
+            to={`/courses/${lesson.courseId}/lessons`}
             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-50"
           >
             <FileTextIcon aria-hidden="true" className="h-3 w-3" />

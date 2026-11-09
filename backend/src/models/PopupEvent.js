@@ -35,7 +35,6 @@ const popupEventSchema = new mongoose.Schema(
     occurredAt: {
       type: Date,
       default: Date.now,
-      index: true,
     },
   },
   { timestamps: true }

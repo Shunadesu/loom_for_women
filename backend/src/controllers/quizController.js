@@ -83,11 +83,32 @@ export const submitQuizAnswer = async (req, res) => {
       quizId: quiz._id,
     });
 
-    // Đánh dấu hoàn thành bài học khi trả lời đúng
+    // Đánh dấu hoàn thành bài học khi trả lời đúng TẤT CẢ câu hỏi.
+    // Nếu bài học chỉ có 1 câu thì hành vi giống cũ (đúng 1 câu là xong).
     let progressPct = null;
-    if (isCorrect && req.body?.complete !== false) {
-      const result = await completeLessonForUser(req.user._id, lesson);
-      progressPct = result.progressPct;
+    let totalQuizzes = 0;
+    let correctQuizzes = 0;
+    let allCorrect = false;
+
+    const lessonQuizzes = await LessonQuiz.find({ lessonId: lesson._id })
+      .sort({ order: 1, createdAt: 1 })
+      .lean();
+    totalQuizzes = lessonQuizzes.length;
+
+    if (totalQuizzes > 0) {
+      const correctQuizIds = await QuizAttempt.distinct('quizId', {
+        userId: req.user._id,
+        lessonId: lesson._id,
+        isCorrect: true,
+      });
+      const correctSet = new Set(correctQuizIds.map(String));
+      correctQuizzes = lessonQuizzes.filter((q) => correctSet.has(String(q._id))).length;
+      allCorrect = correctQuizzes === totalQuizzes;
+
+      if (allCorrect && req.body?.complete !== false) {
+        const result = await completeLessonForUser(req.user._id, lesson);
+        progressPct = result.progressPct;
+      }
     }
 
     res.json({
@@ -98,6 +119,9 @@ export const submitQuizAnswer = async (req, res) => {
       attemptId: String(attempt._id),
       attempts,
       progressPct,
+      totalQuizzes,
+      correctQuizzes,
+      allCorrect,
     });
   } catch (err) {
     console.error('submitQuizAnswer error', err);

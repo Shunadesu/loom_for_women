@@ -10,7 +10,9 @@ export const useAuthStore = create(
       token: null,
       points: 0,
       level: 1,
-      
+      // Cờ đăng nhập — các trang dùng để quyết định mở LoginDrawer hay cho vào.
+      isAuthenticated: false,
+
       // Profile fields cho Safety Passport
       profile: {
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
@@ -27,9 +29,10 @@ export const useAuthStore = create(
       setAuth: (user, token) => {
         const points = user?.points || 0;
         const level = user?.level || 1;
-        set({ user, token, points, level });
+        set({ user, token, points, level, isAuthenticated: Boolean(token || user?._id) });
       },
-      logout: () => set({ user: null, token: null, points: 0, level: 1 }),
+      logout: () =>
+        set({ user: null, token: null, points: 0, level: 1, isAuthenticated: false }),
       setPoints: (points) => set({ points }),
       setProfile: (patch) => set((state) => ({ profile: { ...state.profile, ...patch } })),
 
@@ -47,17 +50,23 @@ export const useAuthStore = create(
         });
         const points = data.user?.points || 0;
         const level = data.user?.level || 1;
-        set({ user: data.user, token: data.token, points, level });
+        set({ user: data.user, token: data.token, points, level, isAuthenticated: true });
         return data.user;
       },
     }),
     {
       name: 'loom-auth',
-      partialize: (state) => ({ 
-        user: state.user, 
+      partialize: (state) => ({
+        user: state.user,
         token: state.token,
         points: state.points,
         level: state.level,
+      }),
+      // Khôi phục phiên đăng nhập: isAuthenticated suy ra từ token đã lưu.
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...persistedState,
+        isAuthenticated: Boolean(persistedState?.token || persistedState?.user?._id),
       }),
     }
   )

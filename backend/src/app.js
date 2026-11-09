@@ -78,13 +78,43 @@ if (process.env.NODE_ENV === 'production' && allowAnyOrigin) {
   );
 }
 
+// Hỗ trợ wildcard dạng "*.vercel.app" (Vercel tạo domain preview dạng ten-abc123.vercel.app).
+// Chỉ dùng cho HỌ domain, không dùng cho TÊN miền con bất kỳ (tránh mở rộng bất cẩn).
+const wildcardPatterns = allowedOrigins
+  .filter((o) => o.includes('*.'))
+  .map((o) => {
+    const m = /^https?:\/\/\*\.(.+)$/i.exec(o);
+    return m ? m[1].toLowerCase() : null;
+  })
+  .filter(Boolean);
+
+const matchWildcard = (origin) => {
+  const lower = origin.toLowerCase();
+  return wildcardPatterns.some((suffix) => {
+    // Chỉ khớp đúng một cấp subdomain: "a.b.vercel.app" không khớp "*.vercel.app".
+    const host = lower.replace(/^https?:\/\//, '').split('/')[0];
+    const labels = host.split('.');
+    const suffixLabels = suffix.split('.');
+    if (labels.length !== suffixLabels.length + 1) return false;
+    return labels.slice(1).join('.') === suffixLabels.join('.');
+  });
+};
+
+const isOriginAllowed = (origin) => {
+  const normalized = origin.replace(/\/$/, '');
+  if (allowedOrigins.includes(normalized)) return true;
+  // Cho phép wildcard chỉ khi origin dùng http/https.
+  if (/^https?:\/\//i.test(normalized) && matchWildcard(normalized)) return true;
+  return false;
+};
+
 app.use(
   cors({
     origin(origin, callback) {
       // Không có Origin header (curl, server-to-server) → cho phép.
       if (!origin) return callback(null, true);
       if (allowAnyOrigin) return callback(null, true);
-      if (allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      if (isOriginAllowed(origin)) {
         return callback(null, true);
       }
       // Trả `false` thay vì `new Error(...)` — nếu throw, errorHandler sẽ log
@@ -93,7 +123,14 @@ app.use(
     },
     credentials: corsCredentials,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+    ],
+    exposedHeaders: ['Content-Range', 'X-Total-Count'],
     maxAge: 86400,
   })
 );

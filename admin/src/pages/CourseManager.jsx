@@ -196,7 +196,7 @@ export default function CourseManager() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
-                        onClick={() => navigate(`/admin/courses/${item._id}/lessons`)}
+                        onClick={() => navigate(`/courses/${item._id}/lessons`)}
                         className="rounded p-1 hover:bg-sky-50"
                         title="Quản lý bài học"
                       >

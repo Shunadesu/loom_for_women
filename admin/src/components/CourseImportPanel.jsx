@@ -379,7 +379,7 @@ export default function CourseImportPanel() {
               courses.map((course) => (
                 <Link
                   key={course.id}
-                  to={`/admin/courses/${course.id}`}
+                  to={`/courses/${course.id}`}
                   state={{ course }}
                   className="block bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex items-start gap-3.5 hover:border-[#E60067]/40 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
                 >

@@ -445,7 +445,7 @@ export default function UserDetailModal({ user: listUser, onClose }) {
               </span>
               <div className="flex items-center gap-2">
                 <Link
-                  to={`/admin/users/${user._id}`}
+                  to={`/users/${user._id}`}
                   className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-pink-50 hover:text-pink-700"
                 >
                   Mở trang chi tiết

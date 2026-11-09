@@ -176,7 +176,7 @@ export default function UserDetail() {
       return;
     try {
       await deleteUserAdmin(user._id);
-      navigate('/admin/users');
+      navigate('/users');
     } catch (err) {
       const msg = err?.response?.data?.error || 'Xoá thất bại.';
       notify({ type: 'error', title: 'Xoá thất bại', message: msg });
@@ -206,7 +206,7 @@ export default function UserDetail() {
         </p>
         <button
           type="button"
-          onClick={() => navigate('/admin/users')}
+          onClick={() => navigate('/users')}
           className="mt-4 inline-flex items-center gap-1 rounded-md bg-pink-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-pink-700"
         >
           <ArrowLeftIcon aria-hidden="true" className="h-3.5 w-3.5" />
@@ -228,7 +228,7 @@ export default function UserDetail() {
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={() => navigate('/admin/users')}
+          onClick={() => navigate('/users')}
           className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
         >
           <ArrowLeftIcon aria-hidden="true" className="h-3.5 w-3.5" />
@@ -484,7 +484,7 @@ export default function UserDetail() {
                     </div>
                     {p.courseId && (
                       <Link
-                        to={`/admin/courses/${p.courseId}/lessons`}
+                        to={`/courses/${p.courseId}/lessons`}
                         className="hidden shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-pink-50 hover:text-pink-700 md:inline-block"
                       >
                         ↗ Mở khóa

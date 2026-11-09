@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { uploadCourse, uploadLessonPdf } from '../middleware/upload.js';
+import { uploadCourse, uploadLessonMedia } from '../middleware/upload.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import {
   listAllCourses,
@@ -25,7 +25,16 @@ router.get('/', listAllCourses);
 
 // Lesson routes (nested under course) — đặt trước route /:id để tránh xung đột
 router.get('/:courseId/lessons', listLessonsByCourse);
-router.post('/:courseId/lessons', uploadLessonPdf.single('pdf'), createLesson);
+router.post(
+  '/:courseId/lessons',
+  uploadLessonMedia.fields([
+    { name: 'pdf', maxCount: 1 },
+    { name: 'slidePdf', maxCount: 1 },
+    { name: 'summaryImage', maxCount: 1 },
+    { name: 'summaryPdf', maxCount: 1 },
+  ]),
+  createLesson
+);
 router.post('/:courseId/lessons/reorder', reorderLessons);
 
 // Chi tiết 1 khóa học (dùng cho trang Sửa khóa học)

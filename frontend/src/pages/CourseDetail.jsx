@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion';
 import Header from '../components/layout/Header.jsx';
 import LessonPlayerModal from '../components/course/LessonPlayerModal.jsx';
+import LessonMedia from '../components/course/LessonMedia.jsx';
 import {
   PlayIcon,
   CheckCircleIcon,
@@ -22,7 +23,11 @@ import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
 import { useNotification } from '../store/notificationStore.js';
 import { addFavorite, removeFavorite } from '../services/favoriteApi.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
-import { buildVideoEmbedUrl } from '../utils/videoSource.js';
+import {
+  getLessonParts,
+  hasStructuredContent,
+  countAvailableParts,
+} from '../utils/lessonParts.js';
 
 export default function CourseDetail() {
   const { slug } = useParams();
@@ -97,16 +102,6 @@ export default function CourseDetail() {
     )
   );
 
-  /** Bài học có dữ liệu 4 phần (slide / mô phỏng / tóm tắt / quiz) hay không. */
-  const hasStructuredContent = (l) =>
-    Boolean(
-      l &&
-        ((l.slides?.length || 0) > 0 ||
-          (l.simulations?.length || 0) > 0 ||
-          (l.quizzes?.length || 0) > 0 ||
-          l.summary)
-    );
-
   function handleSelectLesson(lesson) {
     setCurrentLessonId(lesson._id);
     setSearchParams(
@@ -117,8 +112,8 @@ export default function CourseDetail() {
       },
       { replace: true }
     );
-    // Bài học có nội dung 4 phần → mở thẳng trình phát
-    if (hasStructuredContent(lesson)) setPlayerOpen(true);
+    // Click vào bài học → mở modal ngay (bài học 4 phần hoặc bài học chỉ có media)
+    setPlayerOpen(true);
   }
 
   function handleQuizPassed(result) {
@@ -433,102 +428,134 @@ export default function CourseDetail() {
                 </div>
               )}
 
-              {/* Nội dung bài học — render theo contentType */}
+              {/* Nội dung bài học — ưu tiên player 4 phần nếu bài học có nội dung cấu trúc */}
               {currentLesson && (
                 <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-                  {currentLesson.contentType === 'image_pdf' ? (
-                    <div className="space-y-3 bg-slate-50 p-3">
-                      {currentLesson.imageUrl ? (
-                        <img
-                          src={currentLesson.imageUrl}
-                          alt={currentLesson.title}
-                          className="mx-auto max-h-[70vh] w-auto rounded-lg object-contain"
-                        />
-                      ) : (
-                        <p className="py-6 text-center text-xs text-slate-400">
-                          Bài học chưa có ảnh.
-                        </p>
-                      )}
-                      {currentLesson.pdfUrl && (
-                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-                          <iframe
-                            src={resolveImageUrl(currentLesson.pdfUrl)}
-                            title={`Tài liệu ${currentLesson.title}`}
-                            className="h-[70vh] w-full"
-                          />
+                  {hasStructuredContent(currentLesson) ? (
+                    /* Bài học có 4 phần → không render media cũ (tránh khung đen) */
+                    <div className="space-y-3 bg-gradient-to-br from-pink-50 via-white to-slate-50 p-5">
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E60067] text-sm font-black text-white shadow-sm">
+                          4
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#E60067]">
+                            Bài học 4 phần
+                          </span>
+                          <h2 className="mt-0.5 text-base font-extrabold text-slate-900">
+                            {currentLesson.title}
+                          </h2>
+                          <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+                            Slide bài giảng → Mô phỏng tình huống → Tóm tắt bài
+                            học → Trắc nghiệm tổng kết.
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  ) : currentLesson.contentType === 'video_pdf' ? (
-                    <div>
-                      <div className="aspect-video w-full bg-black">
-                        <iframe
-                          src={buildVideoEmbedUrl(currentLesson)}
-                          title={currentLesson.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="h-full w-full"
-                        />
                       </div>
-                      {currentLesson.pdfUrl && (
-                        <div className="border-t border-slate-100 p-3">
-                          <a
-                            href={resolveImageUrl(currentLesson.pdfUrl)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[#E60067] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
-                          >
-                            <BookIcon aria-hidden="true" className="h-3.5 w-3.5" />
-                            Tải tài liệu PDF
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="aspect-video w-full bg-black">
-                      <iframe
-                        src={buildVideoEmbedUrl(currentLesson)}
-                        title={currentLesson.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="h-full w-full"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h2 className="text-base font-bold text-slate-900">
-                      {currentLesson.title}
-                    </h2>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {hasStructuredContent(currentLesson) && (
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setPlayerOpen(true)}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-[#E60067] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#c90059]"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-[#E60067] px-4 py-2 text-xs font-bold text-white hover:bg-[#c90059]"
                         >
                           <PlayIcon aria-hidden="true" className="h-3.5 w-3.5" />
                           Học bài học 4 phần
                         </button>
-                      )}
-                      {completedSet.has(String(currentLesson._id)) ? (
-                        <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
-                          <CheckCircleIcon
-                            aria-hidden="true"
-                            className="h-4 w-4"
-                          />
-                          Đã hoàn thành
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleComplete(currentLesson._id)}
-                          className="rounded-full bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700"
-                        >
-                          Đánh dấu hoàn thành
-                        </button>
-                      )}
+                        {completedSet.has(String(currentLesson._id)) ? (
+                          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
+                            <CheckCircleIcon
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                            />
+                            Đã hoàn thành
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleComplete(currentLesson._id)}
+                            className="rounded-full bg-teal-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-teal-700"
+                          >
+                            Đánh dấu hoàn thành
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Chi tiết từng phần trong 4 phần */}
+                      <div className="grid gap-2 pt-1 sm:grid-cols-2 lg:grid-cols-4">
+                        {getLessonParts(currentLesson).map((part) => (
+                          <div
+                            key={part.key}
+                            className={[
+                              'rounded-xl border p-2.5',
+                              part.available
+                                ? 'border-pink-100 bg-white'
+                                : 'border-slate-100 bg-slate-50/70',
+                            ].join(' ')}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={[
+                                  'flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-black',
+                                  part.available
+                                    ? 'bg-[#E60067] text-white'
+                                    : 'bg-slate-200 text-slate-400',
+                                ].join(' ')}
+                              >
+                                {PART_STEP_INDEX[part.key]}
+                              </span>
+                              <span
+                                className={[
+                                  'text-[10px] font-extrabold',
+                                  part.available
+                                    ? 'text-slate-900'
+                                    : 'text-slate-400',
+                                ].join(' ')}
+                              >
+                                {part.label}
+                              </span>
+                            </div>
+                            <p
+                              className={[
+                                'mt-1 text-[10px]',
+                                part.available
+                                  ? 'text-slate-600'
+                                  : 'text-slate-400',
+                              ].join(' ')}
+                            >
+                              {part.available ? partDetail(part) : 'Chưa có nội dung'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <LessonMedia lesson={currentLesson} pdfInFrame />
+                  )}
+                  {!hasStructuredContent(currentLesson) && (
+                    <div className="p-4">
+                      <h2 className="text-base font-bold text-slate-900">
+                        {currentLesson.title}
+                      </h2>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {completedSet.has(String(currentLesson._id)) ? (
+                          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
+                            <CheckCircleIcon
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                            />
+                            Đã hoàn thành
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleComplete(currentLesson._id)}
+                            className="rounded-full bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700"
+                          >
+                            Đánh dấu hoàn thành
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -660,17 +687,15 @@ export default function CourseDetail() {
                           {l.title}
                         </p>
                         <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400">
-                          <span
-                            className={[
-                              'inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold',
-                              lessonTypeBadge(l.contentType).className,
-                            ].join(' ')}
-                          >
-                            {lessonTypeBadge(l.contentType).label}
-                          </span>
-                          {hasStructuredContent(l) && (
-                            <span className="inline-block rounded-full bg-pink-100 px-1.5 py-0.5 text-[9px] font-bold text-[#E60067]">
-                              4 phần
+                          {/* Bài học 4 phần → badge loại media không liên quan, bỏ qua */}
+                          {!hasStructuredContent(l) && (
+                            <span
+                              className={[
+                                'inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold',
+                                lessonTypeBadge(l.contentType).className,
+                              ].join(' ')}
+                            >
+                              {lessonTypeBadge(l.contentType).label}
                             </span>
                           )}
                           {l.durationSeconds > 0 && (
@@ -679,6 +704,9 @@ export default function CourseDetail() {
                             </span>
                           )}
                         </span>
+
+                        {/* Chi tiết 4 phần của bài học */}
+                        <LessonPartsGrid lesson={l} />
                       </div>
                       {isActive && (
                         <PlayIcon
@@ -704,12 +732,96 @@ export default function CourseDetail() {
         isAuthenticated={isAuthenticated}
         onRequireLogin={() => openLoginDrawer()}
         onPassed={handleQuizPassed}
+        onComplete={handleComplete}
+        isCompleted={completedSet.has(String(currentLesson?._id))}
         onOpenCertificate={() => {
+          // Đóng modal trước để LoginDrawer (z-50) không bị modal (z-[9999]) che khuất
           setPlayerOpen(false);
+          if (!isAuthenticated) {
+            // Mở drawer đăng nhập ngay tại trang hiện tại, sau khi login sẽ tự sang /chung-chi
+            openLoginDrawer('/chung-chi');
+            return;
+          }
           navigate('/chung-chi');
         }}
       />
     </motion.div>
+  );
+}
+
+/**
+ * Lưới thông tin 4 phần của một bài học.
+ *
+ * Mỗi phần hiển thị nhãn + số lượng, phần không có nội dung thì mờ đi.
+ * Nếu bài học không có bất kỳ phần 4 phần nào → hiển thị loại media
+ * (video / ảnh / PDF) cho đúng với thực tế bài học.
+ */
+function LessonPartsGrid({ lesson }) {
+  const parts = getLessonParts(lesson);
+  const available = countAvailableParts(lesson);
+
+  // Bài học không có phần 4 phần nào → badge loại media đã hiển thị ở trên
+  if (available === 0) return null;
+
+  return (
+    <div className="mt-1.5">
+      <div className="mb-1 flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1 rounded-md bg-pink-100 px-1.5 py-0.5 text-[9px] font-extrabold text-[#E60067]">
+          Bài học 4 phần
+        </span>
+        <span className="text-[9px] font-bold text-slate-400">
+          {available}/4 phần
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-1">
+        {parts.map((part) => (
+          <div
+            key={part.key}
+            className={[
+              'flex items-center gap-1 rounded-md border px-1.5 py-1 text-[9px] font-bold',
+              part.available
+                ? 'border-pink-100 bg-pink-50/70 text-[#E60067]'
+                : 'border-slate-100 bg-slate-50 text-slate-300',
+            ].join(' ')}
+          >
+            <span
+              className={[
+                'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8px] font-black',
+                part.available
+                  ? 'bg-[#E60067] text-white'
+                  : 'bg-slate-200 text-slate-400',
+              ].join(' ')}
+            >
+              {part.available ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-2.5 w-2.5"
+                  aria-hidden="true"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              ) : (
+                part.key === 'slides' ? '1' : part.key === 'simulations' ? '2' : part.key === 'summary' ? '3' : '4'
+              )}
+            </span>
+            <span className="truncate">{part.label}</span>
+            {part.available && part.count > 0 && (
+              <span className="ml-auto shrink-0 font-extrabold">
+                {part.count}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -722,6 +834,22 @@ function lessonTypeBadge(contentType) {
     return { label: 'Ảnh + PDF', className: 'bg-amber-100 text-amber-700' };
   }
   return { label: 'Chỉ Video', className: 'bg-sky-100 text-sky-700' };
+}
+
+/** Số thứ tự của từng phần trong 4 phần. */
+const PART_STEP_INDEX = {
+  slides: 1,
+  simulations: 2,
+  summary: 3,
+  quizzes: 4,
+};
+
+/** Mô tả ngắn nội dung của một phần. */
+function partDetail(part) {
+  if (part.key === 'slides') return `${part.count} slide bài giảng`;
+  if (part.key === 'simulations') return `${part.count} mô phỏng tình huống`;
+  if (part.key === 'summary') return 'Infographic & tài liệu tóm tắt';
+  return `${part.count} câu hỏi trắc nghiệm`;
 }
 
 function formatDuration(min) {
