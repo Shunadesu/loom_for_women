@@ -29,6 +29,8 @@ export default function QuizStep({
   const [results, setResults] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Khách (chưa đăng nhập) đã nộp đáp án — hiện CTA nhắc đăng nhập để lưu tiến độ.
+  const [guestMode, setGuestMode] = useState(false);
   // Số liệu tổng hợp do backend trả về (số câu đúng / tổng số câu)
   const [serverCorrect, setServerCorrect] = useState(null);
   const [serverAllCorrect, setServerAllCorrect] = useState(null);
@@ -49,6 +51,7 @@ export default function QuizStep({
     setSelected({});
     setResults({});
     setError('');
+    setGuestMode(false);
     setServerCorrect(null);
     setServerAllCorrect(null);
   }, [lessonId]);
@@ -68,10 +71,6 @@ export default function QuizStep({
 
   async function handleSubmit() {
     if (!current) return;
-    if (!isAuthenticated) {
-      if (onRequireLogin) onRequireLogin();
-      return;
-    }
     const answer = selected[currentId];
     if (!answer) return;
 
@@ -80,6 +79,14 @@ export default function QuizStep({
     try {
       const res = await submitQuizAnswer(lessonId, currentId, answer, true);
       setResults((prev) => ({ ...prev, [currentId]: res }));
+
+      if (res?.guest) {
+        // Khách: backend chỉ chấm, không lưu attempt/điểm/tiến độ.
+        // Số câu đúng frontend tự đếm từ `results` (correctTotal/allCorrect fallback).
+        setGuestMode(true);
+        return;
+      }
+
       if (typeof res?.correctQuizzes === 'number') {
         setServerCorrect(res.correctQuizzes);
       }
@@ -143,14 +150,56 @@ export default function QuizStep({
                 Trả lời đúng tất cả {total} câu để hoàn thành bài học.
               </p>
             )}
-            {total > 1 && allCorrect && (
+            {total > 1 && allCorrect && !guestMode && (
               <p className="mt-0.5 text-[10px] font-bold text-emerald-600">
                 Đã trả lời đúng đủ {total} câu — bài học đã hoàn thành.
+              </p>
+            )}
+            {total > 1 && allCorrect && guestMode && (
+              <p className="mt-0.5 text-[10px] font-bold text-amber-600">
+                Bạn đã trả lời đúng đủ {total} câu. Đăng nhập để lưu tiến độ bài
+                học.
               </p>
             )}
           </div>
         </div>
       </div>
+
+      {/* Nhắc đăng nhập khi đang làm ở chế độ khách */}
+      {!isAuthenticated && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+          <div className="flex items-start gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4" />
+              <path d="M12 8h.01" />
+            </svg>
+            <p className="text-[11px] leading-relaxed text-amber-900">
+              Đang xem trước — kết quả không được lưu. Đăng nhập để lưu tiến độ
+              và nhận điểm.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onRequireLogin?.()}
+            className="shrink-0 cursor-pointer rounded-xl bg-[#E60067] px-3.5 py-1.5 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-[#c90059]"
+          >
+            Đăng nhập
+          </button>
+        </div>
+      )}
 
       {/* Video tình huống (nếu có) */}
       {current?.videoUrl && (
@@ -287,6 +336,15 @@ export default function QuizStep({
                 </p>
               )}
             </div>
+            {guestMode && (
+              <button
+                type="button"
+                onClick={() => onRequireLogin?.()}
+                className="mt-2 cursor-pointer rounded-lg bg-[#E60067] px-3 py-1.5 text-[10px] font-extrabold text-white shadow-sm transition-colors hover:bg-[#c90059]"
+              >
+                Đăng nhập để lưu tiến độ
+              </button>
+            )}
           </div>
         )}
 

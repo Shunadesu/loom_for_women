@@ -6,7 +6,6 @@ import { resolveImageUrl } from '../utils/imageUrl.js';
 import { extractYoutubeId } from '../utils/youtube.js';
 import { ArrowLeftIcon, FileTextIcon, VideoIcon, EditIcon } from '../components/icons.jsx';
 import { useNotification } from '../store/notificationStore.js';
-import LessonFourPartModal from '../components/LessonFourPartModal.jsx';
 import { toStatements } from '../components/lessonDraft.js';
 
 /**
@@ -20,12 +19,6 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingLessonId, setEditingLessonId] = useState(null);
-
-  async function loadContent() {
-    const contentData = await fetchCourseContent(courseId);
-    setLessons(contentData.items || []);
-  }
 
   useEffect(() => {
     if (!courseId) return undefined;
@@ -174,27 +167,11 @@ export default function CourseDetail() {
             key={lesson._id}
             lesson={lesson}
             index={index}
-            onEdit={setEditingLessonId}
+            courseId={courseId}
           />
         ))}
       </div>
 
-      {/* Modal sửa nội dung 4 phần */}
-      {editingLessonId && (
-        <LessonFourPartModal
-          courseId={courseId}
-          lessonId={editingLessonId}
-          onClose={() => setEditingLessonId(null)}
-          onSaved={async () => {
-            setEditingLessonId(null);
-            try {
-              await loadContent();
-            } catch {
-              // im lặng — đã hiển thị thông báo ở form
-            }
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -215,7 +192,7 @@ const PART_STYLES = {
   quiz: { label: '4. Đánh giá nội dung học', box: 'border-amber-200 bg-amber-50/60', chip: 'bg-amber-100 text-amber-900' },
 };
 
-function LessonContentCard({ lesson, index, onEdit }) {
+function LessonContentCard({ lesson, index, courseId }) {
   const content = lesson.content || {};
   const slides = content.slides || [];
   const simulations = content.simulations || [];
@@ -241,7 +218,9 @@ function LessonContentCard({ lesson, index, onEdit }) {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => onEdit?.(lesson._id)}
+            onClick={() =>
+              navigate(`/courses/${courseId}/lessons/${lesson._id}/edit`)
+            }
             className="inline-flex items-center gap-1 rounded-lg border border-pink-200 bg-pink-50 px-2 py-1 text-[10px] font-bold text-[#E60067] hover:bg-pink-100"
           >
             <EditIcon aria-hidden="true" className="h-3 w-3" />

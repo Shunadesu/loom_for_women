@@ -8,8 +8,6 @@ const NAV = [
   { to: '/heroes', label: 'Hero Banner', icon: '🖼️' },
   { to: '/logo', label: 'Logo', icon: '🎨' },
   { to: '/courses', label: 'Khóa học', icon: '📚' },
-  { to: '/product-categories', label: 'Danh mục SP', icon: '🛍️' },
-  { to: '/products', label: 'Sản phẩm', icon: '📦' },
   { to: '/forum-posts', label: 'Diễn đàn', icon: '💬' },
   { to: '/users', label: 'Người dùng', icon: '👥' },
   { to: '/config', label: 'Cấu hình', icon: '⚙️', soon: true },

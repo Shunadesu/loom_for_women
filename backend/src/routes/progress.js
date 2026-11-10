@@ -11,7 +11,7 @@ import { submitQuizAnswer, getLessonQuiz } from '../controllers/quizController.j
 const router = Router();
 
 router.post('/lessons/:lessonId/complete', requireAuth, markLessonComplete);
-router.post('/lessons/:lessonId/quiz', requireAuth, submitQuizAnswer);
+router.post('/lessons/:lessonId/quiz', optionalAuth, submitQuizAnswer);
 router.get('/lessons/:lessonId/quiz', optionalAuth, getLessonQuiz);
 router.get('/me', requireAuth, myProgress);
 router.get('/me/stats', requireAuth, myStats);

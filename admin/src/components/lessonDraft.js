@@ -14,7 +14,7 @@ export function toStatements(simulation) {
   const mapped = list
     .map((s) => ({
       text: String(s?.text ?? '').trim(),
-      isCorrect: s?.isCorrect !== false,
+      isCorrect: s.isCorrect !== false,
     }))
     .filter((s) => s.text);
   if (mapped.length > 0) return mapped;
@@ -191,9 +191,64 @@ export function missingParts(draft) {
     missing.push('mô phỏng');
   }
   const sum = draft.summary || {};
-  if (!sum.imageUrl?.trim() && !sum.videoUrl?.trim() && !sum.pdfUrl?.trim()) {
-    missing.push('tóm tắt');
-  }
+  const hasSummary =
+    Boolean(sum.imageUrl?.trim()) ||
+    Boolean(sum.videoUrl?.trim()) ||
+    Boolean(sum.pdfUrl?.trim()) ||
+    Boolean(draft.summaryImageFile) ||
+    Boolean(draft.summaryPdfFile);
+  if (!hasSummary) missing.push('tóm tắt');
   if (!(draft.quizzes || []).length) missing.push('trắc nghiệm');
   return missing;
+}
+
+/**
+ * Kiểm tra 1 bài học trước khi lưu.
+ * @param {object} draft
+ * @param {string} [label] - tiền tố cho thông báo (VD: "Bài học #2")
+ * @returns {string|null} thông báo lỗi đầu tiên, hoặc null nếu hợp lệ
+ */
+export function validateLessonDraft(draft, label = 'Bài học') {
+  if (!draft.title?.trim()) {
+    return `${label} chưa có tiêu đề.`;
+  }
+
+  const needsPdf =
+    draft.contentType === 'video_pdf' || draft.contentType === 'image_pdf';
+  if (needsPdf && !draft.pdfFile && !draft.pdfUrl) {
+    return `${label} cần file PDF (media bổ sung).`;
+  }
+  if (draft.contentType === 'image_pdf' && !draft.imageUrl?.trim()) {
+    return `${label} cần URL ảnh (media bổ sung).`;
+  }
+
+  // Bài học có media nhưng không có nội dung 4 phần → cần video
+  const hasMedia = Boolean(
+    draft.videoUrl?.trim() ||
+      draft.imageUrl?.trim() ||
+      draft.pdfFile ||
+      draft.pdfUrl
+  );
+  const missing = missingParts(draft);
+  if (missing.length === 4 && !hasMedia) {
+    return `${label} chưa có nội dung nào (thiếu ${missing.join(', ')}).`;
+  }
+  // Bài học có 4 phần nhưng thiếu câu hỏi → cảnh báo rõ
+  if (missing.includes('trắc nghiệm') && missing.length < 4) {
+    return `${label} thiếu câu hỏi trắc nghiệm (phần 4).`;
+  }
+  return null;
+}
+
+/**
+ * Kiểm tra cả danh sách bài học — trả về lỗi đầu tiên hoặc null.
+ * @param {object[]} drafts
+ * @returns {string|null}
+ */
+export function validateLessonDrafts(drafts = []) {
+  for (let i = 0; i < drafts.length; i += 1) {
+    const error = validateLessonDraft(drafts[i], `Bài học #${i + 1}`);
+    if (error) return error;
+  }
+  return null;
 }

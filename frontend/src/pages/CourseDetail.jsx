@@ -115,6 +115,8 @@ export default function CourseDetail() {
   }
 
   function handleQuizPassed(result) {
+    // Khách (chưa đăng nhập) không có tiến độ nào được lưu → không ghi tiến độ giả.
+    if (!isAuthenticated) return;
     applyQuizResult(course?._id, currentLesson?._id, result);
     fetchContinue().catch(() => {});
     fetchStats().catch(() => {});

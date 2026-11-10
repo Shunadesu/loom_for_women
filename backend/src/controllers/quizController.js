@@ -12,14 +12,27 @@ import { completeLessonForUser } from '../services/lessonCompletionService.js';
  * Body: { quizId?, answer: 'A'|'B'|'C'|'D', complete?: boolean }
  * Trả về: { isCorrect, correctAnswer, explain, quizCount, attempts }
  *
+ * KHÁCH (chưa đăng nhập) cũng nộp được — backend vẫn chấm và trả đáp án đúng +
+ * giải thích, nhưng KHÔNG lưu QuizAttempt / điểm / tiến độ (các bản ghi này
+ * đều cần userId). Frontend tự hiện nhắc đăng nhập để lưu tiến độ.
+ *
  * Nếu trả lời đúng và complete=true → tick hoàn thành bài học
  * (dùng lại logic award điểm + cấp chứng chỉ trong progressController).
  */
 export const submitQuizAnswer = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Vui lòng đăng nhập để làm trắc nghiệm.' });
+    // Token có format Bearer nhưng không hợp lệ / hết hạn → báo 401 để
+    // frontend mở drawer đăng nhập. KHÔNG âm thầm hạ xuống chế độ khách,
+    // nếu không học viên sẽ tưởng đã lưu tiến độ.
+    const authHeader = req.headers.authorization || '';
+    const hasToken =
+      authHeader.startsWith('Bearer ') && authHeader.slice(7).trim();
+    if (!req.user && hasToken) {
+      return res
+        .status(401)
+        .json({ error: 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.' });
     }
+    const isGuest = !req.user;
 
     const { lessonId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(lessonId)) {
@@ -50,6 +63,32 @@ export const submitQuizAnswer = async (req, res) => {
     }
 
     const isCorrect = normalized === quiz.correct;
+
+    // Tổng số câu hỏi của bài học — cần cho cả 2 nhánh (khách / đã đăng nhập).
+    const lessonQuizzes = await LessonQuiz.find({ lessonId: lesson._id })
+      .sort({ order: 1, createdAt: 1 })
+      .lean();
+    const totalQuizzes = lessonQuizzes.length;
+
+    // ─── Khách (chưa đăng nhập) ───
+    // Chỉ chấm và trả đáp án đúng + giải thích. KHÔNG tạo QuizAttempt,
+    // KHÔNG cộng điểm, KHÔNG tick hoàn thành (tất cả đều cần userId).
+    // Frontend tự đếm số câu đúng và hiện nhắc đăng nhập để lưu tiến độ.
+    if (isGuest) {
+      return res.json({
+        isCorrect,
+        correctAnswer: quiz.correct,
+        explain: quiz.explain || '',
+        quizId: String(quiz._id),
+        attemptId: null,
+        attempts: 0,
+        progressPct: null,
+        totalQuizzes,
+        correctQuizzes: null,
+        allCorrect: null,
+        guest: true,
+      });
+    }
 
     const attempt = await QuizAttempt.create({
       userId: req.user._id,
@@ -86,14 +125,8 @@ export const submitQuizAnswer = async (req, res) => {
     // Đánh dấu hoàn thành bài học khi trả lời đúng TẤT CẢ câu hỏi.
     // Nếu bài học chỉ có 1 câu thì hành vi giống cũ (đúng 1 câu là xong).
     let progressPct = null;
-    let totalQuizzes = 0;
     let correctQuizzes = 0;
     let allCorrect = false;
-
-    const lessonQuizzes = await LessonQuiz.find({ lessonId: lesson._id })
-      .sort({ order: 1, createdAt: 1 })
-      .lean();
-    totalQuizzes = lessonQuizzes.length;
 
     if (totalQuizzes > 0) {
       const correctQuizIds = await QuizAttempt.distinct('quizId', {
@@ -122,6 +155,7 @@ export const submitQuizAnswer = async (req, res) => {
       totalQuizzes,
       correctQuizzes,
       allCorrect,
+      guest: false,
     });
   } catch (err) {
     console.error('submitQuizAnswer error', err);

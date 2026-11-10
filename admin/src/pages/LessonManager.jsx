@@ -3,8 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchAllCoursesAdmin } from '../services/courseApi.js';
 import {
   fetchLessonsByCourseAdmin,
-  createLessonAdmin,
-  updateLessonAdmin,
   deleteLessonAdmin,
   reorderLessonsAdmin,
 } from '../services/lessonApi.js';
@@ -23,11 +21,7 @@ import {
   XIcon,
   FileTextIcon,
 } from '../components/icons.jsx';
-import LessonContentForm, {
-  createEmptyLessonDraft,
-  describeContentType,
-} from '../components/LessonContentForm.jsx';
-import LessonFourPartModal from '../components/LessonFourPartModal.jsx';
+import { describeContentType } from '../components/LessonContentForm.jsx';
 import DocumentManagerModal from '../components/DocumentManagerModal.jsx';
 import { useNotification } from '../store/notificationStore.js';
 
@@ -39,11 +33,8 @@ export default function LessonManager() {
   const [items, setItems] = useState([]);
   const [contentMap, setContentMap] = useState({});
   const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
   const [previewingItem, setPreviewingItem] = useState(null);
   const [docsModalFor, setDocsModalFor] = useState(null);
-  const [intakeLessonId, setIntakeLessonId] = useState(null);
   const { notify } = useNotification();
 
   useEffect(() => {
@@ -89,13 +80,11 @@ export default function LessonManager() {
   }
 
   function handleNew() {
-    setEditingItem(null);
-    setModalOpen(true);
+    navigate(`/courses/${courseId}/lessons/new`);
   }
 
   function handleEdit(item) {
-    setEditingItem(item);
-    setModalOpen(true);
+    navigate(`/courses/${courseId}/lessons/${item._id}/edit`);
   }
 
   function handlePreview(item) {
@@ -109,22 +98,6 @@ export default function LessonManager() {
       setItems(items.filter((l) => l._id !== item._id));
     } catch (err) {
       notify({ type: 'error', title: 'Xoá thất bại', message: err?.response?.data?.error || 'Xoá thất bại.' });
-    }
-  }
-
-  async function handleSave(draft) {
-    try {
-      const payload = draftToFormData(draft);
-      if (editingItem) {
-        const updated = await updateLessonAdmin(editingItem._id, payload);
-        setItems(items.map((l) => (l._id === updated._id ? updated : l)));
-      } else {
-        const created = await createLessonAdmin(courseId, payload);
-        setItems([...items, created]);
-      }
-      setModalOpen(false);
-    } catch (err) {
-      notify({ type: 'error', title: 'Lưu thất bại', message: err?.response?.data?.error || 'Lưu thất bại.' });
     }
   }
 
@@ -342,7 +315,11 @@ export default function LessonManager() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
-                        onClick={() => setIntakeLessonId(item._id)}
+                        onClick={() =>
+                          navigate(
+                            `/courses/${courseId}/lessons/${item._id}/edit`
+                          )
+                        }
                         className="rounded bg-pink-50 p-1 hover:bg-pink-100"
                         title="Sửa nội dung 4 phần"
                       >
@@ -399,14 +376,6 @@ export default function LessonManager() {
         </div>
       )}
 
-      {modalOpen && (
-        <LessonFormModal
-          item={editingItem}
-          onClose={() => setModalOpen(false)}
-          onSave={handleSave}
-        />
-      )}
-
       {previewingItem && (
         <PreviewModal item={previewingItem} onClose={() => setPreviewingItem(null)} />
       )}
@@ -418,17 +387,6 @@ export default function LessonManager() {
         />
       )}
 
-      {intakeLessonId && (
-        <LessonFourPartModal
-          courseId={courseId}
-          lessonId={intakeLessonId}
-          onClose={() => setIntakeLessonId(null)}
-          onSaved={() => {
-            setIntakeLessonId(null);
-            loadLessons();
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -439,67 +397,6 @@ const PART_BADGES = [
   { key: 'sum', short: 'Tóm tắt', label: 'Tóm tắt bài học', check: (c) => Boolean(c.summary) },
   { key: 'quiz', short: 'Quiz', label: 'Đánh giá trắc nghiệm', check: (c) => (c.quizzes || []).length > 0 },
 ];
-
-function LessonFormModal({ item, onClose, onSave }) {
-  const [draft, setDraft] = useState(() =>
-    item ? lessonToDraft(item) : createEmptyLessonDraft()
-  );
-  const [saving, setSaving] = useState(false);
-  const { notify } = useNotification();
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!draft.title.trim()) {
-      notify({ type: 'warning', title: 'Thiếu thông tin', message: 'Tiêu đề không được trống.' });
-      return;
-    }
-    const needsPdf = draft.contentType === 'video_pdf' || draft.contentType === 'image_pdf';
-    if (needsPdf && !draft.pdfFile && !draft.pdfUrl) {
-      notify({ type: 'warning', title: 'Thiếu file PDF', message: 'Vui lòng chọn file PDF.' });
-      return;
-    }
-    if (draft.contentType === 'image_pdf' && !draft.imageUrl.trim()) {
-      notify({ type: 'warning', title: 'Thiếu ảnh', message: 'Vui lòng nhập URL ảnh.' });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await onSave(draft);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-8 w-full max-w-2xl rounded-lg bg-white p-4 shadow-xl">
-        <h2 className="mb-3 text-sm font-extrabold text-slate-900">
-          {item ? 'Sửa bài học' : 'Thêm bài học'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <LessonContentForm value={draft} onChange={setDraft} />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
-            >
-              Huỷ
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 rounded-md bg-primary-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-primary-700 disabled:opacity-50"
-            >
-              {saving ? 'Đang lưu...' : 'Lưu'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 function PreviewModal({ item, onClose }) {
   const type = item.contentType || 'video';

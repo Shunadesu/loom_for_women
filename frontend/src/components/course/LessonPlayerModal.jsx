@@ -116,6 +116,17 @@ export default function LessonPlayerModal({
     onOpenCertificate?.();
   };
 
+  /**
+   * Mở drawer đăng nhập từ bên trong modal bài học.
+   * LoginDrawer có z-50, modal bài học có z-[9999] → phải đóng modal trước
+   * thì drawer mới thấy được (giống handleOpenCertificate).
+   * redirectPath '/' → sau khi đăng nhập xong, người dùng ở lại trang hiện tại.
+   */
+  const handleRequireLogin = () => {
+    onClose?.();
+    onRequireLogin?.('/');
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-0 sm:p-4">
       <div className="flex h-full max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-white sm:h-[92vh] sm:max-h-[92vh] sm:rounded-2xl sm:shadow-2xl">
@@ -409,7 +420,7 @@ export default function LessonPlayerModal({
               quizzes={quizzes}
               lessonId={lesson._id}
               isAuthenticated={isAuthenticated}
-              onRequireLogin={onRequireLogin}
+              onRequireLogin={handleRequireLogin}
               onPassed={onPassed}
             />
           )}
