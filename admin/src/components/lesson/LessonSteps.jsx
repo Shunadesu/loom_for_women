@@ -206,21 +206,23 @@ export function LessonStepSlide({ value, onChange, showDuration = true }) {
     : resolveImageUrl(draft.slidePdfUrl || '');
 
   const handlePickPdf = (file) => {
-    const stillHasPdf = Boolean(file || draft.slidePdfUrl);
+    // Chọn file PDF → chuyển sang chế độ nhúng (trừ khi admin đã chọn nhập tay).
+    // Bỏ file và không còn PDF nào → quay về chế độ nhập tay.
     const explicitManual = draft.slideMode === 'manual';
+    const explicitPdf = draft.slideMode === 'pdf';
+    const stillHasPdf = Boolean(file || draft.slidePdfUrl);
     patch({
       slidePdfFile: file,
       slidePdfName: file ? file.name : draft.slidePdfName,
-      // Chọn file PDF → mặc định chuyển sang chế độ nhúng PDF,
-      // trừ khi admin đã chọn rõ chế độ nhập tay.
-      // Bỏ file và không còn PDF nào → quay về chế độ nhập tay.
       slideMode: file
         ? explicitManual
           ? 'manual'
           : 'pdf'
         : stillHasPdf
           ? draft.slideMode
-          : 'manual',
+          : explicitPdf
+            ? 'pdf'
+            : 'manual',
     });
   };
 
@@ -279,23 +281,23 @@ export function LessonStepSlide({ value, onChange, showDuration = true }) {
         />
       </div>
 
-      {/* ─── Chọn cách hiển thị phần 1 ─── */}
+      {/* ─── Chọn cách hiển thị phần 1 (chỉ 1 trong 2) ─── */}
       <div className="rounded-lg border border-pink-200 bg-white/80 p-2.5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
             Cách hiển thị slide
           </span>
-          <div className="flex flex-wrap gap-1.5">
+          <div
+            role="radiogroup"
+            aria-label="Cách hiển thị slide ở Phần 1"
+            className="flex flex-wrap gap-1.5"
+          >
             <button
               type="button"
-              // Không có file PDF thì không cho chọn chế độ nhúng —
-              // quay về nhập tay để admin vẫn nhập được danh sách slide.
-              onClick={() => patch({ slideMode: hasPdf ? 'pdf' : 'manual' })}
-              title={
-                hasPdf
-                  ? 'Học viên sẽ xem trực tiếp file PDF slide trong Phần 1.'
-                  : 'Cần tải lên file PDF slide trước khi chọn chế độ này.'
-              }
+              role="radio"
+              aria-checked={mode === 'pdf'}
+              onClick={() => patch({ slideMode: 'pdf' })}
+              title="Học viên sẽ xem trực tiếp file PDF slide trong Phần 1."
               className={[
                 'rounded-md border px-2 py-1 text-[11px] font-bold transition',
                 mode === 'pdf'
@@ -307,7 +309,10 @@ export function LessonStepSlide({ value, onChange, showDuration = true }) {
             </button>
             <button
               type="button"
+              role="radio"
+              aria-checked={mode === 'manual'}
               onClick={() => patch({ slideMode: 'manual' })}
+              title="Học viên sẽ xem từng slide nhập tay trong Phần 1."
               className={[
                 'rounded-md border px-2 py-1 text-[11px] font-bold transition',
                 mode === 'manual'
@@ -321,9 +326,14 @@ export function LessonStepSlide({ value, onChange, showDuration = true }) {
         </div>
         <p className="mt-1 text-[10px] text-slate-500">
           {mode === 'pdf'
-            ? 'Học viên sẽ xem trực tiếp file PDF slide trong Phần 1. Danh sách slide thủ công (nếu có) vẫn được giữ trong hệ thống.'
+            ? 'Học viên sẽ xem trực tiếp file PDF slide trong Phần 1 — không cần nhập danh sách slide thủ công. Danh sách slide thủ công (nếu có) vẫn được giữ trong hệ thống.'
             : 'Học viên sẽ xem từng slide nhập tay trong Phần 1. File PDF slide vẫn có thể tải lên để học viên tải về.'}
         </p>
+        {mode === 'pdf' && !hasPdf && (
+          <p className="mt-1 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
+            Chưa có file PDF slide — hãy tải lên file ở ô bên dưới, nếu không Phần 1 sẽ không có nội dung.
+          </p>
+        )}
       </div>
 
       {/* ─── File PDF slide ─── */}

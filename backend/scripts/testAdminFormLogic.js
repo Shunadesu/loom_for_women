@@ -231,8 +231,12 @@ assert(
   resolveSlideMode({ slideMode: 'pdf', slidePdfUrl: '/u.pdf' }) === 'pdf'
 );
 assert(
-  'slideMode=pdf nhưng chưa có file → quay về manual',
-  resolveSlideMode({ slideMode: 'pdf' }) === 'manual'
+  'slideMode=pdf được giữ kể cả khi chưa tải file lên',
+  resolveSlideMode({ slideMode: 'pdf' }) === 'pdf'
+);
+assert(
+  'chỉ dùng 1 trong 2 cách: manual giữ dù có PDF',
+  resolveSlideMode({ slideMode: 'manual', slidePdfUrl: '/u.pdf' }) === 'manual'
 );
 
 // Bài học chỉ có PDF → không còn thiếu phần 'slide'
@@ -258,6 +262,43 @@ assert(
 assert(
   'lessonToDraft nạp slideMode',
   lessonToDraft({ ...serverLesson, slideMode: 'pdf' }, content).slideMode === 'pdf'
+);
+
+// ─── Chỉ 1 trong 2 cách được dùng: ràng buộc theo đúng chế độ đã chọn ───
+// Chế độ PDF: phải có file PDF, không có slide tay thì vẫn thiếu 'slide'
+const d6 = createLessonDraft();
+d6.slideMode = 'pdf';
+d6.slides = [{ title: 'S1' }];
+d6.simulation = { videoUrl: 'https://youtu.be/x', description: '', statements: [] };
+d6.summary = { imageUrl: 'https://img/a.png' };
+d6.quizzes = [{ question: 'Q1', options: { A: 'a', B: 'b' }, correct: 'A', type: 'single' }];
+assert(
+  `Chế độ PDF mà chưa có file → vẫn thiếu 'slide' (${missingParts(d6).join(',')})`,
+  missingParts(d6).includes('slide')
+);
+
+// Chế độ thủ công: có PDF nhưng không có slide tay → vẫn thiếu 'slide'
+const d7 = createLessonDraft();
+d7.slideMode = 'manual';
+d7.slidePdfUrl = '/uploads/lessons/only.pdf';
+d7.simulation = { videoUrl: 'https://youtu.be/x', description: '', statements: [] };
+d7.summary = { imageUrl: 'https://img/a.png' };
+d7.quizzes = [{ question: 'Q1', options: { A: 'a', B: 'b' }, correct: 'A', type: 'single' }];
+assert(
+  `Chế độ thủ công mà không có slide tay → vẫn thiếu 'slide' (${missingParts(d7).join(',')})`,
+  missingParts(d7).includes('slide')
+);
+
+// Chế độ thủ công + có slide tay → đủ
+const d8 = createLessonDraft();
+d8.slideMode = 'manual';
+d8.slides = [{ title: 'S1' }];
+d8.simulation = { videoUrl: 'https://youtu.be/x', description: '', statements: [] };
+d8.summary = { imageUrl: 'https://img/a.png' };
+d8.quizzes = [{ question: 'Q1', options: { A: 'a', B: 'b' }, correct: 'A', type: 'single' }];
+assert(
+  `Chế độ thủ công + có slide tay → đủ (${missingParts(d8).join(',')})`,
+  missingParts(d8).length === 0
 );
 
 console.log(`\n${failed === 0 ? '✅ TẤT CẢ KIỂM TRA PASS' : `❌ ${failed} KIỂM TRA THẤT BẠI`}`);

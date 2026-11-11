@@ -35,6 +35,10 @@ export function hasStatements(simulation) {
  * - 'manual' : dùng danh sách slide thủ công
  * - 'auto'   : có file PDF thì dùng PDF, ngược lại dùng slide thủ công
  *
+ * Lưu ý: khi admin đã chọn tường minh 'pdf' hoặc 'manual' thì lựa chọn đó
+ * được giữ nguyên, kể cả khi chưa tải file PDF lên — nhờ vậy admin có thể
+ * chọn chế độ trước rồi tải file sau. Chỉ chế độ 'auto' mới tự suy ra.
+ *
  * @param {object} source
  * @param {string} [source.slideMode] - chế độ đã lưu ('auto' | 'pdf' | 'manual')
  * @param {string} [source.slidePdfUrl] - URL file PDF slide đã lưu
@@ -44,12 +48,10 @@ export function hasStatements(simulation) {
  */
 export function resolveSlideMode(source = {}) {
   const mode = String(source.slideMode || '').trim().toLowerCase();
-  const hasPdf = Boolean(source.slidePdfFile || source.slidePdfUrl);
-  if (mode === 'manual') return 'manual';
-  // 'pdf' nhưng chưa có file nào → quay về nhập tay để admin vẫn nhập được slide.
-  if (mode === 'pdf') return hasPdf ? 'pdf' : 'manual';
+  // Lựa chọn tường minh của admin luôn được giữ.
+  if (mode === 'pdf' || mode === 'manual') return mode;
   // 'auto' hoặc không xác định → có PDF thì ưu tiên PDF
-  if (hasPdf) return 'pdf';
+  if (source.slidePdfFile || source.slidePdfUrl) return 'pdf';
   return 'manual';
 }
 
@@ -208,11 +210,16 @@ export function draftToFormData(draft, order) {
  */
 export function missingParts(draft) {
   const missing = [];
-  // Phần 1 có nội dung khi: dùng PDF slide (có file) HOẶC có slide thủ công
+  // Phần 1: tùy chế độ đã chọn, nội dung phải tồn tại tương ứng.
+  //  - 'pdf'    : cần có file PDF slide (danh sách slide tay không được hiển thị)
+  //  - 'manual': cần có ít nhất 1 slide nhập tay
+  //  - 'auto'   : có PDF thì dùng PDF, ngược lại dùng slide tay
   const slideMode = resolveSlideMode(draft);
   const hasSlidePdf = Boolean(draft.slidePdfFile || draft.slidePdfUrl);
   const hasSlides = (draft.slides || []).length > 0;
-  if (!((slideMode === 'pdf' && hasSlidePdf) || hasSlides)) {
+  const slideOk =
+    slideMode === 'pdf' ? hasSlidePdf : slideMode === 'manual' ? hasSlides : hasSlidePdf || hasSlides;
+  if (!slideOk) {
     missing.push('slide');
   }
   const sim = draft.simulation || {};

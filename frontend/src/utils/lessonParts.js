@@ -34,7 +34,8 @@ export function summaryHasContent(summary) {
  * - 'pdf'    : dùng file PDF slide (nhúng trực tiếp)
  * - 'manual' : dùng danh sách slide thủ công
  *
- * Quy tắc mặc định khi bài học không khai báo `slideMode`:
+ * Lựa chọn tường minh của admin luôn được giữ (chỉ dùng 1 trong 2 cách).
+ * Quy tắc mặc định khi bài học không khai báo `slideMode` ('auto'):
  * có file PDF slide thì dùng PDF, ngược lại dùng slide thủ công.
  *
  * @param {object} lesson
@@ -42,9 +43,7 @@ export function summaryHasContent(summary) {
  */
 export function resolveSlideMode(lesson) {
   const mode = String(lesson?.slideMode || '').trim().toLowerCase();
-  if (mode === 'manual') return 'manual';
-  // 'pdf' nhưng không có file nào → dùng slide thủ công.
-  if (mode === 'pdf') return lesson?.slidePdfUrl ? 'pdf' : 'manual';
+  if (mode === 'pdf' || mode === 'manual') return mode;
   if (lesson?.slidePdfUrl) return 'pdf';
   return 'manual';
 }
@@ -59,11 +58,13 @@ export function getLessonParts(lesson) {
   const quizzes = Array.isArray(lesson?.quizzes) ? lesson.quizzes : [];
   const hasSummary = summaryHasContent(lesson?.summary);
 
-  // Phần 1: dùng PDF slide (nhúng) hoặc danh sách slide thủ công
+  // Phần 1: dùng PDF slide (nhúng) hoặc danh sách slide thủ công.
+  // Chỉ 1 trong 2 được dùng — theo đúng chế độ admin đã chọn.
   const slideMode = resolveSlideMode(lesson);
   const hasSlidePdf = slideMode === 'pdf' && Boolean(lesson?.slidePdfUrl);
-  const slidesAvailable = slides.length > 0 || hasSlidePdf;
-  const slidesCount = slides.length > 0 ? slides.length : hasSlidePdf ? 1 : 0;
+  const slidesAvailable =
+    slideMode === 'pdf' ? hasSlidePdf : slides.length > 0;
+  const slidesCount = slideMode === 'pdf' ? (hasSlidePdf ? 1 : 0) : slides.length;
 
   return [
     {

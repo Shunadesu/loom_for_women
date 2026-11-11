@@ -106,8 +106,20 @@ assert(
   resolveSlideMode({ slideMode: 'manual', slidePdfUrl: '/a.pdf' }) === 'manual'
 );
 assert(
-  'slideMode=pdf ghi đè (không PDF)',
+  'slideMode=pdf được giữ (chỉ 1 trong 2 cách)',
   resolveSlideMode({ slideMode: 'pdf' }) === 'pdf'
+);
+
+// Chỉ 1 trong 2: chế độ manual thì slide tay được dùng, PDF không ưu tiên
+const manualMode = {
+  slideMode: 'manual',
+  slidePdfUrl: '/uploads/lessons/a.pdf',
+  slides: [{ title: 'S1' }, { title: 'S2' }],
+};
+assert(
+  'slideMode=manual → dùng slide thủ công dù có PDF',
+  byKey(getLessonParts(manualMode), 'slides').isPdf === false &&
+    byKey(getLessonParts(manualMode), 'slides').count === 2
 );
 
 const pdfLesson = {
