@@ -256,7 +256,13 @@ function LessonContentCard({ lesson, index, courseId }) {
             </a>
           )}
           {slides.length === 0 ? (
-            <Empty text="Chưa có slide nào." />
+            lesson.slidePdfUrl && lesson.slideMode !== 'manual' ? (
+              <p className="text-[11px] text-slate-500">
+                Phần 1 hiển thị bằng file PDF slide (nhúng trực tiếp).
+              </p>
+            ) : (
+              <Empty text="Chưa có slide nào." />
+            )
           ) : (
             <ul className="space-y-1.5">
               {slides.map((s) => (

@@ -312,6 +312,18 @@ export default function UserDetail() {
                   {user.location}
                 </p>
               )}
+              {user.age != null && (
+                <p>
+                  <span className="font-bold text-slate-700">🎂 Tuổi:</span>{' '}
+                  {user.age}
+                </p>
+              )}
+              {user.occupation && (
+                <p>
+                  <span className="font-bold text-slate-700">💼 Nghề nghiệp:</span>{' '}
+                  {user.occupation}
+                </p>
+              )}
               <p>
                 <span className="font-bold text-slate-700">📅 Tạo:</span>{' '}
                 {formatDateTime(user.createdAt)}

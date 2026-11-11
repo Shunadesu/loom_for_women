@@ -29,6 +29,30 @@ export function hasStatements(simulation) {
   return toStatements(simulation).length > 0;
 }
 
+/**
+ * Chế độ hiển thị Phần 1.
+ * - 'pdf'    : dùng file PDF slide (nhúng trực tiếp)
+ * - 'manual' : dùng danh sách slide thủ công
+ * - 'auto'   : có file PDF thì dùng PDF, ngược lại dùng slide thủ công
+ *
+ * @param {object} source
+ * @param {string} [source.slideMode] - chế độ đã lưu ('auto' | 'pdf' | 'manual')
+ * @param {string} [source.slidePdfUrl] - URL file PDF slide đã lưu
+ * @param {File}  [source.slidePdfFile] - file PDF slide mới chọn
+ * @param {Array}  [source.slides] - danh sách slide thủ công
+ * @returns {'pdf'|'manual'}
+ */
+export function resolveSlideMode(source = {}) {
+  const mode = String(source.slideMode || '').trim().toLowerCase();
+  const hasPdf = Boolean(source.slidePdfFile || source.slidePdfUrl);
+  if (mode === 'manual') return 'manual';
+  // 'pdf' nhưng chưa có file nào → quay về nhập tay để admin vẫn nhập được slide.
+  if (mode === 'pdf') return hasPdf ? 'pdf' : 'manual';
+  // 'auto' hoặc không xác định → có PDF thì ưu tiên PDF
+  if (hasPdf) return 'pdf';
+  return 'manual';
+}
+
 /** Bản nháp bài học mới — đủ 4 phần + media. */
 export function createLessonDraft(contentType = 'video') {
   return {
@@ -43,6 +67,7 @@ export function createLessonDraft(contentType = 'video') {
     slidePdfFile: null,
     slidePdfName: '',
     slidePdfUrl: '',
+    slideMode: 'auto',
     slides: [],
     // ─── Phần 2: mô phỏng ───
     simulation: { videoUrl: '', description: '', statements: [] },
@@ -80,6 +105,7 @@ export function lessonToDraft(lesson, content = null) {
     slidePdfTitle: lesson.slidePdfTitle || '',
     slidePdfName: lesson.slidePdfName || '',
     slidePdfUrl: lesson.slidePdfUrl || '',
+    slideMode: lesson.slideMode || 'auto',
     slides: (content?.slides || []).map((s) => ({
       title: s.title || '',
       content: s.content || '',
@@ -141,6 +167,7 @@ export function draftToFormData(draft, order) {
   form.append('knowledgeTitle', (draft.knowledgeTitle || '').trim());
   form.append('knowledgeContent', (draft.knowledgeContent || '').trim());
   form.append('slidePdfTitle', (draft.slidePdfTitle || '').trim());
+  form.append('slideMode', draft.slideMode || 'auto');
   form.append('slides', JSON.stringify(draft.slides || []));
   if (draft.slidePdfFile) form.append('slidePdf', draft.slidePdfFile);
 
@@ -181,7 +208,13 @@ export function draftToFormData(draft, order) {
  */
 export function missingParts(draft) {
   const missing = [];
-  if (!(draft.slides || []).length) missing.push('slide');
+  // Phần 1 có nội dung khi: dùng PDF slide (có file) HOẶC có slide thủ công
+  const slideMode = resolveSlideMode(draft);
+  const hasSlidePdf = Boolean(draft.slidePdfFile || draft.slidePdfUrl);
+  const hasSlides = (draft.slides || []).length > 0;
+  if (!((slideMode === 'pdf' && hasSlidePdf) || hasSlides)) {
+    missing.push('slide');
+  }
   const sim = draft.simulation || {};
   if (
     !sim.videoUrl?.trim() &&

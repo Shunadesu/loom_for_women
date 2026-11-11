@@ -9,7 +9,8 @@
  * - Trang nhập bài học nhiều bước (pages/LessonFormPage.jsx)
  * - Editor 4 phần dạng tab (components/LessonContentEditor.jsx)
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { resolveImageUrl } from '../../utils/imageUrl.js';
 import SlideEditorList from '../SlideEditorList.jsx';
 import SimulationEditor from '../SimulationEditor.jsx';
 import QuizListEditor from '../QuizListEditor.jsx';
@@ -18,7 +19,7 @@ import {
   resolveVideoSource,
   buildVideoEmbedUrl,
 } from '../../utils/videoSource.js';
-import { missingParts } from '../lessonDraft.js';
+import { missingParts, resolveSlideMode } from '../lessonDraft.js';
 
 /**
  * Metadata 6 bước — dùng cho stepper.
@@ -184,6 +185,45 @@ export function LessonStepSlide({ value, onChange, showDuration = true }) {
   const draft = value;
   const patch = (changes) => onChange({ ...draft, ...changes });
 
+  // Chế độ hiển thị Phần 1: 'pdf' (nhúng file PDF) hoặc 'manual' (nhập tay)
+  const mode = resolveSlideMode(draft);
+  const hasPdf = Boolean(draft.slidePdfFile || draft.slidePdfUrl);
+
+  // Object URL cho file PDF vừa chọn (chưa upload) để preview
+  const [localPdfUrl, setLocalPdfUrl] = useState('');
+  useEffect(() => {
+    if (!draft.slidePdfFile) {
+      setLocalPdfUrl('');
+      return undefined;
+    }
+    const url = URL.createObjectURL(draft.slidePdfFile);
+    setLocalPdfUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [draft.slidePdfFile]);
+
+  const previewPdfUrl = draft.slidePdfFile
+    ? localPdfUrl
+    : resolveImageUrl(draft.slidePdfUrl || '');
+
+  const handlePickPdf = (file) => {
+    const stillHasPdf = Boolean(file || draft.slidePdfUrl);
+    const explicitManual = draft.slideMode === 'manual';
+    patch({
+      slidePdfFile: file,
+      slidePdfName: file ? file.name : draft.slidePdfName,
+      // Chọn file PDF → mặc định chuyển sang chế độ nhúng PDF,
+      // trừ khi admin đã chọn rõ chế độ nhập tay.
+      // Bỏ file và không còn PDF nào → quay về chế độ nhập tay.
+      slideMode: file
+        ? explicitManual
+          ? 'manual'
+          : 'pdf'
+        : stillHasPdf
+          ? draft.slideMode
+          : 'manual',
+    });
+  };
+
   return (
     <div className="space-y-2.5 rounded-lg border border-pink-200 bg-pink-50/60 p-2.5">
       <p className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#E60067]">
@@ -239,6 +279,54 @@ export function LessonStepSlide({ value, onChange, showDuration = true }) {
         />
       </div>
 
+      {/* ─── Chọn cách hiển thị phần 1 ─── */}
+      <div className="rounded-lg border border-pink-200 bg-white/80 p-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            Cách hiển thị slide
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              // Không có file PDF thì không cho chọn chế độ nhúng —
+              // quay về nhập tay để admin vẫn nhập được danh sách slide.
+              onClick={() => patch({ slideMode: hasPdf ? 'pdf' : 'manual' })}
+              title={
+                hasPdf
+                  ? 'Học viên sẽ xem trực tiếp file PDF slide trong Phần 1.'
+                  : 'Cần tải lên file PDF slide trước khi chọn chế độ này.'
+              }
+              className={[
+                'rounded-md border px-2 py-1 text-[11px] font-bold transition',
+                mode === 'pdf'
+                  ? 'border-[#E60067] bg-[#E60067] text-white'
+                  : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50',
+              ].join(' ')}
+            >
+              Nhúng file PDF slide
+            </button>
+            <button
+              type="button"
+              onClick={() => patch({ slideMode: 'manual' })}
+              className={[
+                'rounded-md border px-2 py-1 text-[11px] font-bold transition',
+                mode === 'manual'
+                  ? 'border-[#E60067] bg-[#E60067] text-white'
+                  : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50',
+              ].join(' ')}
+            >
+              Nhập slide thủ công
+            </button>
+          </div>
+        </div>
+        <p className="mt-1 text-[10px] text-slate-500">
+          {mode === 'pdf'
+            ? 'Học viên sẽ xem trực tiếp file PDF slide trong Phần 1. Danh sách slide thủ công (nếu có) vẫn được giữ trong hệ thống.'
+            : 'Học viên sẽ xem từng slide nhập tay trong Phần 1. File PDF slide vẫn có thể tải lên để học viên tải về.'}
+        </p>
+      </div>
+
+      {/* ─── File PDF slide ─── */}
       <div className="grid gap-2 rounded-lg border border-pink-200 bg-white/80 p-2.5 sm:grid-cols-2">
         <div>
           <span className="mb-1 block text-[10px] font-bold text-slate-600">
@@ -254,18 +342,12 @@ export function LessonStepSlide({ value, onChange, showDuration = true }) {
         </div>
         <div>
           <span className="mb-1 block text-[10px] font-bold text-slate-600">
-            File PDF slide (tải lên để học viên tải về):
+            File PDF slide (tải lên để nhúng hoặc cho học viên tải về):
           </span>
           <input
             type="file"
             accept=".pdf,application/pdf"
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null;
-              patch({
-                slidePdfFile: file,
-                slidePdfName: file ? file.name : draft.slidePdfName,
-              });
-            }}
+            onChange={(e) => handlePickPdf(e.target.files?.[0] || null)}
             className="w-full text-[11px] text-slate-600"
           />
           {(draft.slidePdfName || draft.slidePdfUrl) && (
@@ -274,13 +356,53 @@ export function LessonStepSlide({ value, onChange, showDuration = true }) {
               {draft.slidePdfFile ? ' (mới)' : ''}
             </p>
           )}
+          {!hasPdf && (
+            <p className="mt-0.5 text-[10px] font-bold text-amber-600">
+              Chưa có file PDF — hãy tải lên file PDF slide (tối đa 20MB).
+            </p>
+          )}
         </div>
       </div>
 
-      <SlideEditorList
-        value={draft.slides}
-        onChange={(slides) => patch({ slides })}
-      />
+      {/* ─── Preview PDF (chế độ nhúng) ─── */}
+      {mode === 'pdf' && (
+        <div className="space-y-1.5 rounded-lg border border-pink-200 bg-white p-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+              Xem trước file PDF slide
+            </span>
+            {previewPdfUrl && (
+              <a
+                href={previewPdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-md border border-pink-200 bg-pink-50 px-2 py-1 text-[10px] font-bold text-[#E60067] hover:bg-pink-100"
+              >
+                Mở tab mới
+              </a>
+            )}
+          </div>
+          {previewPdfUrl ? (
+            <iframe
+              title="Xem trước file PDF slide"
+              src={previewPdfUrl}
+              className="h-[420px] w-full rounded-lg border border-slate-200 bg-slate-50"
+            />
+          ) : (
+            <p className="py-6 text-center text-[11px] font-bold text-amber-600">
+              Chưa có file PDF để xem trước. Hãy tải lên file ở ô bên trên.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ─── Danh sách slide thủ công (chế độ nhập tay) ─── */}
+      {mode === 'manual' && (
+        <SlideEditorList
+          value={draft.slides}
+          onChange={(slides) => patch({ slides })}
+        />
+      )}
     </div>
   );
 }

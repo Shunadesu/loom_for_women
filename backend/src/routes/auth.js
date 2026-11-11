@@ -9,7 +9,17 @@ router.post(
   '/register',
   [
     body('phone').trim().notEmpty().withMessage('Số điện thoại là bắt buộc.'),
-    body('name').optional().isString().isLength({ max: 50 }).withMessage('Tên tối đa 50 ký tự.'),
+    body('name').trim().notEmpty().withMessage('Tên là bắt buộc.').isLength({ max: 50 }).withMessage('Tên tối đa 50 ký tự.'),
+    body('age')
+      .isInt({ min: 13, max: 100 })
+      .withMessage('Tuổi không hợp lệ (từ 13 đến 100).')
+      .toInt(),
+    body('occupation')
+      .trim()
+      .notEmpty()
+      .withMessage('Nghề nghiệp là bắt buộc.')
+      .isLength({ max: 100 })
+      .withMessage('Nghề nghiệp tối đa 100 ký tự.'),
     body('password')
       .isString()
       .isLength({ min: 6 })

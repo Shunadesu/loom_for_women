@@ -4,6 +4,9 @@ import { extractYoutubeId } from '../../utils/youtube.js';
 /**
  * Phần 2 — Mô phỏng tình huống (Video & Đúng/Sai).
  *
+ * Luồng: người học chọn Đúng/Sai cho TẤT CẢ phát biểu, sau đó nộp 1 lần.
+ * Chỉ khi nộp xong mới hiện kết quả + đáp án đúng từng câu.
+ *
  * Props:
  * - simulation : object { videoUrl, youtubeId, description, statements: [{ text, isCorrect }] }
  *                (hỗ trợ dữ liệu cũ: statement + isCorrect)
@@ -27,6 +30,8 @@ function toStatements(sim) {
 export default function SimulationStep({ simulation }) {
   // Lựa chọn của học viên theo chỉ số phát biểu: { 0: true, 1: false, ... }
   const [choices, setChoices] = useState({});
+  // Đã nộp cả phần Đúng/Sai hay chưa — sau khi nộp mới hiện kết quả.
+  const [submitted, setSubmitted] = useState(false);
 
   const sim = simulation || null;
   const statements = useMemo(() => toStatements(sim), [sim]);
@@ -56,6 +61,8 @@ export default function SimulationStep({ simulation }) {
   const correctCount = statements.filter(
     (s, i) => choices[i] !== undefined && choices[i] === s.isCorrect
   ).length;
+  /** Đã chọn đủ đáp án chưa — chỉ khi đủ mới cho nộp. */
+  const allAnswered = total > 0 && answered >= total;
 
   const choose = (index, value) => {
     setChoices((prev) => ({ ...prev, [index]: value }));
@@ -83,7 +90,9 @@ export default function SimulationStep({ simulation }) {
             )}
             {total > 0 && (
               <p className="mt-0.5 text-[11px] font-bold text-teal-700">
-                Đã trả lời {answered}/{total} • Đúng {correctCount}/{total}
+                {submitted
+                  ? `Đã trả lời ${answered}/${total} • Đúng ${correctCount}/${total}`
+                  : `Đã chọn ${answered}/${total} — điền đủ rồi nộp 1 lần`}
               </p>
             )}
           </div>
@@ -115,7 +124,8 @@ export default function SimulationStep({ simulation }) {
           {statements.map((st, i) => {
             const chosen = choices[i];
             const isAnswered = chosen !== undefined;
-            const isCorrect = isAnswered && chosen === st.isCorrect;
+            // Chỉ chấm khi đã nộp cả phần — trước đó không lộ đáp án đúng.
+            const isCorrect = submitted && isAnswered && chosen === st.isCorrect;
 
             return (
               <div
@@ -139,12 +149,19 @@ export default function SimulationStep({ simulation }) {
                 <div className="mt-3 flex flex-wrap gap-2 sm:pl-7">
                   <button
                     type="button"
+                    disabled={submitted}
                     onClick={() => choose(i, true)}
                     className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold transition-all ${
-                      chosen === true
-                        ? 'bg-emerald-600 text-white'
-                        : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                    }`}
+                      submitted
+                        ? st.isCorrect
+                          ? 'bg-emerald-600 text-white'
+                          : chosen === true
+                            ? 'bg-rose-600 text-white'
+                            : 'border border-slate-200 bg-slate-50 text-slate-400'
+                        : chosen === true
+                          ? 'bg-teal-700 text-white'
+                          : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    } ${submitted ? 'cursor-default' : 'cursor-pointer'}`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -162,15 +179,27 @@ export default function SimulationStep({ simulation }) {
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
                     Đúng
+                    {submitted && st.isCorrect && (
+                      <span className="text-[9px] font-extrabold uppercase opacity-90">
+                        Đáp án đúng
+                      </span>
+                    )}
                   </button>
                   <button
                     type="button"
+                    disabled={submitted}
                     onClick={() => choose(i, false)}
                     className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold transition-all ${
-                      chosen === false
-                        ? 'bg-rose-600 text-white'
-                        : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                    }`}
+                      submitted
+                        ? !st.isCorrect
+                          ? 'bg-emerald-600 text-white'
+                          : chosen === false
+                            ? 'bg-rose-600 text-white'
+                            : 'border border-slate-200 bg-slate-50 text-slate-400'
+                        : chosen === false
+                          ? 'bg-teal-700 text-white'
+                          : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                    } ${submitted ? 'cursor-default' : 'cursor-pointer'}`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -189,10 +218,15 @@ export default function SimulationStep({ simulation }) {
                       <path d="m6 6 12 12" />
                     </svg>
                     Sai
+                    {submitted && !st.isCorrect && (
+                      <span className="text-[9px] font-extrabold uppercase opacity-90">
+                        Đáp án đúng
+                      </span>
+                    )}
                   </button>
                 </div>
 
-                {isAnswered && (
+                {submitted && isAnswered && (
                   <div
                     className={`mt-3 flex items-start gap-2 rounded-xl border p-3 sm:ml-7 ${
                       isCorrect
@@ -252,6 +286,40 @@ export default function SimulationStep({ simulation }) {
               </div>
             );
           })}
+
+          {/* ─── Nút nộp toàn bộ phần Đúng/Sai (1 lần) ─── */}
+          {!submitted ? (
+            <div className="sticky bottom-0 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur sm:p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[11px] font-bold text-slate-600">
+                  {allAnswered
+                    ? `Đã chọn đủ ${total} câu. Sẵn sàng nộp.`
+                    : `Còn ${total - answered} câu chưa chọn Đúng/Sai.`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(true)}
+                  disabled={!allAnswered}
+                  className="w-full cursor-pointer rounded-xl bg-gradient-to-r from-teal-700 to-emerald-700 px-5 py-3 text-xs font-extrabold text-white shadow-md transition-all hover:from-teal-800 hover:to-emerald-800 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+                >
+                  Nộp đáp án
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 sm:p-4">
+              <p className="text-[11px] font-bold text-emerald-800">
+                Bạn trả lời đúng {correctCount}/{total} câu.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSubmitted(false)}
+                className="shrink-0 cursor-pointer rounded-xl border border-emerald-300 bg-white px-3.5 py-1.5 text-[11px] font-extrabold text-emerald-700 transition-colors hover:bg-emerald-100"
+              >
+                Làm lại
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -17,6 +17,20 @@ import {
 
 const publicUrlFor = (filename) => `/uploads/lessons/${filename}`;
 
+const VALID_SLIDE_MODES = ['auto', 'pdf', 'manual'];
+
+/**
+ * Chuẩn hoá chế độ hiển thị Phần 1.
+ * @param {any} raw - giá trị gửi từ form
+ * @param {boolean} hasPdf - đã có file PDF slide hay chưa
+ * @returns {'auto'|'pdf'|'manual'}
+ */
+const normalizeSlideMode = (raw, hasPdf) => {
+  const value = String(raw || '').trim().toLowerCase();
+  if (VALID_SLIDE_MODES.includes(value)) return value;
+  return hasPdf ? 'pdf' : 'auto';
+};
+
 const filenameFromUrl = (url) => {
   if (!url) return null;
   try {
@@ -97,6 +111,11 @@ const readContentPayload = (body, files = {}) => {
     slidePdfFile,
     summaryImageFile,
     summaryPdfFile,
+    /**
+     * Chế độ hiển thị Phần 1 — không gửi thì mặc định 'auto'
+     * (có PDF thì dùng PDF, ngược lại dùng slide thủ công).
+     */
+    slideMode: normalizeSlideMode(body.slideMode, Boolean(slidePdfFile)),
   };
 };
 
@@ -158,6 +177,7 @@ export const createCourseWithLesson = async (req, res) => {
         ? clean(content.slidePdfFile.originalname, 300)
         : '',
       slidePdfTitle: clean(body.slidePdfTitle, 300),
+      slideMode: content.slideMode,
       durationSeconds: Math.max(0, Number(body.durationSeconds) || 0),
       order: 0,
     });
@@ -208,6 +228,13 @@ export const updateLessonWithContent = async (req, res) => {
       lesson.slidePdfUrl = publicUrlFor(content.slidePdfFile.filename);
       lesson.slidePdfName = clean(content.slidePdfFile.originalname, 300);
       if (oldPdf && oldPdf !== lesson.slidePdfUrl) removeFileByUrl(oldPdf);
+    }
+
+    // Chế độ hiển thị Phần 1 — không gửi thì giữ chế độ đang lưu
+    if (body.slideMode !== undefined) {
+      lesson.slideMode = content.slideMode;
+    } else if (content.slidePdfFile) {
+      lesson.slideMode = 'pdf';
     }
 
     await lesson.save();

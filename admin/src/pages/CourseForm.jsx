@@ -72,8 +72,8 @@ export default function CourseForm({ onSaved }) {
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
+  const [initialCoverUrl, setInitialCoverUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
-  const [bannerUrl, setBannerUrl] = useState('');
   const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState('');
 
   // Danh sách bài học (chỉ để hiển thị tóm tắt + link sửa)
@@ -92,8 +92,8 @@ export default function CourseForm({ onSaved }) {
     setIsActive(true);
     setThumbnailFile(null);
     setCoverUrl('');
+    setInitialCoverUrl('');
     setVideoUrl('');
-    setBannerUrl('');
     setCurrentThumbnailUrl('');
     setLessons([]);
     setContentMap({});
@@ -125,8 +125,8 @@ export default function CourseForm({ onSaved }) {
         setIsPublished(courseData.isPublished ?? true);
         setIsActive(courseData.isActive ?? true);
         setVideoUrl(courseData.videoId ? `https://youtu.be/${courseData.videoId}` : '');
-        setBannerUrl(courseData.bannerUrl || '');
         setCoverUrl(courseData.coverUrl || '');
+        setInitialCoverUrl(courseData.coverUrl || '');
         setCurrentThumbnailUrl(courseData.thumbnail || '');
 
         // Nạp danh sách bài học + nội dung 4 phần để hiển thị tóm tắt
@@ -174,11 +174,21 @@ export default function CourseForm({ onSaved }) {
   const currentThumbnail =
     thumbnailPreview ||
     (currentThumbnailUrl ? resolveImageUrl(currentThumbnailUrl) : '');
-  const heroImage = bannerUrl.trim()
-    ? resolveImageUrl(bannerUrl.trim())
-    : coverUrl.trim()
-      ? resolveImageUrl(coverUrl.trim())
-      : currentThumbnail;
+  const heroImage = coverUrl.trim()
+    ? resolveImageUrl(coverUrl.trim())
+    : currentThumbnail;
+
+  /** Chọn file → bỏ URL (hai lựa chọn loại trừ nhau). */
+  function handlePickThumbnailFile(file) {
+    setThumbnailFile(file || null);
+    if (file) setCoverUrl('');
+  }
+
+  /** Gõ URL → bỏ file đã chọn (hai lựa chọn loại trừ nhau). */
+  function handleChangeCoverUrl(value) {
+    setCoverUrl(value);
+    if (value.trim()) setThumbnailFile(null);
+  }
 
   /** Gom dữ liệu form khóa học thành FormData. */
   function buildCourseFormData() {
@@ -192,9 +202,17 @@ export default function CourseForm({ onSaved }) {
     formData.append('isPublished', isPublished);
     formData.append('isActive', isActive);
     formData.append('videoId', videoId || '');
-    formData.append('bannerUrl', bannerUrl.trim());
     formData.append('coverUrl', coverUrl.trim());
-    if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
+    if (thumbnailFile) {
+      formData.append('thumbnail', thumbnailFile);
+    } else if (
+      coverUrl.trim() &&
+      (coverUrl.trim() !== initialCoverUrl.trim() || !currentThumbnailUrl)
+    ) {
+      // Chỉ dán URL → gửi URL làm ảnh bìa (không cần upload file).
+      // Không gửi lại nếu URL không đổi và ảnh bìa hiện có đã được đặt.
+      formData.append('thumbnail', coverUrl.trim());
+    }
     return formData;
   }
 
@@ -406,52 +424,50 @@ export default function CourseForm({ onSaved }) {
               />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-[11px] font-bold text-slate-700">
-                Ảnh bìa (tải file)
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setThumbnailFile(e.target.files[0])}
-                className="w-full text-xs"
-              />
+          <div>
+            <label className="mb-1 block text-[11px] font-bold text-slate-700">
+              Ảnh bìa
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">
+                  Tải file
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handlePickThumbnailFile(e.target.files[0])}
+                  className="w-full text-xs"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">
+                  Hoặc dán URL
+                </label>
+                <input
+                  type="text"
+                  value={coverUrl}
+                  onChange={(e) => handleChangeCoverUrl(e.target.value)}
+                  className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
+                  placeholder="https://images.unsplash.com/..."
+                />
+              </div>
+            </div>
+            <p className="mt-0.5 text-[10px] text-slate-400">
+              Chỉ cần chọn MỘT trong hai: tải file hoặc dán URL. Ảnh bìa sẽ hiển thị trên thẻ
+              khóa học.
+            </p>
+            <div className="mt-1.5">
               {currentThumbnail ? (
                 <img
                   src={currentThumbnail}
-                  alt="Current"
-                  className="mt-1.5 h-16 w-16 rounded object-cover"
+                  alt="Ảnh bìa hiện tại"
+                  className="h-16 w-16 rounded object-cover"
                 />
               ) : (
-                <div className="mt-1.5 flex h-16 w-16 items-center justify-center rounded bg-slate-100">
+                <div className="flex h-16 w-16 items-center justify-center rounded bg-slate-100">
                   <ImageIcon aria-hidden="true" className="h-4 w-4 text-slate-400" />
                 </div>
-              )}
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-bold text-slate-700">
-                Ảnh bìa (URL)
-              </label>
-              <input
-                type="text"
-                value={coverUrl}
-                onChange={(e) => setCoverUrl(e.target.value)}
-                className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
-                placeholder="https://images.unsplash.com/..."
-              />
-              <p className="mt-0.5 text-[10px] text-slate-400">
-                Dùng khi không muốn upload file. Ảnh bìa sẽ hiển thị trên thẻ khóa học.
-              </p>
-              {coverUrl.trim() && (
-                <img
-                  src={resolveImageUrl(coverUrl.trim())}
-                  alt="Preview ảnh bìa"
-                  className="mt-1.5 h-16 w-16 rounded object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
               )}
             </div>
           </div>
@@ -488,40 +504,6 @@ export default function CourseForm({ onSaved }) {
                   allowFullScreen
                   className="aspect-video w-full"
                 />
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] font-bold text-slate-700">
-              Ảnh nền (URL)
-            </label>
-            <input
-              type="text"
-              value={bannerUrl}
-              onChange={(e) => setBannerUrl(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
-              placeholder="https://images.unsplash.com/..."
-            />
-            <p className="mt-0.5 text-[10px] text-slate-400">
-              Dán URL ảnh nền (Unsplash, ...). Bỏ trống để dùng ảnh bìa làm ảnh nền.
-            </p>
-            {bannerUrl.trim() && (
-              <div className="mt-1.5 flex items-center gap-2">
-                <img
-                  src={resolveImageUrl(bannerUrl.trim())}
-                  alt="Preview ảnh nền"
-                  className="h-14 w-24 rounded object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setBannerUrl('')}
-                  className="rounded border border-slate-300 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-50"
-                >
-                  Xoá ảnh nền
-                </button>
               </div>
             )}
           </div>
@@ -634,19 +616,19 @@ export default function CourseForm({ onSaved }) {
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
             Xem trước thẻ hero
           </p>
-          <div className="relative overflow-hidden rounded-lg bg-slate-200">
+          <div className="relative overflow-hidden rounded-lg bg-slate-100">
             {heroImage ? (
               <img
                 src={heroImage}
                 alt="Hero preview"
-                className="h-32 w-full object-cover"
+                className="h-48 w-full object-contain"
               />
             ) : (
-              <div className="flex h-32 w-full items-center justify-center text-[10px] text-slate-400">
+              <div className="flex h-48 w-full items-center justify-center text-[10px] text-slate-400">
                 Chưa có ảnh
               </div>
             )}
-            <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-black/20 to-transparent p-2.5">
+            <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-black/30 to-transparent p-2.5">
               <p className="line-clamp-1 text-[11px] font-extrabold text-white">
                 {title.trim() || 'Tiêu đề khóa học'}
               </p>
@@ -656,11 +638,7 @@ export default function CourseForm({ onSaved }) {
             </div>
           </div>
           <p className="mt-1 text-[10px] text-slate-400">
-            {bannerUrl.trim()
-              ? 'Đang dùng ảnh nền đã nhập.'
-              : currentThumbnail
-                ? 'Chưa có ảnh nền — đang dùng ảnh bìa.'
-                : 'Chưa có ảnh nào.'}
+            {heroImage ? 'Đang dùng ảnh bìa.' : 'Chưa có ảnh nào.'}
           </p>
         </div>
 

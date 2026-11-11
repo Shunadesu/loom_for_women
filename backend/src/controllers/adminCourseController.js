@@ -87,8 +87,13 @@ export const createCourse = async (req, res) => {
     if (req.file) {
       thumbnail = publicUrlFor(req.file.filename);
     }
+    // Chỉ cần MỘT trong hai: upload file HOẶC dán URL ảnh bìa.
+    // Nếu admin chỉ dán URL (coverUrl) mà không upload file → dùng URL làm ảnh bìa.
+    if (!thumbnail && coverInput) {
+      thumbnail = String(coverInput).trim();
+    }
     if (!thumbnail) {
-      return res.status(400).json({ error: 'Thiếu ảnh thumbnail (upload hoặc URL).' });
+      return res.status(400).json({ error: 'Thiếu ảnh bìa (upload file hoặc dán URL).' });
     }
 
     const slug = await ensureUniqueSlug(slugify(title));
@@ -186,6 +191,8 @@ export const updateCourse = async (req, res) => {
     if (typeof bannerInput === 'string') {
       course.bannerUrl = bannerInput.trim().slice(0, 1000);
     }
+    // Đã bỏ khái niệm "ảnh nền" — dọn dữ liệu cũ cho sạch.
+    course.bannerUrl = '';
     if (videoInput !== undefined && videoInput !== null) {
       course.videoId = extractYoutubeId(videoInput) || '';
     }

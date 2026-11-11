@@ -13,6 +13,7 @@ import {
   countAvailableParts,
   summarizeLessonParts,
   summaryHasContent,
+  resolveSlideMode,
 } from '../../frontend/src/utils/lessonParts.js';
 
 let failed = 0;
@@ -92,6 +93,60 @@ assert('Mô phỏng count = 0', byKey(brokenParts, 'simulations').count === 0);
 assert('Trắc nghiệm count = 0', byKey(brokenParts, 'quizzes').count === 0);
 assert('hasStructuredContent(null) = false', hasStructuredContent(null) === false);
 assert('countAvailableParts(null) = 0', countAvailableParts(null) === 0);
+
+// ─── Phần 1 dùng file PDF slide ───
+console.log('\n[6] Phần 1 dùng file PDF slide');
+assert('Không PDF, không slide → manual', resolveSlideMode({}) === 'manual');
+assert(
+  'Có slidePdfUrl (auto) → pdf',
+  resolveSlideMode({ slidePdfUrl: '/uploads/lessons/a.pdf' }) === 'pdf'
+);
+assert(
+  'slideMode=manual ghi đè (có PDF)',
+  resolveSlideMode({ slideMode: 'manual', slidePdfUrl: '/a.pdf' }) === 'manual'
+);
+assert(
+  'slideMode=pdf ghi đè (không PDF)',
+  resolveSlideMode({ slideMode: 'pdf' }) === 'pdf'
+);
+
+const pdfLesson = {
+  slidePdfUrl: '/uploads/lessons/a.pdf',
+  slidePdfTitle: 'Slide Cẩm nang',
+  quizzes: [{ question: 'Q1' }],
+};
+const pdfParts = getLessonParts(pdfLesson);
+assert('Phần slide available (có PDF)', byKey(pdfParts, 'slides').available === true);
+assert('Phần slide đánh dấu isPdf', byKey(pdfParts, 'slides').isPdf === true);
+assert('Phần slide count = 1', byKey(pdfParts, 'slides').count === 1);
+assert('hasStructuredContent = true', hasStructuredContent(pdfLesson) === true);
+assert('countAvailableParts = 2', countAvailableParts(pdfLesson) === 2);
+assert(
+  'Chuỗi ghi "PDF slide"',
+  summarizeLessonParts(pdfLesson) === 'PDF slide • 1 câu hỏi'
+);
+
+// Bài học có cả PDF lẫn slide thủ công → PDF ưu tiên
+const bothLesson = {
+  slidePdfUrl: '/uploads/lessons/a.pdf',
+  slides: [{ title: 'S1' }, { title: 'S2' }],
+};
+assert(
+  'Có cả PDF và slide → vẫn ưu tiên PDF',
+  resolveSlideMode(bothLesson) === 'pdf' && byKey(getLessonParts(bothLesson), 'slides').isPdf === true
+);
+
+// Chế độ thủ công dù PDF vẫn còn → dùng slide tay
+const manualLesson = {
+  slideMode: 'manual',
+  slidePdfUrl: '/uploads/lessons/a.pdf',
+  slides: [{ title: 'S1' }],
+};
+assert(
+  'slideMode=manual → dùng slide thủ công',
+  byKey(getLessonParts(manualLesson), 'slides').isPdf === false &&
+    byKey(getLessonParts(manualLesson), 'slides').count === 1
+);
 
 console.log('\n' + (failed === 0 ? '✅ TẤT CẢ KIỂM TRA PASS' : `❌ ${failed} KIỂM TRA FAIL`));
 process.exit(failed === 0 ? 0 : 1);

@@ -23,7 +23,7 @@ export default function CourseCard({ course, onProgressClick, onImageClick }) {
         <Link to={detailHref} className="block h-full w-full">
           <img
             alt={course.title}
-            src={resolveImageUrl(course.bannerUrl || course.thumbnail)}
+            src={resolveImageUrl(course.coverUrl || course.thumbnail)}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {

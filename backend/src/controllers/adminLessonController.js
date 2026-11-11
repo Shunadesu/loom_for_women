@@ -17,6 +17,20 @@ import {
 } from '../services/lessonContentService.js';
 
 const VALID_CONTENT_TYPES = ['video', 'video_pdf', 'image_pdf'];
+const VALID_SLIDE_MODES = ['auto', 'pdf', 'manual'];
+
+/**
+ * Chuẩn hoá chế độ hiển thị Phần 1.
+ * @param {any} raw - giá trị gửi từ form
+ * @param {boolean} hasPdf - đã có file PDF slide hay chưa
+ * @returns {'auto'|'pdf'|'manual'}
+ */
+const normalizeSlideMode = (raw, hasPdf) => {
+  const value = String(raw || '').trim().toLowerCase();
+  if (VALID_SLIDE_MODES.includes(value)) return value;
+  // Admin không gửi chế độ → nếu có PDF thì mặc định dùng PDF.
+  return hasPdf ? 'pdf' : 'auto';
+};
 
 const publicUrlFor = (filename) => `/uploads/lessons/${filename}`;
 
@@ -110,6 +124,11 @@ const readContentPayload = (body, files = {}) => {
     summaryImageFile,
     summaryPdfFile,
     /**
+     * Chế độ hiển thị Phần 1 do admin chọn.
+     * Không gửi → 'auto' (có PDF thì dùng PDF, ngược lại slide thủ công).
+     */
+    slideMode: normalizeSlideMode(body.slideMode, Boolean(slidePdfFile)),
+    /**
      * Field nào thực sự được gửi lên. Chỉ ghi đè phần nội dung tương ứng —
      * tránh việc update media làm mất 4 phần đã có.
      */
@@ -126,8 +145,9 @@ const readContentPayload = (body, files = {}) => {
  * Bài học có nội dung 4 phần hay không (dùng để nới validation video).
  * @param {object} content - payload 4 phần đã đọc
  * @param {boolean} [hasStoredContent] - lesson đã có sẵn 4 phần trong DB
+ * @param {string} [slidePdfUrl] - URL file PDF slide đang có (đã lưu hoặc mới upload)
  */
-const hasStructuredContent = (content, hasStoredContent = false) =>
+const hasStructuredContent = (content, hasStoredContent = false, slidePdfUrl = '') =>
   Boolean(
     hasStoredContent ||
       (content.slides || []).length ||
@@ -135,7 +155,10 @@ const hasStructuredContent = (content, hasStoredContent = false) =>
       (content.simulations || []).length ||
       content.summary?.imageUrl ||
       content.summary?.videoUrl ||
-      content.summary?.pdfUrl
+      content.summary?.pdfUrl ||
+      // File PDF slide được nhúng thẳng vào Phần 1 → cũng là nội dung hợp lệ
+      slidePdfUrl ||
+      content.slidePdfFile
   );
 
 /**
@@ -186,7 +209,15 @@ const buildLessonPayload = (
             : current?.youtubeId || '';
 
   const source = resolveVideoSource(videoInput);
-  const structured = content ? hasStructuredContent(content, hasStoredContent) : false;
+  const structured = content
+    ? hasStructuredContent(
+        content,
+        hasStoredContent,
+        (content.slidePdfFile ? publicUrlFor(content.slidePdfFile.filename) : '') ||
+          current?.slidePdfUrl ||
+          ''
+      )
+    : false;
 
   if (contentType === 'video' || contentType === 'video_pdf') {
     // Bài học chỉ có nội dung 4 phần thì không bắt buộc có video.
@@ -247,6 +278,15 @@ const buildLessonPayload = (
   }
   if (body.slidePdfTitle !== undefined) {
     data.slidePdfTitle = String(body.slidePdfTitle || '').trim().slice(0, 300);
+  }
+  // ─── Chế độ hiển thị Phần 1 (PDF hay slide thủ công) ───
+  if (body.slideMode !== undefined) {
+    data.slideMode = content
+      ? content.slideMode
+      : normalizeSlideMode(body.slideMode, Boolean(current?.slidePdfUrl));
+  } else if (content?.slidePdfFile) {
+    // Admin vừa upload PDF slide mà không chỉ định chế độ → dùng PDF
+    data.slideMode = 'pdf';
   }
 
   return { ok: true, data };

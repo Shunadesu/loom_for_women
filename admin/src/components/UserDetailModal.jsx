@@ -275,6 +275,8 @@ export default function UserDetailModal({ user: listUser, onClose }) {
                   <span className="font-mono">{user.passportSerial || '—'}</span>
                 </InfoCell>
                 <InfoCell label="Khu vực">{user.location || '—'}</InfoCell>
+                <InfoCell label="Tuổi">{user.age != null ? user.age : '—'}</InfoCell>
+                <InfoCell label="Nghề nghiệp">{user.occupation || '—'}</InfoCell>
                 <InfoCell label="Ngày tạo">{formatDateTime(user.createdAt)}</InfoCell>
                 <InfoCell label="Đăng nhập cuối">
                   {user.lastLoginAt ? timeAgo(user.lastLoginAt) : '—'}

@@ -4,15 +4,15 @@ import { motion } from 'framer-motion';
 import Header from '../components/layout/Header.jsx';
 import LessonPlayerModal from '../components/course/LessonPlayerModal.jsx';
 import LessonMedia from '../components/course/LessonMedia.jsx';
+import CourseDetailHero from '../components/course/CourseDetailHero.jsx';
 import {
   PlayIcon,
   CheckCircleIcon,
-  ClockIcon,
-  StarIcon,
-  HeartIcon,
-  HeartFillIcon,
+  TrophyIcon,
   BookIcon,
   ArrowLeftIcon,
+  StarIcon,
+  UserIcon,
 } from '../components/icons/index.jsx';
 import { useCourseStore } from '../store/courseStore.js';
 import { useProgressStore } from '../store/progressStore.js';
@@ -22,7 +22,6 @@ import { useAuthStore } from '../store/authStore.js';
 import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
 import { useNotification } from '../store/notificationStore.js';
 import { addFavorite, removeFavorite } from '../services/favoriteApi.js';
-import { resolveImageUrl } from '../utils/imageUrl.js';
 import {
   getLessonParts,
   hasStructuredContent,
@@ -219,12 +218,6 @@ export default function CourseDetail() {
 
   const progressPct = myProgress?.progressPct || 0;
   const courseComments = comments[course._id] || [];
-  const heroImage = course.bannerUrl
-    ? resolveImageUrl(course.bannerUrl)
-    : course.thumbnail
-      ? resolveImageUrl(course.thumbnail)
-      : '';
-  const hasHeroImage = Boolean(heroImage);
 
   return (
     <motion.div
@@ -235,182 +228,58 @@ export default function CourseDetail() {
     >
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-6 pb-20 sm:px-6 md:pb-6">
-        <button
-          type="button"
-          onClick={() => navigate('/khoa-hoc')}
-          className="mb-3 flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-[#E60067]"
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-3 flex items-center gap-1.5 text-[11px] font-medium text-slate-500"
         >
-          <ArrowLeftIcon aria-hidden="true" className="h-3 w-3" />
-          Quay lại
-        </button>
+          <Link
+            to="/"
+            className="flex items-center gap-1 font-bold text-slate-600 transition-colors hover:text-[#E60067]"
+          >
+            <ArrowLeftIcon aria-hidden="true" className="h-3 w-3" />
+            Trang chủ
+          </Link>
+          <span className="text-slate-300">/</span>
+          <Link
+            to="/khoa-hoc"
+            className="font-bold text-slate-600 transition-colors hover:text-[#E60067]"
+          >
+            Khóa học
+          </Link>
+          <span className="text-slate-300">/</span>
+          <span className="truncate font-bold text-slate-900">{course.title}</span>
+        </nav>
 
         <div className="space-y-4">
           {/* Hero */}
-          <div
-            className={[
-              'relative overflow-hidden rounded-2xl border border-slate-200/80 shadow-sm',
-              hasHeroImage
-                ? 'bg-slate-900'
-                : 'bg-white p-4 sm:p-6',
-            ].join(' ')}
-          >
-            {hasHeroImage && (
-              <>
-                <img
-                  src={heroImage}
-                  alt={course.title}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/25" />
-              </>
-            )}
-            <div className={hasHeroImage ? 'relative p-4 sm:p-6' : ''}>
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="mb-2 flex items-center gap-2">
-                    {course.isFeatured && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                        NỔI BẬT
-                      </span>
-                    )}
-                    {course.videoId && (
-                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
-                        CÓ VIDEO
-                      </span>
-                    )}
-                  </div>
-                  <h1
-                    className={[
-                      'text-xl font-extrabold sm:text-2xl',
-                      hasHeroImage ? 'text-white' : 'text-slate-900',
-                    ].join(' ')}
-                  >
-                    {course.title}
-                  </h1>
-                  {course.description && (
-                    <p
-                      className={[
-                        'mt-2 text-xs sm:text-sm',
-                        hasHeroImage ? 'text-white/85' : 'text-slate-600',
-                      ].join(' ')}
-                    >
-                      {course.description}
-                    </p>
-                  )}
-                  <div
-                    className={[
-                      'mt-3 flex flex-wrap items-center gap-3 text-[11px] font-medium',
-                      hasHeroImage ? 'text-white/75' : 'text-slate-500',
-                    ].join(' ')}
-                  >
-                    {course.rating > 0 && (
-                      <div className="flex items-center gap-1 font-bold text-amber-500">
-                        <StarIcon
-                          aria-hidden="true"
-                          className="h-3 w-3 fill-amber-400 stroke-amber-400"
-                        />
-                        <span>{Number(course.rating).toFixed(1)}</span>
-                      </div>
-                    )}
-                    {course.durationMinutes > 0 && (
-                      <>
-                        <span
-                          className={hasHeroImage ? 'text-white/40' : 'text-slate-300'}
-                        >
-                          |
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <ClockIcon
-                            aria-hidden="true"
-                            className={
-                              hasHeroImage
-                                ? 'h-3 w-3 text-white/60'
-                                : 'h-3 w-3 text-slate-400'
-                            }
-                          />
-                          <span>{formatDuration(course.durationMinutes)}</span>
-                        </div>
-                      </>
-                    )}
-                    {lessons.length > 0 && (
-                      <>
-                        <span
-                          className={hasHeroImage ? 'text-white/40' : 'text-slate-300'}
-                        >
-                          |
-                        </span>
-                        <span>{lessons.length} bài học</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleToggleFavorite}
-                  className={[
-                    'shrink-0 rounded-full p-2 transition-colors',
-                    hasHeroImage
-                      ? 'bg-black/30 text-white hover:bg-black/50'
-                      : 'hover:bg-pink-50',
-                  ].join(' ')}
-                >
-                  {isFavorite(course._id) ? (
-                    <HeartFillIcon
-                      aria-hidden="true"
-                      className="h-6 w-6 text-[#E60067]"
-                    />
-                  ) : (
-                    <HeartIcon
-                      aria-hidden="true"
-                      className={[
-                        'h-6 w-6',
-                        hasHeroImage ? 'text-white' : 'text-slate-400',
-                      ].join(' ')}
-                    />
-                  )}
-                </button>
-              </div>
-
-              {progressPct > 0 && (
-                <div
-                  className={[
-                    'mt-4 rounded-xl p-3',
-                    hasHeroImage ? 'bg-black/35' : 'bg-slate-50',
-                  ].join(' ')}
-                >
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span
-                      className={[
-                        'font-bold',
-                        hasHeroImage ? 'text-white' : 'text-slate-700',
-                      ].join(' ')}
-                    >
-                      Tiến độ của bạn
-                    </span>
-                    <span className="font-extrabold text-teal-600">
-                      {progressPct}%
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                    <div
-                      className="h-full rounded-full bg-teal-500 transition-all duration-500"
-                      style={{ width: `${progressPct}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <CourseDetailHero
+            course={course}
+            lessons={lessons}
+            progressPct={progressPct}
+            completedCount={completedSet.size}
+            isFavorite={isFavorite(course._id)}
+            onToggleFavorite={handleToggleFavorite}
+          />
 
           {/* Player + Lessons */}
           <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
               {/* Video giới thiệu khóa học */}
               {course.videoId && (
-                <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-[11px] font-black text-white">
+                      ▶
+                    </span>
+                    <div className="min-w-0">
+                      <h2 className="text-sm font-extrabold text-slate-900">
+                        Video giới thiệu khóa học
+                      </h2>
+                      <p className="text-[11px] text-slate-500">
+                        Xem tổng quan nội dung trước khi bắt đầu học
+                      </p>
+                    </div>
+                  </div>
                   <div className="aspect-video w-full bg-black">
                     <iframe
                       src={`https://www.youtube.com/embed/${course.videoId}?rel=0`}
@@ -420,12 +289,7 @@ export default function CourseDetail() {
                       className="h-full w-full"
                     />
                   </div>
-                  <div className="p-4">
-                    <h2 className="text-base font-bold text-slate-900">
-                      Video giới thiệu khóa học
-                    </h2>
-                  </div>
-                </div>
+                </section>
               )}
 
               {/* Nội dung bài học — ưu tiên player 4 phần nếu bài học có nội dung cấu trúc */}
@@ -433,8 +297,8 @@ export default function CourseDetail() {
                 <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
                   {hasStructuredContent(currentLesson) ? (
                     /* Bài học có 4 phần → không render media cũ (tránh khung đen) */
-                    <div className="space-y-3 bg-gradient-to-br from-pink-50 via-white to-slate-50 p-5">
-                      <div className="flex items-start gap-3">
+                    <div>
+                      <div className="flex items-start gap-3 bg-gradient-to-r from-pink-50 via-white to-white px-4 py-4 sm:px-5">
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E60067] text-sm font-black text-white shadow-sm">
                           4
                         </span>
@@ -451,105 +315,104 @@ export default function CourseDetail() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setPlayerOpen(true)}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-[#E60067] px-4 py-2 text-xs font-bold text-white hover:bg-[#c90059]"
-                        >
-                          <PlayIcon aria-hidden="true" className="h-3.5 w-3.5" />
-                          Học bài học 4 phần
-                        </button>
-                        {completedSet.has(String(currentLesson._id)) ? (
-                          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
-                            <CheckCircleIcon
-                              aria-hidden="true"
-                              className="h-4 w-4"
-                            />
-                            Đã hoàn thành
-                          </span>
-                        ) : (
+
+                      <div className="border-t border-slate-100 px-4 py-4 sm:px-5">
+                        <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => handleComplete(currentLesson._id)}
-                            className="rounded-full bg-teal-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-teal-700"
+                            onClick={() => setPlayerOpen(true)}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[#E60067] px-4 py-2 text-xs font-bold text-white hover:bg-[#c90059]"
                           >
-                            Đánh dấu hoàn thành
+                            <PlayIcon aria-hidden="true" className="h-3.5 w-3.5" />
+                            Học bài học 4 phần
                           </button>
-                        )}
-                      </div>
+                          {completedSet.has(String(currentLesson._id)) ? (
+                            <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                              <TrophyIcon aria-hidden="true" className="h-4 w-4" />
+                              Đã hoàn thành
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleComplete(currentLesson._id)}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-teal-700"
+                            >
+                              <CheckCircleIcon aria-hidden="true" className="h-4 w-4" />
+                              Đánh dấu hoàn thành
+                            </button>
+                          )}
+                        </div>
 
-                      {/* Chi tiết từng phần trong 4 phần */}
-                      <div className="grid gap-2 pt-1 sm:grid-cols-2 lg:grid-cols-4">
-                        {getLessonParts(currentLesson).map((part) => (
-                          <div
-                            key={part.key}
-                            className={[
-                              'rounded-xl border p-2.5',
-                              part.available
-                                ? 'border-pink-100 bg-white'
-                                : 'border-slate-100 bg-slate-50/70',
-                            ].join(' ')}
-                          >
-                            <div className="flex items-center gap-1.5">
+                        {/* Timeline 4 phần */}
+                        <ol className="mt-4 space-y-0">
+                          {getLessonParts(currentLesson).map((part, idx) => (
+                            <li key={part.key} className="relative flex gap-3 pb-3 last:pb-0">
+                              {idx < 3 && (
+                                <span
+                                  aria-hidden="true"
+                                  className="absolute left-[11px] top-6 h-full w-px bg-slate-200"
+                                />
+                              )}
                               <span
                                 className={[
-                                  'flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-black',
+                                  'relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black',
                                   part.available
-                                    ? 'bg-[#E60067] text-white'
+                                    ? 'bg-[#E60067] text-white shadow-sm'
                                     : 'bg-slate-200 text-slate-400',
                                 ].join(' ')}
                               >
                                 {PART_STEP_INDEX[part.key]}
                               </span>
-                              <span
-                                className={[
-                                  'text-[10px] font-extrabold',
-                                  part.available
-                                    ? 'text-slate-900'
-                                    : 'text-slate-400',
-                                ].join(' ')}
-                              >
-                                {part.label}
-                              </span>
-                            </div>
-                            <p
-                              className={[
-                                'mt-1 text-[10px]',
-                                part.available
-                                  ? 'text-slate-600'
-                                  : 'text-slate-400',
-                              ].join(' ')}
-                            >
-                              {part.available ? partDetail(part) : 'Chưa có nội dung'}
-                            </p>
-                          </div>
-                        ))}
+                              <div className="min-w-0 flex-1 pt-0.5">
+                                <p
+                                  className={[
+                                    'text-xs font-extrabold',
+                                    part.available
+                                      ? 'text-slate-900'
+                                      : 'text-slate-400',
+                                  ].join(' ')}
+                                >
+                                  {part.label}
+                                </p>
+                                <p
+                                  className={[
+                                    'mt-0.5 text-[11px]',
+                                    part.available
+                                      ? 'text-slate-600'
+                                      : 'text-slate-400',
+                                  ].join(' ')}
+                                >
+                                  {part.available
+                                    ? partDetail(part)
+                                    : 'Chưa có nội dung'}
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ol>
                       </div>
                     </div>
                   ) : (
                     <LessonMedia lesson={currentLesson} pdfInFrame />
                   )}
                   {!hasStructuredContent(currentLesson) && (
-                    <div className="p-4">
+                    <div className="border-t border-slate-100 px-4 py-4 sm:px-5">
                       <h2 className="text-base font-bold text-slate-900">
                         {currentLesson.title}
                       </h2>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {completedSet.has(String(currentLesson._id)) ? (
-                          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
-                            <CheckCircleIcon
-                              aria-hidden="true"
-                              className="h-4 w-4"
-                            />
+                          <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                            <TrophyIcon aria-hidden="true" className="h-4 w-4" />
                             Đã hoàn thành
                           </span>
                         ) : (
                           <button
                             type="button"
                             onClick={() => handleComplete(currentLesson._id)}
-                            className="rounded-full bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-teal-700"
                           >
+                            <CheckCircleIcon aria-hidden="true" className="h-4 w-4" />
                             Đánh dấu hoàn thành
                           </button>
                         )}
@@ -560,113 +423,185 @@ export default function CourseDetail() {
               )}
 
               {/* Comments */}
-              <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
-                <h3 className="mb-3 text-sm font-extrabold text-slate-900">
-                  Bình luận ({courseComments.length})
-                </h3>
-                {isAuthenticated && (
-                  <div className="mb-4 space-y-2 rounded-xl bg-slate-50 p-3">
-                    <textarea
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Nhập bình luận của bạn..."
-                      rows={3}
-                      className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs focus:border-[#E60067] focus:outline-none"
-                    />
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1 text-xs text-slate-600">
-                        <span className="font-bold">Đánh giá:</span>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setCommentRating(star)}
-                            className="transition-transform hover:scale-110"
-                          >
-                            <StarIcon
-                              aria-hidden="true"
-                              className={[
-                                'h-4 w-4',
-                                star <= commentRating
-                                  ? 'fill-amber-400 stroke-amber-400'
-                                  : 'fill-none stroke-slate-300',
-                              ].join(' ')}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handlePostComment}
-                        disabled={posting}
-                        className="rounded-full bg-[#E60067] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#d0005a] disabled:opacity-50"
-                      >
-                        {posting ? 'Đang gửi...' : 'Gửi'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <div className="space-y-3">
-                  {courseComments.length === 0 ? (
-                    <p className="text-center text-xs text-slate-400">
-                      Chưa có bình luận nào.
+              <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 sm:px-6">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-[11px] font-black text-[#E60067]">
+                    {courseComments.length}
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      Bình luận
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Chia sẻ cảm nhận của bạn về khóa học
                     </p>
-                  ) : (
-                    courseComments.map((c) => (
-                      <div
-                        key={c._id}
-                        className="rounded-xl border border-slate-100 bg-slate-50/50 p-3"
-                      >
-                        <div className="mb-1 flex items-start justify-between">
-                          <span className="text-xs font-bold text-slate-900">
-                            {c.userId?.name || c.userId?.phone || 'Ẩn danh'}
-                          </span>
-                          {c.rating > 0 && (
-                            <div className="flex items-center gap-0.5">
-                              {Array.from({ length: c.rating }, (_, i) => (
-                                <StarIcon
-                                  key={i}
-                                  aria-hidden="true"
-                                  className="h-3 w-3 fill-amber-400 stroke-amber-400"
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-700">{c.content}</p>
-                        <span className="mt-1 block text-[10px] text-slate-400">
-                          {new Date(c.createdAt).toLocaleDateString('vi-VN')}
-                        </span>
-                      </div>
-                    ))
-                  )}
+                  </div>
                 </div>
-              </div>
+                <div className="p-4 sm:p-6">
+                  {isAuthenticated ? (
+                    <div className="mb-4 space-y-2.5 rounded-xl bg-slate-50 p-3">
+                      <span className="block text-[11px] font-extrabold text-slate-700">
+                        Viết bình luận
+                      </span>
+                      <textarea
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder="Nhập bình luận của bạn..."
+                        rows={3}
+                        className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs focus:border-[#E60067] focus:outline-none"
+                      />
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 text-xs text-slate-600">
+                          <span className="font-bold">Đánh giá:</span>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setCommentRating(star)}
+                              aria-label={`${star} sao`}
+                              className="transition-transform hover:scale-110"
+                            >
+                              <StarIcon
+                                aria-hidden="true"
+                                className={[
+                                  'h-5 w-5',
+                                  star <= commentRating
+                                    ? 'fill-amber-400 stroke-amber-400'
+                                    : 'fill-none stroke-slate-300',
+                                ].join(' ')}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handlePostComment}
+                          disabled={posting}
+                          className="rounded-full bg-[#E60067] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#d0005a] disabled:opacity-50"
+                        >
+                          {posting ? 'Đang gửi...' : 'Gửi'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openLoginDrawer(`/khoa-hoc/${course.slug}`)}
+                      className="mb-4 flex w-full items-center gap-3 rounded-xl border border-dashed border-pink-200 bg-pink-50/60 p-3 text-left transition-colors hover:bg-pink-50"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#E60067]">
+                        <UserIcon aria-hidden="true" className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs font-extrabold text-slate-900">
+                          Đăng nhập để viết bình luận
+                        </span>
+                        <span className="block text-[11px] text-slate-500">
+                          Chia sẻ trải nghiệm học của bạn với cộng đồng
+                        </span>
+                      </span>
+                    </button>
+                  )}
+                  <div className="space-y-3">
+                    {courseComments.length === 0 ? (
+                      <p className="py-4 text-center text-xs text-slate-400">
+                        Chưa có bình luận nào.
+                      </p>
+                    ) : (
+                      courseComments.map((c) => {
+                        const authorName =
+                          c.userId?.name || c.userId?.phone || 'Ẩn danh';
+                        return (
+                          <div
+                            key={c._id}
+                            className="flex gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3"
+                          >
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-100 text-xs font-black text-[#E60067]">
+                              {authorName.charAt(0).toUpperCase()}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1 flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <span className="block truncate text-xs font-bold text-slate-900">
+                                    {authorName}
+                                  </span>
+                                  <span className="block text-[10px] text-slate-400">
+                                    {new Date(c.createdAt).toLocaleDateString(
+                                      'vi-VN'
+                                    )}
+                                  </span>
+                                </div>
+                                {c.rating > 0 && (
+                                  <div className="flex shrink-0 items-center gap-0.5">
+                                    {Array.from({ length: c.rating }, (_, i) => (
+                                      <StarIcon
+                                        key={i}
+                                        aria-hidden="true"
+                                        className="h-3.5 w-3.5 fill-amber-400 stroke-amber-400"
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs leading-relaxed text-slate-700">
+                                {c.content}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </section>
             </div>
 
             {/* Lesson List */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-              <div className="border-b border-slate-100 bg-slate-50/50 px-4 py-3">
-                <h3 className="text-sm font-extrabold text-slate-900">
-                  Nội dung khóa học
-                </h3>
-              </div>
-              <div className="max-h-[600px] divide-y divide-slate-100 overflow-y-auto">
-                {lessons.map((l, i) => {
-                  const isActive = String(l._id) === String(currentLessonId);
-                  const isDone = completedSet.has(String(l._id));
-                  return (
-                    <button
-                      key={l._id}
-                      type="button"
-                      onClick={() => handleSelectLesson(l)}
-                      className={[
-                        'group flex w-full items-start gap-3 p-3 text-left transition-colors',
-                        isActive
-                          ? 'bg-pink-50'
-                          : 'hover:bg-slate-50',
-                      ].join(' ')}
-                    >
+            <div className="lg:sticky lg:top-4 lg:self-start">
+              <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      Nội dung khóa học
+                    </h3>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">
+                      {lessons.length} bài
+                    </span>
+                  </div>
+                  {lessons.length > 0 && (
+                    <div className="mt-2">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-teal-500 transition-all duration-500"
+                          style={{
+                            width: `${Math.round(
+                              (completedSet.size / lessons.length) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                      <p className="mt-1 text-[10px] font-medium text-slate-500">
+                        Đã hoàn thành {completedSet.size}/{lessons.length} bài học
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="divide-y divide-slate-100 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
+                  {lessons.map((l, i) => {
+                    const isActive = String(l._id) === String(currentLessonId);
+                    const isDone = completedSet.has(String(l._id));
+                    return (
+                      <button
+                        key={l._id}
+                        type="button"
+                        onClick={() => handleSelectLesson(l)}
+                        className={[
+                          'group flex w-full items-start gap-3 border-l-[3px] p-3 text-left transition-colors',
+                          isActive
+                            ? 'border-l-[#E60067] bg-pink-50'
+                            : 'border-l-transparent hover:bg-slate-50',
+                        ].join(' ')}
+                      >
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
                         {isDone ? (
                           <CheckCircleIcon
@@ -717,6 +652,7 @@ export default function CourseDetail() {
                     </button>
                   );
                 })}
+                </div>
               </div>
             </div>
           </div>
@@ -808,7 +744,10 @@ function LessonPartsGrid({ lesson }) {
               )}
             </span>
             <span className="truncate">{part.label}</span>
-            {part.available && part.count > 0 && (
+            {part.available && part.isPdf && (
+              <span className="ml-auto shrink-0 font-extrabold">PDF</span>
+            )}
+            {part.available && !part.isPdf && part.count > 0 && (
               <span className="ml-auto shrink-0 font-extrabold">
                 {part.count}
               </span>
@@ -841,17 +780,12 @@ const PART_STEP_INDEX = {
 
 /** Mô tả ngắn nội dung của một phần. */
 function partDetail(part) {
-  if (part.key === 'slides') return `${part.count} slide bài giảng`;
+  if (part.key === 'slides') {
+    return part.isPdf
+      ? 'Tài liệu PDF slide bài giảng'
+      : `${part.count} slide bài giảng`;
+  }
   if (part.key === 'simulations') return `${part.count} mô phỏng tình huống`;
   if (part.key === 'summary') return 'Infographic & tài liệu tóm tắt';
   return `${part.count} câu hỏi trắc nghiệm`;
-}
-
-function formatDuration(min) {
-  if (!min) return '';
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  if (h > 0 && m > 0) return `${h} Tiếng ${m} Phút`;
-  if (h > 0) return `${h} Tiếng`;
-  return `${m} Phút`;
 }

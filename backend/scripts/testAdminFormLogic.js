@@ -11,6 +11,7 @@ import {
   lessonToDraft,
   draftToFormData,
   missingParts,
+  resolveSlideMode,
 } from '../../admin/src/components/lessonDraft.js';
 
 let failed = 0;
@@ -206,6 +207,58 @@ d4.simulation = { videoUrl: '', description: '', statements: [{ text: 'ST', isCo
 d4.summary = { imageUrl: 'https://img/a.png' };
 d4.quizzes = [{ question: 'Q1', options: { A: 'a', B: 'b' }, correct: 'A', type: 'single' }];
 assert('Không thiếu phần nào', missingParts(d4).length === 0);
+
+// ─── Chế độ hiển thị Phần 1: PDF vs slide thủ công ───
+console.log('\n[8] resolveSlideMode & Phần 1 chỉ có PDF');
+assert(
+  'Không PDF, không slide → manual',
+  resolveSlideMode({ slides: [] }) === 'manual'
+);
+assert(
+  'Có slidePdfUrl (auto) → pdf',
+  resolveSlideMode({ slidePdfUrl: '/uploads/lessons/a.pdf', slides: [] }) === 'pdf'
+);
+assert(
+  'Có slidePdfFile → pdf',
+  resolveSlideMode({ slidePdfFile: { name: 'a.pdf' }, slides: [] }) === 'pdf'
+);
+assert(
+  'slideMode=manual ghi đè (có PDF)',
+  resolveSlideMode({ slideMode: 'manual', slidePdfUrl: '/u.pdf' }) === 'manual'
+);
+assert(
+  'slideMode=pdf + có file PDF → pdf',
+  resolveSlideMode({ slideMode: 'pdf', slidePdfUrl: '/u.pdf' }) === 'pdf'
+);
+assert(
+  'slideMode=pdf nhưng chưa có file → quay về manual',
+  resolveSlideMode({ slideMode: 'pdf' }) === 'manual'
+);
+
+// Bài học chỉ có PDF → không còn thiếu phần 'slide'
+const d5 = createLessonDraft();
+d5.slidePdfUrl = '/uploads/lessons/only.pdf';
+d5.slidePdfName = 'only.pdf';
+d5.slideMode = 'pdf';
+d5.simulation = { videoUrl: 'https://youtu.be/x', description: '', statements: [] };
+d5.summary = { imageUrl: 'https://img/a.png' };
+d5.quizzes = [{ question: 'Q1', options: { A: 'a', B: 'b' }, correct: 'A', type: 'single' }];
+assert(
+  `Bài học chỉ có PDF → không thiếu phần (${missingParts(d5).join(',')})`,
+  missingParts(d5).length === 0
+);
+assert(
+  'slideMode được gửi lên API',
+  draftToFormData(d5, 0).get('slideMode') === 'pdf'
+);
+assert(
+  'Bản nháp mới có slideMode=auto',
+  createLessonDraft().slideMode === 'auto'
+);
+assert(
+  'lessonToDraft nạp slideMode',
+  lessonToDraft({ ...serverLesson, slideMode: 'pdf' }, content).slideMode === 'pdf'
+);
 
 console.log(`\n${failed === 0 ? '✅ TẤT CẢ KIỂM TRA PASS' : `❌ ${failed} KIỂM TRA THẤT BẠI`}`);
 process.exit(failed === 0 ? 0 : 1);

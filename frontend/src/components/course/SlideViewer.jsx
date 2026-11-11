@@ -261,23 +261,21 @@ export default function SlideViewer({
 
             <div className="flex flex-col items-center justify-center md:col-span-5">
               {current?.imageUrl ? (
-                <div className="group relative aspect-4/3 w-full overflow-hidden rounded-2xl border-2 border-white/10 shadow-md">
+                <div className="relative w-full overflow-hidden rounded-2xl border-2 border-white/10 bg-slate-950/40 p-2">
                   <img
                     alt={current.title}
                     src={resolveImageUrl(current.imageUrl)}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="mx-auto max-h-[420px] w-auto rounded-xl object-contain"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                  <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-3">
-                    <span className="text-[10px] font-bold text-pink-200">
-                      Minh họa thực tế
-                    </span>
-                  </div>
+                  <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-bold text-pink-200 backdrop-blur-sm">
+                    Minh họa thực tế
+                  </span>
                 </div>
               ) : (
-                <div className="flex aspect-4/3 w-full items-center justify-center rounded-2xl border-2 border-dashed border-white/10 text-[11px] text-slate-400">
+                <div className="flex min-h-[200px] w-full items-center justify-center rounded-2xl border-2 border-dashed border-white/10 text-[11px] text-slate-400">
                   Chưa có ảnh minh hoạ cho slide này
                 </div>
               )}
@@ -359,7 +357,7 @@ export default function SlideViewer({
               onClick={() => go(si)}
               className={`rounded-xl border p-2.5 text-left transition-all ${
                 si === index
-                  ? 'border-[#E60067] bg-pink-50/70 shadow-xs'
+                  ? 'border-[#E60067] bg-pink-50/70 shadow-xs ring-1 ring-[#E60067]/30'
                   : 'border-slate-200 bg-white hover:bg-slate-50'
               }`}
             >

@@ -47,11 +47,13 @@ export const register = async (req, res) => {
     return res.status(400).json({ error: errors.array()[0].msg });
   }
 
-  const { name = '', password = '' } = req.body;
+  const { name = '', password = '', occupation = '' } = req.body;
   const phone = normalizePhone(req.body.phone);
   if (!phone) {
     return res.status(400).json({ error: 'Số điện thoại không hợp lệ.' });
   }
+
+  const age = Number.parseInt(req.body.age, 10);
 
   // Bắt buộc có mật khẩu khi đăng ký.
   // Trước đây cho phép đăng ký không mật khẩu ⇒ tài khoản "mở", và logic login
@@ -72,6 +74,9 @@ export const register = async (req, res) => {
       phone,
       name: typeof name === 'string' ? name.trim().slice(0, 50) : '',
       passwordHash,
+      age: Number.isFinite(age) ? age : null,
+      occupation:
+        typeof occupation === 'string' ? occupation.trim().slice(0, 100) : '',
     });
 
     const token = signToken({ sub: user._id.toString(), role: user.role });

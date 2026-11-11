@@ -29,6 +29,27 @@ export function summaryHasContent(summary) {
 }
 
 /**
+ * Chế độ hiển thị Phần 1 của bài học.
+ *
+ * - 'pdf'    : dùng file PDF slide (nhúng trực tiếp)
+ * - 'manual' : dùng danh sách slide thủ công
+ *
+ * Quy tắc mặc định khi bài học không khai báo `slideMode`:
+ * có file PDF slide thì dùng PDF, ngược lại dùng slide thủ công.
+ *
+ * @param {object} lesson
+ * @returns {'pdf'|'manual'}
+ */
+export function resolveSlideMode(lesson) {
+  const mode = String(lesson?.slideMode || '').trim().toLowerCase();
+  if (mode === 'manual') return 'manual';
+  // 'pdf' nhưng không có file nào → dùng slide thủ công.
+  if (mode === 'pdf') return lesson?.slidePdfUrl ? 'pdf' : 'manual';
+  if (lesson?.slidePdfUrl) return 'pdf';
+  return 'manual';
+}
+
+/**
  * Tóm tắt 4 phần của bài học.
  * @returns {Array<{key,label,count,available}>}
  */
@@ -38,8 +59,21 @@ export function getLessonParts(lesson) {
   const quizzes = Array.isArray(lesson?.quizzes) ? lesson.quizzes : [];
   const hasSummary = summaryHasContent(lesson?.summary);
 
+  // Phần 1: dùng PDF slide (nhúng) hoặc danh sách slide thủ công
+  const slideMode = resolveSlideMode(lesson);
+  const hasSlidePdf = slideMode === 'pdf' && Boolean(lesson?.slidePdfUrl);
+  const slidesAvailable = slides.length > 0 || hasSlidePdf;
+  const slidesCount = slides.length > 0 ? slides.length : hasSlidePdf ? 1 : 0;
+
   return [
-    { key: 'slides', label: LESSON_PART_LABELS.slides, count: slides.length, available: slides.length > 0 },
+    {
+      key: 'slides',
+      label: LESSON_PART_LABELS.slides,
+      count: slidesCount,
+      available: slidesAvailable,
+      mode: slideMode,
+      isPdf: hasSlidePdf,
+    },
     {
       key: 'simulations',
       label: LESSON_PART_LABELS.simulations,
@@ -78,7 +112,9 @@ export function summarizeLessonParts(lesson, options = {}) {
   const chunks = [];
 
   const slides = parts.find((p) => p.key === 'slides');
-  if (slides?.available) chunks.push(`${slides.count} slide`);
+  if (slides?.available) {
+    chunks.push(slides.isPdf ? 'PDF slide' : `${slides.count} slide`);
+  }
 
   const simulations = parts.find((p) => p.key === 'simulations');
   if (simulations?.available) {

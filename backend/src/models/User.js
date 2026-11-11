@@ -15,6 +15,18 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 50,
     },
+    age: {
+      type: Number,
+      default: null,
+      min: 13,
+      max: 100,
+    },
+    occupation: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 100,
+    },
     passwordHash: {
       type: String,
       default: '',
@@ -76,6 +88,8 @@ userSchema.methods.toSafeJSON = function () {
     _id: this._id,
     phone: this.phone,
     name: this.name,
+    age: this.age,
+    occupation: this.occupation,
     role: this.role,
     isActive: this.isActive,
     lastLoginAt: this.lastLoginAt,

@@ -53,6 +53,25 @@ export const useAuthStore = create(
         set({ user: data.user, token: data.token, points, level, isAuthenticated: true });
         return data.user;
       },
+
+      /**
+       * Đăng ký tài khoản mới qua /api/auth/register.
+       * Backend trả về token luôn ⇒ đăng ký xong là vào thẳng, không cần login lại.
+       */
+      register: async ({ name, phone, age, occupation, password }) => {
+        const normalized = normalizePhoneVN(String(phone || '').trim());
+        const { data } = await api.post('/auth/register', {
+          name: String(name || '').trim(),
+          phone: normalized,
+          age: Number(age),
+          occupation: String(occupation || '').trim(),
+          password,
+        });
+        const points = data.user?.points || 0;
+        const level = data.user?.level || 1;
+        set({ user: data.user, token: data.token, points, level, isAuthenticated: true });
+        return data.user;
+      },
     }),
     {
       name: 'loom-auth',

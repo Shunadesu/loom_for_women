@@ -103,6 +103,18 @@ const lessonSchema = new mongoose.Schema(
       trim: true,
       maxlength: 300,
     },
+    /**
+     * Cách hiển thị Phần 1:
+     *   - 'auto'   : có file PDF slide thì dùng PDF, ngược lại dùng slide thủ công
+     *   - 'pdf'    : luôn dùng file PDF slide (nhúng trực tiếp)
+     *   - 'manual' : luôn dùng danh sách slide thủ công
+     * Slide thủ công vẫn được giữ trong DB kể cả khi đang ở chế độ 'pdf'.
+     */
+    slideMode: {
+      type: String,
+      enum: ['auto', 'pdf', 'manual'],
+      default: 'auto',
+    },
     // Ảnh bìa khóa học dạng URL ngoài (dùng cho form nhập nhanh).
     coverUrl: {
       type: String,

@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import SlideViewer from './SlideViewer.jsx';
 import SimulationStep from './SimulationStep.jsx';
 import SummaryStep from './SummaryStep.jsx';
 import QuizStep from './QuizStep.jsx';
 import LessonMedia from './LessonMedia.jsx';
-import { hasStructuredContent } from '../../utils/lessonParts.js';
+import { hasStructuredContent, resolveSlideMode } from '../../utils/lessonParts.js';
 import { resolveImageUrl } from '../../utils/imageUrl.js';
+
+// pdf.js khá nặng (~1.4MB) → chỉ tải khi bài học thực sự dùng PDF slide
+const SlidePdfViewer = lazy(() => import('./SlidePdfViewer.jsx'));
 
 /**
  * Modal học bài 4 phần (Phần 1 → 4).
@@ -67,6 +70,11 @@ export default function LessonPlayerModal({
   const quizzes = useMemo(() => lesson?.quizzes || [], [lesson]);
   const summary = lesson?.summary || null;
 
+  // Chế độ hiển thị Phần 1: PDF slide (nhúng) hay slide thủ công
+  const slideMode = resolveSlideMode(lesson);
+  const slidePdfUrl = lesson?.slidePdfUrl || '';
+  const usePdfSlides = slideMode === 'pdf' && Boolean(slidePdfUrl);
+
   if (!open || !lesson) return null;
 
   // Bài học KHÔNG có nội dung 4 phần → hiển thị media (video/ảnh/PDF) trong modal.
@@ -77,7 +85,7 @@ export default function LessonPlayerModal({
    * Nếu thiếu, hiển thị empty-state tiếng Việt thay vì khóa người học.
    */
   const stepHasContent = {
-    1: slides.length > 0,
+    1: slides.length > 0 || usePdfSlides,
     2: simulations.length > 0,
     3: Boolean(summary && (summary.imageUrl || summary.pdfUrl || summary.videoUrl)),
     4: quizzes.length > 0,
@@ -295,12 +303,28 @@ export default function LessonPlayerModal({
           )}
           {structured && step === 1 && (
             <div className="space-y-4">
-              <SlideViewer
-                slides={slides}
-                lessonTitle={lesson.knowledgeTitle || lesson.title}
-                pdfUrl={lesson.slidePdfUrl || ''}
-                pdfTitle={lesson.slidePdfTitle || lesson.slidePdfName || ''}
-              />
+              {usePdfSlides ? (
+                <Suspense
+                  fallback={
+                    <p className="py-16 text-center text-xs font-bold text-slate-500">
+                      Đang tải trình xem PDF slide...
+                    </p>
+                  }
+                >
+                  <SlidePdfViewer
+                    pdfUrl={resolveImageUrl(slidePdfUrl)}
+                    pdfTitle={lesson.slidePdfTitle || lesson.slidePdfName || ''}
+                    lessonTitle={lesson.knowledgeTitle || lesson.title}
+                  />
+                </Suspense>
+              ) : (
+                <SlideViewer
+                  slides={slides}
+                  lessonTitle={lesson.knowledgeTitle || lesson.title}
+                  pdfUrl={slidePdfUrl}
+                  pdfTitle={lesson.slidePdfTitle || lesson.slidePdfName || ''}
+                />
+              )}
               <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row">
                 <div className="text-xs text-slate-600">
                   <span className="font-bold text-slate-900">
