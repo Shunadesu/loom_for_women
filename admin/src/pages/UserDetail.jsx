@@ -5,6 +5,7 @@ import {
   deleteUserAdmin,
 } from '../services/userApi.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
+import { genderLabel } from '../utils/gender.js';
 import {
   ArrowLeftIcon,
   TrashIcon,
@@ -316,6 +317,12 @@ export default function UserDetail() {
                 <p>
                   <span className="font-bold text-slate-700">🎂 Tuổi:</span>{' '}
                   {user.age}
+                </p>
+              )}
+              {user.gender && (
+                <p>
+                  <span className="font-bold text-slate-700">⚧ Giới tính:</span>{' '}
+                  {genderLabel(user.gender)}
                 </p>
               )}
               {user.occupation && (

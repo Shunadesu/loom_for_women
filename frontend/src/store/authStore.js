@@ -55,16 +55,44 @@ export const useAuthStore = create(
       },
 
       /**
+       * Đổi avatar: upload file ảnh lên /api/auth/avatar.
+       * Cập nhật user mới vào store persist, trả về user.
+       */
+      updateAvatar: async (file) => {
+        const form = new FormData();
+        form.append('avatar', file);
+        const { data } = await api.patch('/auth/avatar', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        set({ user: data.user });
+        // Đồng bộ avatar mới sang passport store để ProfileBanner
+        // (đang ưu tiên profile.avatar) hiển thị ảnh mới ngay.
+        try {
+          const { usePassportStore } = await import('./passportStore.js');
+          const passport = usePassportStore.getState().passport;
+          if (passport?.profile) {
+            usePassportStore.setState({
+              passport: {
+                ...passport,
+                profile: { ...passport.profile, avatar: data.user?.avatar },
+              },
+            });
+          }
+        } catch (_) {}
+        return data.user;
+      },
+      /**
        * Đăng ký tài khoản mới qua /api/auth/register.
        * Backend trả về token luôn ⇒ đăng ký xong là vào thẳng, không cần login lại.
        */
-      register: async ({ name, phone, age, occupation, password }) => {
+      register: async ({ name, phone, age, occupation, gender, password }) => {
         const normalized = normalizePhoneVN(String(phone || '').trim());
         const { data } = await api.post('/auth/register', {
           name: String(name || '').trim(),
           phone: normalized,
           age: Number(age),
           occupation: String(occupation || '').trim(),
+          gender: String(gender || '').trim(),
           password,
         });
         const points = data.user?.points || 0;

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import Lesson from '../models/Lesson.js';
 import LessonQuiz from '../models/LessonQuiz.js';
 import QuizAttempt from '../models/QuizAttempt.js';
-import { awardPoints, POINT_RULES } from '../utils/points.js';
+import { awardPoints, POINT_RULES, getUserPoints } from '../utils/points.js';
 import { completeLessonForUser } from '../services/lessonCompletionService.js';
 
 /**
@@ -127,6 +127,8 @@ export const submitQuizAnswer = async (req, res) => {
     let progressPct = null;
     let correctQuizzes = 0;
     let allCorrect = false;
+    let awardedCourse = 0;
+    let totalPoints = null;
 
     if (totalQuizzes > 0) {
       const correctQuizIds = await QuizAttempt.distinct('quizId', {
@@ -141,7 +143,16 @@ export const submitQuizAnswer = async (req, res) => {
       if (allCorrect && req.body?.complete !== false) {
         const result = await completeLessonForUser(req.user._id, lesson);
         progressPct = result.progressPct;
+        awardedCourse = result.awardedCourse || 0;
+        totalPoints = result.totalPoints ?? null;
       }
+    }
+
+    // Dù chưa đủ cả bài, quiz đúng vẫn đã cộng điểm ở trên → luôn trả tổng
+    // điểm mới để frontend nhảy số ở header ngay (trước đây chỉ trả khi
+    // allCorrect nên header cứ kẹt ở 0).
+    if (totalPoints == null) {
+      totalPoints = await getUserPoints(req.user._id);
     }
 
     res.json({
@@ -155,6 +166,8 @@ export const submitQuizAnswer = async (req, res) => {
       totalQuizzes,
       correctQuizzes,
       allCorrect,
+      awardedCourse,
+      totalPoints,
       guest: false,
     });
   } catch (err) {
@@ -287,6 +300,8 @@ export const submitQuizAnswers = async (req, res) => {
     let progressPct = null;
     let correctQuizzes = 0;
     let allCorrect = false;
+    let awardedCourse = 0;
+    let totalPoints = null;
 
     if (totalQuizzes > 0) {
       const correctQuizIds = await QuizAttempt.distinct('quizId', {
@@ -303,7 +318,15 @@ export const submitQuizAnswers = async (req, res) => {
       if (allCorrect && req.body?.complete !== false) {
         const result = await completeLessonForUser(req.user._id, lesson);
         progressPct = result.progressPct;
+        awardedCourse = result.awardedCourse || 0;
+        totalPoints = result.totalPoints ?? null;
       }
+    }
+
+    // Dù chưa đủ cả bài, quiz đúng vẫn đã cộng điểm ở trên → luôn trả tổng
+    // điểm mới để frontend nhảy số ở header ngay.
+    if (totalPoints == null) {
+      totalPoints = await getUserPoints(req.user._id);
     }
 
     res.json({
@@ -312,6 +335,8 @@ export const submitQuizAnswers = async (req, res) => {
       correctQuizzes,
       allCorrect,
       progressPct,
+      awardedCourse,
+      totalPoints,
       guest: false,
     });
   } catch (err) {

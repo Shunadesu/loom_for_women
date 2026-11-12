@@ -27,6 +27,13 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 100,
     },
+    // Giới tính: 'female' | 'male' | 'other' (rỗng = chưa cung cấp).
+    // Lưu theo giá trị tiếng Anh, hiển thị ra UI bằng nhãn tiếng Việt.
+    gender: {
+      type: String,
+      enum: ['female', 'male', 'other', ''],
+      default: '',
+    },
     passwordHash: {
       type: String,
       default: '',
@@ -90,6 +97,7 @@ userSchema.methods.toSafeJSON = function () {
     name: this.name,
     age: this.age,
     occupation: this.occupation,
+    gender: this.gender || '',
     role: this.role,
     isActive: this.isActive,
     lastLoginAt: this.lastLoginAt,

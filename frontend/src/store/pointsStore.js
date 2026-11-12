@@ -4,17 +4,33 @@ import {
   fetchMyTransactions,
 } from '../services/pointsApi.js';
 
+function levelFromPoints(total) {
+  const safe = Number(total) || 0;
+  if (safe >= 2000) return 4;
+  if (safe >= 500) return 3;
+  if (safe >= 100) return 2;
+  return 1;
+}
+
 export const usePointsStore = create((set) => ({
   total: 0,
   transactions: [],
-  loading: false,
+  loading: true,
+  txLoading: true,
   error: null,
 
   fetch: async () => {
     set({ loading: true, error: null });
     try {
       const data = await fetchMyPoints();
-      set({ total: data.total || 0, loading: false });
+      const total = Number(data.total) || 0;
+      set({ total, loading: false });
+      // Đồng bộ lên header (BrandBar đọc authStore.points).
+      try {
+        const { useAuthStore } = await import('./authStore.js');
+        useAuthStore.setState({ points: total, level: levelFromPoints(total) });
+      } catch (_) {}
+      return total;
     } catch (err) {
       set({
         error: err?.response?.data?.error || 'Không tải được điểm.',
@@ -24,14 +40,14 @@ export const usePointsStore = create((set) => ({
   },
 
   fetchTransactions: async () => {
-    set({ loading: true, error: null });
+    set({ txLoading: true, error: null });
     try {
       const transactions = await fetchMyTransactions();
-      set({ transactions, loading: false });
+      set({ transactions, txLoading: false });
     } catch (err) {
       set({
         error: err?.response?.data?.error || 'Không tải được lịch sử.',
-        loading: false,
+        txLoading: false,
       });
     }
   },

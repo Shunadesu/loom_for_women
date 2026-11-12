@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '../components/layout/Header.jsx';
 import { PdfIcon, CheckCircleIcon } from '../components/icons/index.jsx';
+import CertificatePreviewModal from '../components/certificate/CertificatePreviewModal.jsx';
 import { useCertificateStore } from '../store/certificateStore.js';
 import { useAuthStore } from '../store/authStore.js';
 import { useLoginDrawerStore } from '../store/loginDrawerStore.js';
@@ -17,6 +18,7 @@ export default function MyCertificates() {
   const { notify } = useNotification();
 
   const [downloading, setDownloading] = useState(null);
+  const [selectedCert, setSelectedCert] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -129,7 +131,16 @@ export default function MyCertificates() {
               {items.map((cert) => (
                 <div
                   key={cert._id}
-                  className="flex items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-4 shadow-xs"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedCert(cert)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedCert(cert);
+                    }
+                  }}
+                  className="flex cursor-pointer items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-4 shadow-xs transition-colors hover:border-pink-200"
                 >
                   <div className="flex-1">
                     <h3 className="text-sm font-bold text-slate-900">
@@ -145,7 +156,10 @@ export default function MyCertificates() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleDownload(cert)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(cert);
+                    }}
                     disabled={downloading === cert._id}
                     className="flex items-center gap-1 rounded-full bg-[#E60067] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#d0005a] disabled:opacity-50"
                   >
@@ -158,6 +172,13 @@ export default function MyCertificates() {
           )}
         </div>
       </main>
+      <CertificatePreviewModal
+        cert={selectedCert}
+        open={Boolean(selectedCert)}
+        onClose={() => setSelectedCert(null)}
+        onDownload={handleDownload}
+        downloading={downloading}
+      />
     </motion.div>
   );
 }

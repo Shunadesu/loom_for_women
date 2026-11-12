@@ -5,6 +5,7 @@ import {
   getUserAdmin,
 } from '../services/userApi.js';
 import { resolveImageUrl } from '../utils/imageUrl.js';
+import { genderLabel } from '../utils/gender.js';
 import {
   XIcon,
   AwardIcon,
@@ -276,6 +277,7 @@ export default function UserDetailModal({ user: listUser, onClose }) {
                 </InfoCell>
                 <InfoCell label="Khu vực">{user.location || '—'}</InfoCell>
                 <InfoCell label="Tuổi">{user.age != null ? user.age : '—'}</InfoCell>
+                <InfoCell label="Giới tính">{genderLabel(user.gender)}</InfoCell>
                 <InfoCell label="Nghề nghiệp">{user.occupation || '—'}</InfoCell>
                 <InfoCell label="Ngày tạo">{formatDateTime(user.createdAt)}</InfoCell>
                 <InfoCell label="Đăng nhập cuối">

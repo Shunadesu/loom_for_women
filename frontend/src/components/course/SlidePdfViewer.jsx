@@ -9,7 +9,7 @@
  * - pdfTitle    : tên hiển thị của file PDF
  * - lessonTitle : tiêu đề bài học (hiển thị trên header)
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Document, Page, Thumbnail, pdfjs } from 'react-pdf';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -20,8 +20,59 @@ import 'react-pdf/dist/Page/TextLayer.css';
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 2.5;
+const ZOOM_MAX = 3;
 const ZOOM_STEP = 0.25;
+
+// Padding của khung chứa thumbnail (p-2 = 8px mỗi cạnh).
+const THUMB_PANE_PADDING_X = 16;
+// Padding + viền của thẻ thumbnail (p-1 = 4px mỗi cạnh, viền 1px).
+const THUMB_CARD_CHROME_X = 10;
+// Khoảng trống an toàn (px) giữa trang PDF và mép khung.
+const PAGE_FIT_MARGIN = 4;
+// Padding (p-3 = 12px) + viền (1px) của khung xem trang PDF chính.
+const MAIN_FRAME_CHROME_Y = 26;
+// Tỉ lệ chiều cao cửa sổ dành cho khung xem trang PDF chính.
+const MAIN_FRAME_HEIGHT_RATIO = 0.72;
+
+/**
+ * Đo kích thước (width/height) của một phần tử, tự cập nhật khi kích thước
+ * thay đổi (resize cửa sổ, đổi layout…). Dùng để render trang PDF vừa khít
+ * khung chứa nó, tránh bị cắt mất một phần như bản gốc.
+ *
+ * Trả về `[refCallback, size]`. Phải dùng callback ref thay vì object ref vì
+ * phần tử đo có thể chưa tồn tại ở lần render đầu (react-pdf chỉ render
+ * children sau khi PDF tải xong) — callback ref sẽ được gọi đúng lúc phần tử
+ * xuất hiện và khiến việc đo kích thước chạy được.
+ *
+ * @returns {[[(el: HTMLElement|null) => void], {width:number, height:number}]}
+ */
+function useElementSize() {
+  const [el, setEl] = useState(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    if (!el) return undefined;
+
+    const update = () => {
+      setSize((prev) => {
+        const width = el.clientWidth;
+        const height = el.clientHeight;
+        if (prev.width === width && prev.height === height) return prev;
+        return { width, height };
+      });
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [el]);
+
+  // Callback ref: giữ nguyên identity để không re-render vô ích.
+  const refCallback = useCallback((node) => setEl(node), []);
+
+  return [refCallback, size];
+}
 
 export default function SlidePdfViewer({
   pdfUrl = '',
@@ -34,6 +85,65 @@ export default function SlidePdfViewer({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showThumbs, setShowThumbs] = useState(true);
+  // Kích thước gốc của trang PDF hiện tại (đơn vị pt) — dùng để tính tỉ lệ vừa khung.
+  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
+  // Chiều cao khung nhìn hiện tại — dùng làm trần chiều cao cho trang PDF.
+  const [viewportHeight, setViewportHeight] = useState(() =>
+    typeof window === 'undefined' ? 900 : window.innerHeight
+  );
+
+  // Đo khung chứa thumbnail & khung chứa trang PDF chính để render vừa khít.
+  const [thumbPaneRef, thumbSize] = useElementSize();
+  const [mainPaneRef, mainSize] = useElementSize();
+
+  useEffect(() => {
+    const onResize = () => setViewportHeight(window.innerHeight);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Bề rộng khung thumbnail = clientWidth - padding (8px×2) - viền (1px×2).
+  // Bên trong mỗi thẻ còn padding (4px×2) + viền (1px×2) ⇒ bề rộng canvas.
+  const thumbPaneWidth = Math.min(
+    140,
+    Math.max(64, thumbSize.width - THUMB_PANE_PADDING_X - THUMB_CARD_CHROME_X)
+  );
+
+  // Bề rộng khung xem trang PDF chính (đo trên phần tử con, đã trừ padding/viền).
+  const mainAvailableWidth = Math.max(
+    120,
+    mainSize.width - PAGE_FIT_MARGIN * 2
+  );
+
+  // Chiều cao tối đa dành cho khung xem trang PDF (theo chiều cao cửa sổ).
+  const mainMaxHeight = Math.round(viewportHeight * MAIN_FRAME_HEIGHT_RATIO);
+
+  // Tỉ lệ hiển thị: trang PDF được co giãn theo BỀ RỘNG khung xem ⇒ trang luôn
+  // chiếm đúng bề rộng khung (không bị nhỏ lại, không bị bỏ trống hai bên).
+  // Chiều cao bám theo tỉ lệ gốc của trang; nếu trang cao hơn khung thì khung
+  // cuộn dọc bên trong.
+  const fitScale = useMemo(() => {
+    if (!pageSize.width || !pageSize.height) return 0;
+    return mainAvailableWidth / pageSize.width;
+  }, [mainAvailableWidth, pageSize.width, pageSize.height]);
+
+  // Tỉ lệ hiển thị thực tế = tỉ lệ vừa khung × mức zoom người dùng chọn.
+  const displayScale = fitScale > 0 ? fitScale * scale : 1;
+
+  // Chiều cao trang sau khi render (px).
+  const renderedPageHeight = pageSize.height
+    ? Math.round(pageSize.height * displayScale)
+    : 0;
+
+  // Chiều cao khung chứa trang PDF: bám sát chiều cao trang để trang luôn
+  // "full" khung, có giới hạn trần theo chiều cao cửa sổ.
+  const mainFrameHeight = renderedPageHeight
+    ? Math.min(mainMaxHeight, renderedPageHeight + MAIN_FRAME_CHROME_Y)
+    : mainMaxHeight;
+  const mainInnerHeight = Math.max(
+    120,
+    mainFrameHeight - MAIN_FRAME_CHROME_Y
+  );
 
   // Đổi file → về trang đầu & reset zoom
   useEffect(() => {
@@ -42,6 +152,7 @@ export default function SlidePdfViewer({
     setNumPages(0);
     setLoading(true);
     setError(null);
+    setPageSize({ width: 0, height: 0 });
   }, [pdfUrl]);
 
   const onLoadSuccess = useCallback(({ numPages: total }) => {
@@ -198,7 +309,10 @@ export default function SlidePdfViewer({
                   <path d="M5 12h14" />
                 </svg>
               </button>
-              <span className="min-w-[42px] text-center text-[11px] font-bold text-slate-700">
+              <span
+                className="min-w-[42px] text-center text-[11px] font-bold text-slate-700"
+                title="100% = trang vừa kín bề rộng khung xem"
+              >
                 {Math.round(scale * 100)}%
               </span>
               <button
@@ -274,26 +388,47 @@ export default function SlidePdfViewer({
               error=""
             >
               <div className="flex flex-col gap-3 lg:flex-row">
-                {/* Thumbnail */}
+                {/* Thumbnail — render trang PDF vừa khít bề rộng khung để không bị cắt */}
                 {showThumbs && numPages > 0 && (
-                  <div className="max-h-[520px] shrink-0 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-2 lg:w-[136px]">
+                  <div
+                    ref={thumbPaneRef}
+                    className="max-h-[520px] shrink-0 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200 bg-slate-50 p-2 lg:w-[168px]"
+                  >
                     <div className="space-y-2">
                       {Array.from({ length: numPages }, (_, i) => i + 1).map(
                         (n) => (
                           <div
                             key={n}
-                            className={`rounded-lg border p-1 transition-all ${
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => go(n)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                go(n);
+                              }
+                            }}
+                            title={`Xem trang ${n}`}
+                            className={`mx-auto block cursor-pointer overflow-hidden rounded-lg border p-1 transition-all ${
                               n === page
-                                ? 'border-[#E60067] bg-white shadow-xs ring-1 ring-[#E60067]/30'
-                                : 'border-slate-200 bg-white hover:border-slate-300'
+                                ? 'border-[#E60067] bg-white shadow-sm ring-2 ring-[#E60067]/30'
+                                : 'border-slate-200 bg-white hover:border-slate-400 hover:shadow-sm'
                             }`}
+                            style={{ width: thumbPaneWidth + THUMB_CARD_CHROME_X }}
                           >
-                            <Thumbnail
-                              pageNumber={n}
-                              scale={0.24}
-                              onItemClick={() => go(n)}
-                            />
-                            <span className="mt-0.5 block text-center text-[9px] font-bold text-slate-500">
+                            <div className="overflow-hidden rounded-md bg-white">
+                              <Thumbnail
+                                pageNumber={n}
+                                width={thumbPaneWidth}
+                                className="block"
+                                onItemClick={() => go(n)}
+                              />
+                            </div>
+                            <span
+                              className={`mt-1 block text-center text-[10px] font-bold ${
+                                n === page ? 'text-[#E60067]' : 'text-slate-500'
+                              }`}
+                            >
                               Trang {n}
                             </span>
                           </div>
@@ -303,18 +438,33 @@ export default function SlidePdfViewer({
                   </div>
                 )}
 
-                {/* Trang PDF chính */}
+                {/* Trang PDF chính — tự co giãn vừa khung, giữ nguyên tỉ lệ gốc */}
                 <div className="min-w-0 flex-1">
-                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-3">
-                    <div className="overflow-auto">
-                      <Page
-                        pageNumber={page}
-                        scale={scale}
-                        renderTextLayer
-                        renderAnnotationLayer
-                        loading=""
-                        className="mx-auto"
-                      />
+                  <div
+                    className="flex items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-3"
+                    style={{ height: `${mainFrameHeight}px` }}
+                  >
+                    <div
+                      ref={mainPaneRef}
+                      className="flex min-w-0 w-full items-center justify-center overflow-auto"
+                      style={{ height: `${mainInnerHeight}px` }}
+                    >
+                      <div className="mx-auto shrink-0">
+                        <Page
+                          pageNumber={page}
+                          scale={displayScale}
+                          renderTextLayer
+                          renderAnnotationLayer
+                          loading=""
+                          onLoadSuccess={({ originalWidth, originalHeight }) =>
+                            setPageSize({
+                              width: originalWidth,
+                              height: originalHeight,
+                            })
+                          }
+                          className="overflow-hidden rounded-lg shadow-md"
+                        />
+                      </div>
                     </div>
                   </div>
 

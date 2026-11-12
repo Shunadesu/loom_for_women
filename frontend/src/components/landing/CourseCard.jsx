@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { PlayIcon, StarIcon, ClockIcon } from '../icons/index.jsx';
 import CourseProgressButton from './CourseProgressButton.jsx';
+import CourseLearnedBadge from './CourseLearnedBadge.jsx';
+import { useCourseProgress, useCourseLastLessonId } from '../../hooks/useCourseProgress.js';
 import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 /**
@@ -11,9 +13,15 @@ import { resolveImageUrl } from '../../utils/imageUrl.js';
  *   - onImageClick: click vào vùng thumbnail
  */
 export default function CourseCard({ course, onProgressClick, onImageClick }) {
+  // % tiến trình: lấy max(store cục bộ, giá trị API) để cập nhật tức thì
+  // sau khi vừa hoàn thành một bài học.
+  const progressPct = useCourseProgress(course);
+  // Bài đang học dở: ưu tiên store cục bộ, fallback sang API.
+  const lastLessonId = useCourseLastLessonId(course);
+
   // Nếu user đang học dở → deep-link tới đúng bài đó
-  const detailHref = course.lastLessonId
-    ? `/khoa-hoc/${course.slug}?lesson=${course.lastLessonId}`
+  const detailHref = lastLessonId
+    ? `/khoa-hoc/${course.slug}?lesson=${lastLessonId}`
     : `/khoa-hoc/${course.slug}`;
 
   return (
@@ -52,11 +60,15 @@ export default function CourseCard({ course, onProgressClick, onImageClick }) {
       <div className="flex flex-1 flex-col justify-between p-3">
         <div>
           <div className="mb-1 flex items-center justify-between gap-1">
-            {course.isFeatured && (
-              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
-                NỔI BẬT
-              </span>
-            )}
+            <div className="flex min-w-0 items-center gap-1">
+              {course.isFeatured && (
+                <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
+                  NỔI BẬT
+                </span>
+              )}
+              {/* Badge "đã học" */}
+              <CourseLearnedBadge course={course} variant="inline" />
+            </div>
           </div>
 
           <Link to={detailHref}>
@@ -90,8 +102,8 @@ export default function CourseCard({ course, onProgressClick, onImageClick }) {
 
         <div className="mt-2 flex items-center justify-between border-t border-slate-50 pt-2">
           <CourseProgressButton
-            progressPct={course.progressPct || 0}
-            onClick={() => onProgressClick?.(course)}
+            progressPct={progressPct}
+            onClick={() => onProgressClick?.({ ...course, lastLessonId })}
           />
           {course.lessonsCount > 0 && (
             <span className="text-[10px] text-slate-400">

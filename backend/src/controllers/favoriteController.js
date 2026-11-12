@@ -1,4 +1,5 @@
 import Favorite from '../models/Favorite.js';
+import UserProgress from '../models/UserProgress.js';
 
 export const addFavorite = async (req, res) => {
   try {
@@ -30,14 +31,37 @@ export const myFavorites = async (req, res) => {
     const favs = await Favorite.find({ userId: req.user._id })
       .populate({
         path: 'courseId',
-        select: 'title slug thumbnail durationMinutes rating lessonsCount isActive',
+        select:
+          'title slug thumbnail coverUrl category durationMinutes rating lessonsCount isFeatured isActive',
       })
       .sort({ createdAt: -1 })
       .lean();
+
+    const activeCourses = favs
+      .filter((f) => f.courseId && f.courseId.isActive)
+      .map((f) => f.courseId);
+
+    // Gắn tiến trình học để CourseLearnedBadge / CourseProgressButton
+    // hiển thị đúng trên trang yêu thích (giống GET /api/courses).
+    const progresses = await UserProgress.find({
+      userId: req.user._id,
+      courseId: { $in: activeCourses.map((c) => c._id) },
+    }).lean();
+    const progressMap = {};
+    for (const p of progresses) {
+      progressMap[String(p.courseId)] = p;
+    }
+
     res.json({
-      items: favs
-        .filter((f) => f.courseId && f.courseId.isActive)
-        .map((f) => f.courseId),
+      items: activeCourses.map((c) => {
+        const p = progressMap[String(c._id)];
+        return {
+          ...c,
+          progressPct: p?.progressPct ?? 0,
+          lastLessonId: p?.lastLessonId ? String(p.lastLessonId) : null,
+          isFavorite: true,
+        };
+      }),
     });
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server.' });

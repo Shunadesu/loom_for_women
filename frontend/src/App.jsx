@@ -4,6 +4,7 @@ import LoginDrawer from './components/auth/LoginDrawer.jsx';
 import CartDrawer from './components/cart/CartDrawer.jsx';
 import ExpertQAModal from './components/expert/ExpertQAModal.jsx';
 import SupportModal from './components/support/SupportModal.jsx';
+import WorkshopModal from './components/workshop/WorkshopModal.jsx';
 import ForumModal from './components/forum/ForumModal.jsx';
 import Footer from './components/layout/Footer.jsx';
 import BottomNav from './components/layout/BottomNav.jsx';
@@ -29,6 +30,8 @@ import { useForumStore } from './store/forumStore.js';
 import { useCartStore } from './store/cartStore.js';
 import { useAuthStore } from './store/authStore.js';
 import { useConfigStore } from './store/configStore.js';
+import { useProgressStore } from './store/progressStore.js';
+import { usePointsStore } from './store/pointsStore.js';
 import { resolveImageUrl } from './utils/imageUrl.js';
 
 function ComingSoon({ title }) {
@@ -115,7 +118,7 @@ export default function App() {
   const token = useAuthStore((s) => s.token);
   const fetchConfig = useConfigStore((s) => s.fetchConfig);
   const logoUrl = useConfigStore((s) => s.config?.logoUrl);
-
+  const fetchProgress = useProgressStore((s) => s.fetch);
   // Tải config (logo, text popup) sớm để header/footer có logo ngay
   useEffect(() => {
     fetchConfig();
@@ -135,6 +138,25 @@ export default function App() {
     }
   }, [token, initCart]);
 
+  // Khi user đăng nhập → nạp tiến trình học tập để các badge "đã học" hiển thị
+  // đúng ở mọi trang (khóa học nổi bật, danh sách khóa học, yêu thích...)
+  // + nạp tổng điểm để header (BrandBar đọc authStore.points) không kẹt ở 0
+  // sau khi reload (persist lưu điểm cũ).
+  useEffect(() => {
+    if (token) {
+      fetchProgress().catch(() => {});
+      try {
+        usePointsStore.getState().fetch().catch(() => {});
+      } catch (_) {}
+    } else {
+      // Đăng xuất → xoá tiến trình + điểm cũ để không lọn vào tài khoản khác.
+      useProgressStore.setState({ byCourse: {}, favoriteIds: new Set() });
+      try {
+        usePointsStore.setState({ total: 0, transactions: [] });
+      } catch (_) {}
+    }
+  }, [token, fetchProgress]);
+
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -145,6 +167,7 @@ export default function App() {
         <CartDrawer isOpen={isCartOpen} onClose={closeCart} />
         <ExpertQAModal />
         <SupportModal />
+        <WorkshopModal />
         <ForumModal isOpen={isForumOpen} onClose={closeForum} />
         <NotificationContainer />
         <BottomNav />

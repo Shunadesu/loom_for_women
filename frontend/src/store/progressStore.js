@@ -36,12 +36,28 @@ export const useProgressStore = create((set, get) => ({
       const map = {};
       for (const p of data.items || []) {
         if (p.courseId) {
-          map[String(p.courseId._id || p.courseId)] = {
-            progressPct: p.progressPct,
-            lastLessonId: p.lastLessonId ? String(p.lastLessonId) : null,
-            completedLessons: (p.completedLessons || []).map((l) => String(l)),
+          const cid = String(p.courseId._id || p.courseId);
+          const completed = new Set((p.completedLessons || []).map(String));
+          // Gộp với dữ liệu local (bài vừa hoàn thành trong phiên hiện tại)
+          // để không bị mất khi API trả về dữ liệu cũ.
+          const local = get().byCourse[cid];
+          for (const id of local?.completedLessons || []) completed.add(String(id));
+          map[cid] = {
+            progressPct: Math.max(
+              Number(p.progressPct) || 0,
+              Number(local?.progressPct) || 0
+            ),
+            lastLessonId: p.lastLessonId ? String(p.lastLessonId) : local?.lastLessonId || null,
+            completedLessons: Array.from(completed),
+            completedCount: completed.size,
+            totalLessons: local?.totalLessons,
           };
         }
+      }
+      // Giữ lại các khóa chỉ có ở local (vừa học xong nhưng API chưa kịp trả),
+      // tránh bị mất badge / % tiến trình khi refetch.
+      for (const [cid, local] of Object.entries(get().byCourse)) {
+        if (!map[cid] && local) map[cid] = local;
       }
       set({
         byCourse: map,
@@ -82,14 +98,24 @@ export const useProgressStore = create((set, get) => ({
       // Cập nhật local
       const map = { ...get().byCourse };
       const cid = String(courseId);
+      const prev = map[cid] || {};
+      // Thêm bài học vào danh sách đã hoàn thành (không trùng) để UI
+      // "Đã hoàn thành" + thanh tiến trình cập nhật ngay.
+      const completed = new Set((prev.completedLessons || []).map(String));
+      completed.add(String(lessonId));
       map[cid] = {
-        ...(map[cid] || {}),
+        ...prev,
         progressPct: res.progressPct,
         lastLessonId: String(lessonId),
+        completedLessons: Array.from(completed),
         completedCount: res.completedCount,
         totalLessons: res.totalLessons,
       };
       set({ byCourse: map });
+      // Đồng bộ điểm mới lên header + trang điểm ngay khi hoàn thành.
+      // Backend trả totalPoints (tổng từ PointTransaction) sau khi cộng
+      // lesson_complete / course_finish (200đ).
+      get().syncPoints(res?.totalPoints);
       return res;
     } catch (err) {
       throw err;
@@ -99,25 +125,56 @@ export const useProgressStore = create((set, get) => ({
   /**
    * Cập nhật tiến độ sau khi học viên trả lời đúng trắc nghiệm.
    * Backend đã tự tick hoàn thành bài học, ta chỉ cập nhật state local.
+   * Đồng thời đồng bộ totalPoints (nếu có) để header nhảy điểm ngay.
+   * Chỉ đánh dấu hoàn thành khi backend trả progressPct (tức đã đủ cả bài);
+   * quiz đúng lẻ vẫn cộng điểm nhưng chưa tick hoàn thành.
    */
   applyQuizResult: (courseId, lessonId, result = {}) => {
-    if (!courseId) return;
+    if (!courseId) return result;
+    const finished = typeof result?.progressPct === 'number' || result?.allCorrect === true;
     const map = { ...get().byCourse };
     const cid = String(courseId);
     const lid = String(lessonId);
     const prev = map[cid] || {};
-    const completed = new Set((prev.completedLessons || []).map(String));
-    completed.add(lid);
-    map[cid] = {
-      ...prev,
-      lastLessonId: lid,
-      completedLessons: Array.from(completed),
-      progressPct:
-        typeof result.progressPct === 'number'
-          ? result.progressPct
-          : prev.progressPct,
-    };
-    set({ byCourse: map });
+    if (finished) {
+      const completed = new Set((prev.completedLessons || []).map(String));
+      completed.add(lid);
+      map[cid] = {
+        ...prev,
+        lastLessonId: lid,
+        completedLessons: Array.from(completed),
+        progressPct:
+          typeof result.progressPct === 'number'
+            ? result.progressPct
+            : prev.progressPct,
+      };
+      set({ byCourse: map });
+    }
+    get().syncPoints(result?.totalPoints);
+    return result;
+  },
+
+  /**
+   * Đồng bộ tổng điểm mới lên header + trang điểm (dùng cho quiz đúng lẻ,
+   * bình luận... — những chỗ cộng điểm nhưng chưa hoàn thành bài học).
+   */
+  syncPoints: (totalPoints) => {
+    if (typeof totalPoints !== 'number') return;
+    try {
+      // Dynamic import đồng bộ để tránh circular import lúc khởi tạo store.
+      import('./authStore.js')
+        .then(({ useAuthStore }) => {
+          const pts = Number(totalPoints) || 0;
+          const level = pts >= 2000 ? 4 : pts >= 500 ? 3 : pts >= 100 ? 2 : 1;
+          useAuthStore.setState({ points: pts, level });
+        })
+        .catch(() => {});
+      import('./pointsStore.js')
+        .then(({ usePointsStore }) => {
+          usePointsStore.setState({ total: Number(totalPoints) || 0 });
+        })
+        .catch(() => {});
+    } catch (_) {}
   },
 
   isFavorite: (courseId) => get().favoriteIds.has(String(courseId)),

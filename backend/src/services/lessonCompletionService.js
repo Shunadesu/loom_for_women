@@ -2,7 +2,7 @@ import Lesson from '../models/Lesson.js';
 import UserProgress from '../models/UserProgress.js';
 import Course from '../models/Course.js';
 import PointTransaction from '../models/PointTransaction.js';
-import { awardPoints, POINT_RULES } from '../utils/points.js';
+import { awardPoints, POINT_RULES, getUserPoints } from '../utils/points.js';
 import { issueCertificateIfNeeded } from '../utils/certificate.js';
 
 /**
@@ -59,34 +59,41 @@ export async function completeLessonForUser(userId, lesson) {
     });
   }
 
-  // Đạt 100% → cấp chứng chỉ + điểm course_finish
+  // Đạt 100% → cấp chứng chỉ + điểm course_finish (200đ, hard-code).
+  // Điểm khóa học ĐỘC LẬP với việc tạo chứng chỉ: chỉ cần chưa từng cộng
+  // type=course_finish cho khóa này thì cộng ngay, kể cả khi chứng chỉ đã
+  // tồn tại từ trước (tránh mất điểm oan).
   let certificateCreated = false;
+  let awardedCourse = 0;
   if (pct >= 100) {
     const certResult = await issueCertificateIfNeeded(userId, courseId);
     certificateCreated = certResult.created;
-    if (certResult.created) {
-      const courseFinishCount = await PointTransaction.countDocuments({
+    const courseFinishCount = await PointTransaction.countDocuments({
+      userId,
+      type: 'course_finish',
+      refId: String(courseId),
+    });
+    if (courseFinishCount === 0) {
+      const course = await Course.findById(courseId).lean();
+      await awardPoints({
         userId,
+        delta: POINT_RULES.COURSE_FINISH,
         type: 'course_finish',
         refId: String(courseId),
+        description: `Hoàn thành khóa học: ${course?.title || ''}`,
       });
-      if (courseFinishCount === 0) {
-        const course = await Course.findById(courseId).lean();
-        await awardPoints({
-          userId,
-          delta: POINT_RULES.COURSE_FINISH,
-          type: 'course_finish',
-          refId: String(courseId),
-          description: `Hoàn thành khóa học: ${course?.title || ''}`,
-        });
-      }
+      awardedCourse = POINT_RULES.COURSE_FINISH;
     }
   }
+
+  const totalPoints = await getUserPoints(userId);
 
   return {
     progressPct: pct,
     completedCount: progress.completedLessons.length,
     totalLessons,
     certificateCreated,
+    awardedCourse,
+    totalPoints,
   };
 }

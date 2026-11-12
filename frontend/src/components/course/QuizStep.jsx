@@ -150,6 +150,14 @@ export default function QuizStep({
         setServerAllCorrect(res.allCorrect);
       }
       // Bài học chỉ hoàn thành khi trả lời đúng TẤT CẢ câu.
+      // Dù đúng lẻ hay đủ cả bài, điểm quiz vẫn đã cộng ở backend →
+      // đồng bộ tổng điểm mới lên header ngay (tránh kẹt ở 0).
+      if (!res?.guest && typeof res?.totalPoints === 'number') {
+        try {
+          const { useProgressStore } = await import('../../store/progressStore.js');
+          useProgressStore.getState().syncPoints(res.totalPoints);
+        } catch (_) {}
+      }
       if (res?.allCorrect && onPassed) {
         onPassed(res);
       }

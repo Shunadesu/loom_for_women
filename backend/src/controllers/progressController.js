@@ -32,6 +32,8 @@ export const markLessonComplete = async (req, res) => {
       completedCount: result.completedCount,
       totalLessons: result.totalLessons,
       certificateCreated: result.certificateCreated,
+      awardedCourse: result.awardedCourse || 0,
+      totalPoints: result.totalPoints ?? 0,
     });
   } catch (err) {
     console.error('markLessonComplete error', err);

@@ -67,7 +67,13 @@ export default function MyFavorites() {
                 <CourseCard
                   key={course._id}
                   course={course}
-                  onProgressClick={(c) => navigate(`/khoa-hoc/${c.slug}`)}
+                  onProgressClick={(c) =>
+                    navigate(
+                      c.lastLessonId
+                        ? `/khoa-hoc/${c.slug}?lesson=${c.lastLessonId}`
+                        : `/khoa-hoc/${c.slug}`
+                    )
+                  }
                 />
               ))}
             </div>

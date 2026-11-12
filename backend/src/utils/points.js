@@ -43,7 +43,7 @@ export async function getUserPoints(userId) {
 export const POINT_RULES = {
   LESSON_COMPLETE: 5,
   QUIZ_CORRECT: 5,
-  COURSE_FINISH: 100,
+  COURSE_FINISH: 200,
   COMMENT: 2,
 };
 

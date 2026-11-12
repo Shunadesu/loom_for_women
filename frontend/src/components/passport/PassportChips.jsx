@@ -1,45 +1,47 @@
-import { MessageCircleIcon, ShieldIcon, StoreIcon, PackageIcon, BookIcon, GiftIcon } from '../icons/index.jsx';
+import {
+  ShieldIcon,
+  CalendarIcon,
+  QuestionMarkIcon,
+  ShareIcon,
+  BookOpenIcon,
+  PhoneCallIcon,
+} from '../icons/index.jsx';
 
 const CHIPS = [
-  { id: 'messages', label: 'Tin Nhắn Khách', Icon: MessageCircleIcon, badge: 1 },
-  { id: 'passport', label: 'Hộ Chiếu', Icon: ShieldIcon },
-  { id: 'myProducts', label: 'Sản Phẩm Đăng', Icon: StoreIcon, badge: 2 },
-  { id: 'orders', label: 'Đơn Khách Đặt', Icon: PackageIcon, badge: 3, hasPulse: true },
-  { id: 'documents', label: 'Tài Liệu', Icon: BookIcon },
-  { id: 'gifts', label: 'Quà Tặng', Icon: GiftIcon },
+  { id: 'passport', label: 'Hộ Chiếu An Toàn', Icon: ShieldIcon },
+  { id: 'workshop', label: 'Workshop', Icon: CalendarIcon, badge: 3 },
+  { id: 'expert', label: 'Hỏi Chuyên Gia', Icon: QuestionMarkIcon, badge: 3 },
+  { id: 'forum', label: 'Diễn Đàn', Icon: ShareIcon, badge: 3 },
+  { id: 'documents', label: 'Tài Liệu Đã Lưu', Icon: BookOpenIcon },
+  { id: 'support', label: 'Hỗ Trợ 24/7', Icon: PhoneCallIcon, tone: 'emerald' },
 ];
 
 export default function PassportChips({ activeTab, onChange }) {
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 scrollbar-none">
       {CHIPS.map((chip) => {
         const isActive = activeTab === chip.id;
+        const Icon = chip.Icon;
         return (
           <button
             key={chip.id}
+            type="button"
             onClick={() => onChange(chip.id)}
             className={[
-              'py-2 px-3 rounded-full font-bold text-center text-[11px] shrink-0 transition-all cursor-pointer flex items-center gap-1.5',
+              'flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full py-2 px-3.5 text-center text-xs font-bold transition-all',
               isActive
                 ? 'bg-[#E60067] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50',
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
             ].join(' ')}
           >
-            <chip.Icon className="w-3.5 h-3.5" />
-            <span>{chip.label}</span>
-            {chip.badge && (
-              <span className={[
-                'font-extrabold text-[9px] px-1.5 py-0.2 rounded-full',
-                isActive
-                  ? 'bg-white text-[#E60067]'
-                  : 'bg-[#E60067] text-white'
-              ].join(' ')}>
-                {chip.badge}
-              </span>
-            )}
-            {chip.hasPulse && !isActive && (
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            )}
+            <Icon
+              aria-hidden="true"
+              className={`h-3.5 w-3.5 ${!isActive && chip.tone === 'emerald' ? 'text-emerald-600' : ''}`}
+            />
+            <span>
+              {chip.label}
+              {typeof chip.badge === 'number' && chip.badge > 0 ? ` (${chip.badge})` : ''}
+            </span>
           </button>
         );
       })}

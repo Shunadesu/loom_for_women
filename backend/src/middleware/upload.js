@@ -43,6 +43,18 @@ if (!fs.existsSync(UPLOAD_LESSON_DIR)) {
   fs.mkdirSync(UPLOAD_LESSON_DIR, { recursive: true });
 }
 
+// ─── Avatar upload dir ───────────────────────────────────────
+const UPLOAD_AVATAR_DIR = path.join(__dirname, '../../uploads/avatars');
+if (!fs.existsSync(UPLOAD_AVATAR_DIR)) {
+  fs.mkdirSync(UPLOAD_AVATAR_DIR, { recursive: true });
+}
+
+// ─── Avatar upload dir ───────────────────────────────────────
+const UPLOAD_AVATAR_DIR = path.join(__dirname, '../../uploads/avatars');
+if (!fs.existsSync(UPLOAD_AVATAR_DIR)) {
+  fs.mkdirSync(UPLOAD_AVATAR_DIR, { recursive: true });
+}
+
 const imageFileFilter = (_req, file, cb) => {
   const ok = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
     file.mimetype
@@ -177,6 +189,12 @@ export const uploadLessonMedia = multer({
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 
+export const uploadAvatar = multer({
+  storage: makeStorage(UPLOAD_AVATAR_DIR),
+  fileFilter: imageFileFilter,
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
+});
+
 export {
   UPLOAD_HERO_DIR,
   UPLOAD_COURSE_DIR,
@@ -184,6 +202,7 @@ export {
   UPLOAD_DOC_DIR,
   UPLOAD_BRAND_DIR,
   UPLOAD_LESSON_DIR,
+  UPLOAD_AVATAR_DIR,
 };
 
 /** Xoá file vật lý nếu thuộc thư gốc uploads của mình. */
@@ -197,6 +216,7 @@ export const safeUnlink = (absPath) => {
       (UPLOAD_PRODUCT_DIR && norm.startsWith(UPLOAD_PRODUCT_DIR)) ||
       (UPLOAD_DOC_DIR && norm.startsWith(UPLOAD_DOC_DIR)) ||
       (UPLOAD_BRAND_DIR && norm.startsWith(UPLOAD_BRAND_DIR)) ||
+      (UPLOAD_AVATAR_DIR && norm.startsWith(UPLOAD_AVATAR_DIR)) ||
       (UPLOAD_LESSON_DIR && norm.startsWith(UPLOAD_LESSON_DIR));
     if (isInUploads && fs.existsSync(norm)) {
       fs.unlinkSync(norm);

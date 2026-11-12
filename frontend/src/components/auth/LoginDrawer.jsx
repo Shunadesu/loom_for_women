@@ -5,6 +5,7 @@ import { XMarkIcon, UserIcon } from '../icons/index.jsx';
 import { useAuthStore } from '../../store/authStore.js';
 import { useLoginDrawerStore } from '../../store/loginDrawerStore.js';
 import { useCartStore } from '../../store/cartStore.js';
+import { GENDER_OPTIONS } from '../../utils/gender.js';
 
 export default function LoginDrawer() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function LoginDrawer() {
   const [regPhone, setRegPhone] = useState('');
   const [regAge, setRegAge] = useState('');
   const [regOccupation, setRegOccupation] = useState('');
+  const [regGender, setRegGender] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState('');
@@ -63,6 +65,7 @@ export default function LoginDrawer() {
       setRegPhone('');
       setRegAge('');
       setRegOccupation('');
+      setRegGender('');
       setRegPassword('');
       setRegError('');
     }
@@ -122,6 +125,7 @@ export default function LoginDrawer() {
         phone: regPhone,
         age: regAge,
         occupation: regOccupation,
+        gender: regGender,
         password: regPassword,
       });
       await finishAuthSuccess();
@@ -349,6 +353,33 @@ export default function LoginDrawer() {
                       placeholder="VD: Công nhân may, Bán hàng online…"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition-all focus:border-[#E60067] focus:outline-none focus:ring-2 focus:ring-pink-100"
                     />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-700">
+                      Giới tính
+                    </label>
+                    <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Giới tính">
+                      {GENDER_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={regGender === option.value}
+                          onClick={() => setRegGender(option.value)}
+                          className={`rounded-xl border px-3 py-3 text-sm font-bold transition-all ${
+                            regGender === option.value
+                              ? 'border-[#E60067] bg-gradient-to-r from-[#E60067] to-rose-600 text-white shadow-sm'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-pink-300 hover:bg-pink-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Giúp chúng tôi hiểu rõ hơn đối tượng học viên
+                    </p>
                   </div>
 
                   <div>

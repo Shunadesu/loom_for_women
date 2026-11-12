@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from '../components/layout/Header.jsx';
@@ -48,6 +48,7 @@ export default function CourseDetail() {
   const fetchStats = useProgressStore((s) => s.fetchStats);
   const isFavorite = useProgressStore((s) => s.isFavorite);
   const toggleFavoriteLocal = useProgressStore((s) => s.toggleFavoriteLocal);
+  const fetchProgress = useProgressStore((s) => s.fetch);
 
   const comments = useCommentStore((s) => s.byCourse);
   const fetchComments = useCommentStore((s) => s.fetch);
@@ -64,11 +65,20 @@ export default function CourseDetail() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commentRating, setCommentRating] = useState(5);
+  // Đang gọi API đánh dấu hoàn thành → chống gọi trùng cho cùng 1 bài học.
+  const completingRef = useRef(new Set());
 
   useEffect(() => {
     if (!slug) return;
     fetchDetail(slug).catch(() => {});
   }, [slug, fetchDetail]);
+
+  // Nạp tiến độ tổng (đã hoàn thành bài nào, % từng khóa) để gộp với dữ liệu
+  // trong myProgress của API chi tiết.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchProgress().catch(() => {});
+  }, [isAuthenticated, fetchProgress]);
 
   // Bình luận luôn dùng course._id làm khoá (store đọc theo comments[course._id]).
   // Chờ có course rồi mới tải, tránh gọi 2 lần với 2 kiểu tham số.
@@ -93,11 +103,17 @@ export default function CourseDetail() {
   }, [lessons, currentLessonId, myProgress, searchParams]);
 
   const currentLesson = lessons.find((l) => String(l._id) === String(currentLessonId));
-  const completedSet = new Set(
-    (progressStore[course?._id]?.completedLessons || myProgress?.completedLessons || []).map(
-      String
-    )
-  );
+
+  // Danh sách bài đã hoàn thành: gộp cả dữ liệu từ API (myProgress) lẫn từ
+  // store (cập nhật tức thì sau khi đánh dấu hoàn thành) để không mất bài học
+  // đã hoàn thành trước đó.
+  const completedSet = useMemo(() => {
+    const set = new Set((myProgress?.completedLessons || []).map(String));
+    for (const id of progressStore[course?._id]?.completedLessons || []) {
+      set.add(String(id));
+    }
+    return set;
+  }, [myProgress?.completedLessons, progressStore, course?._id]);
 
   function handleSelectLesson(lesson) {
     setCurrentLessonId(lesson._id);
@@ -131,12 +147,25 @@ export default function CourseDetail() {
       openLoginDrawer();
       return;
     }
+    // Bài học đã hoàn thành rồi → không gọi API lại (tránh báo trùng,
+    // ví dụ khi vừa trả lời đúng trắc nghiệm ở Phần 4).
+    const key = String(lessonId);
+    if (completedSet.has(key) || completingRef.current.has(key)) return;
+    completingRef.current.add(key);
     try {
       await completeLesson(lessonId, course._id);
+      // Nạp lại tiến độ tổng (danh sách bài đã hoàn thành + % khóa học).
+      fetchProgress().catch(() => {});
       // Refresh continue + stats cho header
       fetchContinue().catch(() => {});
       fetchStats().catch(() => {});
+      notify({
+        type: 'success',
+        title: 'Đã hoàn thành bài học',
+        message: 'Tiến trình học tập của bạn đã được cập nhật.',
+      });
     } catch (err) {
+      completingRef.current.delete(key);
       notify({ type: 'error', title: 'Lưu tiến độ thất bại', message: err?.response?.data?.error || 'Không lưu được tiến độ.' });
     }
   }
@@ -173,6 +202,12 @@ export default function CourseDetail() {
       });
       setCommentText('');
       setCommentRating(5);
+      // Bình luận được +2 điểm ở backend → tải lại tổng điểm để header
+      // và trang điểm nhảy số ngay.
+      try {
+        const { usePointsStore } = await import('../store/pointsStore.js');
+        usePointsStore.getState().fetch().catch(() => {});
+      } catch (_) {}
     } catch (err) {
       notify({ type: 'error', title: 'Đăng bình luận thất bại', message: err?.response?.data?.error || 'Đăng bình luận thất bại.' });
     }
@@ -216,7 +251,17 @@ export default function CourseDetail() {
     );
   }
 
-  const progressPct = myProgress?.progressPct || 0;
+  // Tiến trình khóa học = max(giá trị từ API, giá trị vừa cập nhật ở store).
+  // Khóa học coi như đã hoàn tất khi đạt 100% → lúc đó mới hiện nút chứng nhận.
+  const courseProgressPct = Math.max(
+    Number(myProgress?.progressPct) || 0,
+    Number(progressStore[course._id]?.progressPct) || 0
+  );
+  const courseCompleted = courseProgressPct >= 100;
+  const canOpenCertificate = isAuthenticated && courseCompleted;
+
+  // Thanh tiến trình trên hero cũng phản ánh tiến trình vừa cập nhật.
+  const progressPct = courseProgressPct;
   const courseComments = comments[course._id] || [];
 
   return (
@@ -332,14 +377,9 @@ export default function CourseDetail() {
                               Đã hoàn thành
                             </span>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleComplete(currentLesson._id)}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-teal-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-teal-700"
-                            >
-                              <CheckCircleIcon aria-hidden="true" className="h-4 w-4" />
-                              Đánh dấu hoàn thành
-                            </button>
+                            <span className="text-[11px] font-medium text-slate-500">
+                              Xem đủ 4 phần trong modal để được đánh dấu hoàn thành.
+                            </span>
                           )}
                         </div>
 
@@ -670,11 +710,15 @@ export default function CourseDetail() {
         onPassed={handleQuizPassed}
         onComplete={handleComplete}
         isCompleted={completedSet.has(String(currentLesson?._id))}
-        onOpenCertificate={() => {
-          // Đã đăng nhập (LessonPlayerModal đã tự kiểm tra) → sang thẳng trang chứng chỉ.
-          setPlayerOpen(false);
-          navigate('/chung-chi');
-        }}
+        onOpenCertificate={
+          canOpenCertificate
+            ? () => {
+                // Đã đăng nhập + khóa học đã hoàn tất → sang thẳng trang chứng nhận.
+                setPlayerOpen(false);
+                navigate('/chung-chi');
+              }
+            : undefined
+        }
       />
     </motion.div>
   );

@@ -11,6 +11,7 @@ export default function MyPoints() {
   const total = usePointsStore((s) => s.total);
   const transactions = usePointsStore((s) => s.transactions);
   const loading = usePointsStore((s) => s.loading);
+  const txLoading = usePointsStore((s) => s.txLoading);
   const fetch = usePointsStore((s) => s.fetch);
   const fetchTransactions = usePointsStore((s) => s.fetchTransactions);
 
@@ -67,10 +68,14 @@ export default function MyPoints() {
             <div className="space-y-2 text-xs text-slate-700">
               <div className="flex items-start gap-2">
                 <span className="font-bold text-teal-600">+5 điểm</span>
+                <span>Trả lời đúng 1 câu trắc nghiệm (tính 1 lần/câu)</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-teal-600">+5 điểm</span>
                 <span>Hoàn thành 1 bài học</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="font-bold text-teal-600">+100 điểm</span>
+                <span className="font-bold text-teal-600">+200 điểm</span>
                 <span>Hoàn thành 1 khóa học (100%)</span>
               </div>
               <div className="flex items-start gap-2">
@@ -85,7 +90,7 @@ export default function MyPoints() {
             <h2 className="mb-3 text-sm font-extrabold text-slate-900">
               Lịch sử giao dịch
             </h2>
-            {loading ? (
+            {txLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
                   <div
@@ -103,30 +108,36 @@ export default function MyPoints() {
               </p>
             ) : (
               <div className="space-y-2">
-                {transactions.map((t) => (
-                  <div
-                    key={t._id}
-                    className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-3"
-                  >
-                    <div className="flex-1">
-                      <p className="text-xs font-bold text-slate-900">{t.reason}</p>
-                      <span className="text-[10px] text-slate-400">
-                        {new Date(t.createdAt).toLocaleString('vi-VN')}
-                      </span>
-                    </div>
+                {transactions.map((t) => {
+                  // Backend PointTransaction dùng `description` + `delta`;
+                  // giữ fallback `reason`/`amount` cho dữ liệu cũ.
+                  const label = t.description || t.reason || 'Giao dịch điểm';
+                  const amount = Number(t.delta ?? t.amount ?? 0);
+                  return (
                     <div
-                      className={[
-                        'flex items-center gap-1 text-xs font-extrabold',
-                        t.amount > 0 ? 'text-emerald-600' : 'text-red-600',
-                      ].join(' ')}
+                      key={t._id}
+                      className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-3"
                     >
-                      {t.amount > 0 && (
-                        <ArrowUpIcon aria-hidden="true" className="h-3 w-3" />
-                      )}
-                      <span>{t.amount > 0 ? '+' : ''}{t.amount}</span>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-slate-900">{label}</p>
+                        <span className="text-[10px] text-slate-400">
+                          {t.createdAt ? new Date(t.createdAt).toLocaleString('vi-VN') : ''}
+                        </span>
+                      </div>
+                      <div
+                        className={[
+                          'flex items-center gap-1 text-xs font-extrabold',
+                          amount > 0 ? 'text-emerald-600' : 'text-red-600',
+                        ].join(' ')}
+                      >
+                        {amount > 0 && (
+                          <ArrowUpIcon aria-hidden="true" className="h-3 w-3" />
+                        )}
+                        <span>{amount > 0 ? '+' : ''}{amount}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

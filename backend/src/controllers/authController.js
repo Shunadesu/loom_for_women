@@ -1,7 +1,30 @@
 import bcrypt from 'bcryptjs';
+import path from 'path';
 import { validationResult } from 'express-validator';
 import User from '../models/User.js';
 import { signToken } from '../utils/jwt.js';
+import { normalizeGender } from '../utils/gender.js';
+import { getUserPoints, computeTierFromPoints } from '../utils/points.js';
+import { safeUnlink, UPLOAD_AVATAR_DIR } from '../middleware/upload.js';
+
+/**
+ * Gắn điểm + cấp hiện tại vào user JSON trả về cho frontend.
+ * - points: tổng từ PointTransaction (nguồn sự thật duy nhất).
+ * - level: số cấp suy ra từ ngưỡng điểm (1-4), để header hiển thị "Cấp X".
+ */
+function levelFromPoints(total) {
+  const safe = Number(total) || 0;
+  if (safe >= 2000) return 4;
+  if (safe >= 500) return 3;
+  if (safe >= 100) return 2;
+  return 1;
+}
+
+async function withPoints(userDoc) {
+  const safe = userDoc.toSafeJSON ? userDoc.toSafeJSON() : userDoc;
+  const points = await getUserPoints(safe._id);
+  return { ...safe, points, level: levelFromPoints(points), tier: computeTierFromPoints(points).key };
+}
 
 // Chấp nhận: 0901234567, 84901234567, +84901234567, 9 012 345 67, 090-123-4567
 // Yêu cầu: 9–11 chữ số sau khi bỏ khoảng trắng/dấu phân cách
@@ -70,6 +93,8 @@ export const register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    const gender = normalizeGender(req.body.gender);
+
     const user = await User.create({
       phone,
       name: typeof name === 'string' ? name.trim().slice(0, 50) : '',
@@ -77,10 +102,12 @@ export const register = async (req, res) => {
       age: Number.isFinite(age) ? age : null,
       occupation:
         typeof occupation === 'string' ? occupation.trim().slice(0, 100) : '',
+      gender,
     });
 
     const token = signToken({ sub: user._id.toString(), role: user.role });
-    res.status(201).json({ user: user.toSafeJSON(), token });
+    // User mới chưa có điểm nào.
+    res.status(201).json({ user: await withPoints(user), token });
   } catch (err) {
     res.status(500).json({ error: 'Đăng ký thất bại, vui lòng thử lại.' });
   }
@@ -122,12 +149,57 @@ export const login = async (req, res) => {
     await user.save();
 
     const token = signToken({ sub: user._id.toString(), role: user.role });
-    res.json({ user: user.toSafeJSON(), token });
+    res.json({ user: await withPoints(user), token });
   } catch (err) {
     res.status(500).json({ error: 'Đăng nhập thất bại, vui lòng thử lại.' });
   }
 };
 
 export const me = async (req, res) => {
-  res.json({ user: req.user.toSafeJSON() });
+  res.json({ user: await withPoints(req.user) });
+};
+
+const publicAvatarUrlFor = (filename) => `/uploads/avatars/${filename}`;
+
+/** Lấy tên file từ URL avatar (relative hoặc full). */
+const avatarFilenameFromUrl = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    const parsed = new URL(url, 'http://localhost');
+    const last = parsed.pathname.split('/').pop();
+    return last || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Đổi avatar người dùng đã đăng nhập.
+ * - Cần file ảnh ở field "avatar" (multer: uploadAvatar.single('avatar')).
+ * - Xoá file cũ nếu nằm trong uploads/avatars.
+ */
+export const updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Thiếu file ảnh (field "avatar").' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user || !user.isActive) {
+      return res.status(404).json({ error: 'Không tìm thấy tài khoản.' });
+    }
+
+    const oldName = avatarFilenameFromUrl(user.avatar);
+    if (oldName) {
+      safeUnlink(path.join(UPLOAD_AVATAR_DIR, oldName));
+    }
+
+    user.avatar = publicAvatarUrlFor(req.file.filename);
+    await user.save();
+
+    res.json({ user: await withPoints(user) });
+  } catch (err) {
+    if (req.file) safeUnlink(req.file.path);
+    res.status(500).json({ error: 'Đổi ảnh đại diện thất bại, vui lòng thử lại.' });
+  }
 };

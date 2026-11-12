@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchCourses } from '../../services/courseApi.js';
 import { PlayIcon, StarIcon, ClockIcon, ChevronRightIcon } from '../icons/index.jsx';
+import CourseLearnedBadge from './CourseLearnedBadge.jsx';
+import { useCourseLastLessonId } from '../../hooks/useCourseProgress.js';
+import { useAuthStore } from '../../store/authStore.js';
 import { resolveImageUrl } from '../../utils/imageUrl.js';
 
 /**
@@ -13,11 +16,13 @@ import { resolveImageUrl } from '../../utils/imageUrl.js';
 export default function FeaturedCarousel() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
+        // Gửi kèm token để API gắn progressPct (badge "đã học").
         const data = await fetchCourses({ featured: 'true', limit: 12 });
         if (mounted) setItems(data);
       } catch {
@@ -29,7 +34,7 @@ export default function FeaturedCarousel() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   if (!loading && items.length === 0) return null;
 
@@ -65,19 +70,26 @@ export default function FeaturedCarousel() {
 }
 
 function FeaturedCard({ course }) {
+  // Khóa đang học dở → bấm vào đi thẳng tới bài đó (giống CourseCard).
+  const lastLessonId = useCourseLastLessonId(course);
+  const href = lastLessonId
+    ? `/khoa-hoc/${course.slug}?lesson=${lastLessonId}`
+    : `/khoa-hoc/${course.slug}`;
+
   return (
     <Link
-      to={`/khoa-hoc/${course.slug}`}
+      to={href}
       className="group relative block h-44 w-44 shrink-0 overflow-hidden rounded-2xl bg-slate-100 shadow-xs transition-shadow hover:shadow-md sm:h-48 sm:w-48"
     >
-      {course.thumbnail ? (
+      {course.thumbnail || course.coverUrl ? (
         <img
           alt={course.title}
-          src={resolveImageUrl(course.thumbnail)}
+          src={resolveImageUrl(course.coverUrl || course.thumbnail)}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {
             e.currentTarget.src =
+              resolveImageUrl(course.thumbnail) ||
               'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=600';
           }}
         />
@@ -91,6 +103,10 @@ function FeaturedCard({ course }) {
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
           <PlayIcon aria-hidden="true" className="h-5 w-5 text-white drop-shadow" />
         </div>
+      </div>
+      {/* Badge "đã học" — góc trên trái */}
+      <div className="absolute left-1.5 top-1.5">
+        <CourseLearnedBadge course={course} variant="overlay" />
       </div>
       <div className="absolute inset-x-0 bottom-0 p-2 text-white">
         <h4 className="line-clamp-2 text-[11px] font-extrabold leading-tight">

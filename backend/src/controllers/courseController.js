@@ -32,12 +32,25 @@ async function buildProgressMap(userId) {
   const favSet = new Set(favorites.map((f) => String(f.courseId)));
   const map = {};
   for (const p of progresses) {
-    map[String(p.courseId)] = {
+    const cid = String(p.courseId);
+    map[cid] = {
       progressPct: p.progressPct,
       lastLessonId: p.lastLessonId ? String(p.lastLessonId) : null,
-      isFavorite: favSet.has(String(p.courseId)),
-      completedLessons: p.completedLessons.map((l) => String(l)),
+      isFavorite: favSet.has(cid),
+      completedLessons: (p.completedLessons || []).map((l) => String(l)),
     };
+  }
+  // Khóa chỉ yêu thích nhưng chưa học: vẫn cần cờ isFavorite = true
+  // để nút tim hiển thị đúng (progressPct mặc định 0).
+  for (const cid of favSet) {
+    if (!map[cid]) {
+      map[cid] = {
+        progressPct: 0,
+        lastLessonId: null,
+        isFavorite: true,
+        completedLessons: [],
+      };
+    }
   }
   return map;
 }

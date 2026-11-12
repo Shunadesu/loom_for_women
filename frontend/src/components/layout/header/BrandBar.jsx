@@ -163,7 +163,7 @@ export default function BrandBar() {
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-pink-50 hover:text-[#E60067]"
                     >
                       <UserIcon className="h-4 w-4" />
-                      Hộ Chiếu An Toàn
+                      Cá nhân
                     </ProtectedLink>
                     
                     <Link

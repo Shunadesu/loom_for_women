@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import SlideViewer from './SlideViewer.jsx';
 import SimulationStep from './SimulationStep.jsx';
@@ -48,10 +48,6 @@ export default function LessonPlayerModal({
   const [step, setStep] = useState(1);
 
   useEffect(() => {
-    if (open) setStep(1);
-  }, [open, lesson?._id]);
-
-  useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
       if (e.key === 'Escape') onClose?.();
@@ -75,11 +71,6 @@ export default function LessonPlayerModal({
   const slidePdfUrl = lesson?.slidePdfUrl || '';
   const usePdfSlides = slideMode === 'pdf' && Boolean(slidePdfUrl);
 
-  if (!open || !lesson) return null;
-
-  // Bài học KHÔNG có nội dung 4 phần → hiển thị media (video/ảnh/PDF) trong modal.
-  const structured = hasStructuredContent(lesson);
-
   /**
    * Mỗi bước mở được nếu phần đó CÓ nội dung.
    * Nếu thiếu, hiển thị empty-state tiếng Việt thay vì khóa người học.
@@ -90,6 +81,100 @@ export default function LessonPlayerModal({
     3: Boolean(summary && (summary.imageUrl || summary.pdfUrl || summary.videoUrl)),
     4: quizzes.length > 0,
   };
+
+  // Các phần bắt buộc phải xem để tính hoàn thành bài học (thường là cả 4).
+  const requiredSteps = useMemo(
+    () => [1, 2, 3, 4].filter((k) => stepHasContent[k]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [slides.length, simulations.length, quizzes.length, summary, usePdfSlides]
+  );
+
+  // ─── Tiến trình theo 4 phần ───
+  // Chỉ học viên ĐÃ ĐĂNG NHẬP mới có tiến trình; khách vẫn học bình thường
+  // nhưng không ghi nhớ phần đã xem và không tính hoàn thành.
+  const [visitedSteps, setVisitedSteps] = useState(() => new Set());
+  // Mirror của visitedSteps để ghi localStorage đồng bộ.
+  const visitedRef = useRef(new Set());
+  const completedNotifiedRef = useRef(false);
+
+  const storageKey = lesson?._id ? `loom-parts:${lesson._id}` : '';
+
+  // Đọc phần đã xem từ localStorage (chỉ dành cho học viên đã đăng nhập).
+  const readVisitedSteps = useCallback(() => {
+    if (!isAuthenticated || !storageKey) return [];
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(Number).filter((n) => [1, 2, 3, 4].includes(n));
+    } catch {
+      return [];
+    }
+  }, [isAuthenticated, storageKey]);
+
+  /** Đánh dấu 1 phần đã được xem (chỉ lưu khi đã đăng nhập). */
+  const markStepVisited = useCallback(
+    (target) => {
+      if (!isAuthenticated || !storageKey) return;
+      // Dùng ref làm nguồn sự thật để ghi localStorage ngay, không phụ thuộc
+      // thời điểm React chạy updater của setState.
+      const prev = visitedRef.current;
+      if (prev.has(target)) return;
+      const next = new Set(prev);
+      next.add(target);
+      visitedRef.current = next;
+      setVisitedSteps(next);
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(Array.from(next)));
+      } catch {
+        /* bỏ qua lỗi localStorage */
+      }
+    },
+    [isAuthenticated, storageKey]
+  );
+
+  // Mở modal → nạp lại phần đã xem và nhảy tới phần đầu tiên chưa xem.
+  useEffect(() => {
+    if (!open) return;
+    const stored = readVisitedSteps();
+    const storedSet = new Set(stored);
+    visitedRef.current = storedSet;
+    setVisitedSteps(storedSet);
+    completedNotifiedRef.current = false;
+    const firstUnseen = [1, 2, 3, 4].find(
+      (k) => stepHasContent[k] && !stored.includes(k)
+    );
+    const target = firstUnseen || 1;
+    setStep(target);
+    // Phần đang hiển thị cũng được tính là đã xem.
+    markStepVisited(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, lesson?._id, isAuthenticated, markStepVisited]);
+
+  // Số phần đã xem / tổng số phần bắt buộc (chỉ tính với học viên đã đăng nhập).
+  const visitedCount = isAuthenticated
+    ? requiredSteps.filter((k) => visitedSteps.has(k)).length
+    : 0;
+  const allStepsVisited =
+    isAuthenticated &&
+    requiredSteps.length > 0 &&
+    visitedCount === requiredSteps.length;
+
+  // Đủ cả 4 phần → đánh dấu hoàn thành bài học (ghi tiến độ lên backend).
+  useEffect(() => {
+    if (!allStepsVisited || isCompleted) return;
+    if (completedNotifiedRef.current) return;
+    completedNotifiedRef.current = true;
+    onComplete?.(lesson?._id);
+  }, [allStepsVisited, isCompleted, onComplete, lesson?._id]);
+
+  if (!open || !lesson) return null;
+
+  // Bài học KHÔNG có nội dung 4 phần → hiển thị media (video/ảnh/PDF) trong modal.
+  const structured = hasStructuredContent(lesson);
+
+  // Bước 1 dùng PDF slide → mở rộng modal để trang slide hiển thị to hơn.
+  const widePdfStep = structured && step === 1 && usePdfSlides;
 
   /** Điều hướng tới bước hợp lệ gần nhất (bỏ qua bước không có nội dung). */
   const goToStep = (target) => {
@@ -105,6 +190,8 @@ export default function LessonPlayerModal({
       next = forward ?? candidates[candidates.length - 1];
     }
     setStep(next);
+    // Đánh dấu phần này đã được xem (chỉ tính với học viên đã đăng nhập).
+    markStepVisited(next);
   };
 
   /**
@@ -137,7 +224,11 @@ export default function LessonPlayerModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-0 sm:p-4">
-      <div className="flex h-full max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-white sm:h-[92vh] sm:max-h-[92vh] sm:rounded-2xl sm:shadow-2xl">
+      <div
+        className={`flex h-full max-h-[100dvh] w-full flex-col overflow-hidden bg-white sm:h-[92vh] sm:max-h-[92vh] sm:rounded-2xl sm:shadow-2xl ${
+          widePdfStep ? 'sm:max-w-7xl' : 'sm:max-w-5xl'
+        }`}
+      >
         {/* ─── Header ─── */}
         <div className="flex items-center gap-3 bg-gradient-to-r from-[#E60067] to-[#b8004f] px-3 py-3 sm:px-5">
           {course?.coverUrl || course?.thumbnail ? (
@@ -228,6 +319,7 @@ export default function LessonPlayerModal({
               {STEPS.map((s) => {
                 const active = step === s.key;
                 const enabled = stepHasContent[s.key];
+                const visited = isAuthenticated && visitedSteps.has(s.key);
                 return (
                   <button
                     key={s.key}
@@ -243,10 +335,30 @@ export default function LessonPlayerModal({
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${
                         active
                           ? 'bg-white text-[#E60067]'
-                          : 'bg-pink-100 text-[#E60067]'
+                          : visited
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-pink-100 text-[#E60067]'
                       }`}
                     >
-                      {s.key}
+                      {visited ? (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-3 w-3"
+                          aria-hidden="true"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      ) : (
+                        s.key
+                      )}
                     </div>
                     <div className="min-w-0 truncate">
                       <p className="truncate font-extrabold leading-tight">
@@ -263,6 +375,35 @@ export default function LessonPlayerModal({
                   </button>
                 );
               })}
+            </div>
+
+            {/* Tiến trình 4 phần */}
+            <div className="mx-auto mt-2 max-w-5xl">
+              {isAuthenticated ? (
+                <div className="flex items-center gap-3">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-teal-500 transition-all duration-500"
+                      style={{
+                        width: `${
+                          requiredSteps.length > 0
+                            ? Math.round(
+                                (visitedCount / requiredSteps.length) * 100
+                              )
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                  <span className="shrink-0 text-[11px] font-bold text-slate-600">
+                    Đã học {visitedCount}/{requiredSteps.length} phần
+                  </span>
+                </div>
+              ) : (
+                <p className="text-center text-[11px] font-medium text-slate-500">
+                  Đăng nhập để lưu tiến trình học tập.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -489,6 +630,28 @@ export default function LessonPlayerModal({
               </button>
             )}
             {!structured && isCompleted && (
+              <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-4 py-1.5 text-[11px] font-extrabold text-emerald-700">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                >
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <path d="m9 11 3 3L22 4" />
+                </svg>
+                Đã hoàn thành
+              </span>
+            )}
+            {/* Bài học 4 phần → báo hoàn thành khi đã xem đủ các phần */}
+            {structured && isCompleted && (
               <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-4 py-1.5 text-[11px] font-extrabold text-emerald-700">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

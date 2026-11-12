@@ -109,7 +109,7 @@ export default function GiftsList() {
 
       <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
         <p className="text-[11px] text-blue-700 leading-relaxed">
-          <span className="font-bold">💡 Mẹo tích điểm:</span> Hoàn thành khóa học +100 điểm, 
+          <span className="font-bold">💡 Mẹo tích điểm:</span> Hoàn thành khóa học +200 điểm, 
           hoàn thành bài học +5 điểm, bình luận +2 điểm.
         </p>
       </div>
