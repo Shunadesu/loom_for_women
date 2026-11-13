@@ -49,12 +49,6 @@ if (!fs.existsSync(UPLOAD_AVATAR_DIR)) {
   fs.mkdirSync(UPLOAD_AVATAR_DIR, { recursive: true });
 }
 
-// ─── Avatar upload dir ───────────────────────────────────────
-const UPLOAD_AVATAR_DIR = path.join(__dirname, '../../uploads/avatars');
-if (!fs.existsSync(UPLOAD_AVATAR_DIR)) {
-  fs.mkdirSync(UPLOAD_AVATAR_DIR, { recursive: true });
-}
-
 const imageFileFilter = (_req, file, cb) => {
   const ok = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
     file.mimetype
