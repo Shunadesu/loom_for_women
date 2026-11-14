@@ -174,7 +174,11 @@ export default function LessonPlayerModal({
   const structured = hasStructuredContent(lesson);
 
   // Bước 1 dùng PDF slide → mở rộng modal để trang slide hiển thị to hơn.
-  const widePdfStep = structured && step === 1 && usePdfSlides;
+  // Bước 3 có PDF infographic cũng dùng trình xem slide → cần rộng tương tự.
+  const summaryPdfUrl = summary?.pdfUrl || '';
+  const widePdfStep =
+    structured &&
+    ((step === 1 && usePdfSlides) || (step === 3 && Boolean(summaryPdfUrl)));
 
   /** Điều hướng tới bước hợp lệ gần nhất (bỏ qua bước không có nội dung). */
   const goToStep = (target) => {
